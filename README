@@ -1,0 +1,11 @@
+1. MP3 Player
+
+Trying to hack together an mp3 player that is simple and easy to use.
+
+What it should be able to do:
+ * Have a memory stick opening.
+ * Play randomly a sequence of mp3s from the memory stick.
+ * Start playing when the memory stick is inserted and stop when removed.
+ * Broadcast the music by RF.
+ * Have a debugging display that is not shown.
+ * Be made of darkly textured wood. A pillar with the opening at the top.
