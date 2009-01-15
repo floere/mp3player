@@ -4,7 +4,9 @@ Trying to hack together an mp3 player that is simple and easy to use.
 
 What it should be able to do:
  * Have a memory stick opening.
- * Play randomly a sequence of mp3s from the memory stick.
+ * Play randomly a sequence of mp3s from the memory stick, acting as a physical playlist.
+ * The memory sticks used can be flashy (blinking blue for party playlists,
+   white plastic for ambient, black steel for hip hop, a constant red light for hal9000)
  * Start playing when the memory stick is inserted and stop when removed.
  * Broadcast the music by RF.
  * Have a debugging display that is not shown.
