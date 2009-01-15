@@ -1,3 +1,19 @@
+/*
+ * So, basically we have two timers:
+ * 1. A timer that shoves data into the mp3 buffer (32 bytes) of the chip.
+ * 2. A timer that checks the USB Interface for new stuff or a removed memstick.
+ * 
+ * 
+ * r. We have a radio.
+ *    Why? Think synchronized music in the whole apartment.
+ *    Perhaps it can be switched off or on. Perhaps it is always running.
+ *    Let's use the accelerometer for that maybe (punching the thing ;) ).
+ *    Frequency? 103.6 MHz? some band where nothing is on.
+ *    Let's also send intermittent radio info to let the people
+ *    around me know where the good/bad music comes from.
+ *
+ */
+
 //*******************************************************
 //					MP3 Development Platform
 //*******************************************************
