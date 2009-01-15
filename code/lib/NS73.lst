@@ -1,0 +1,566 @@
+   1              		.file	"NS73.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	ns73SerialReset
+  13              	ns73SerialReset:
+  14              	.LFB5:
+  15              		.file 1 "../lib/NS73.c"
+   1:../lib/NS73.c **** /* *********************************************************
+   2:../lib/NS73.c **** 	NS73 FM Transmiter Library. 
+   3:../lib/NS73.c **** 	Must include the NS73.h header file.  
+   4:../lib/NS73.c **** 	FM_SCLK, FM_DIO, FM_TEB and FM_LA should be defined in
+   5:../lib/NS73.c **** 	an external header file and included.
+   6:../lib/NS73.c **** 	
+   7:../lib/NS73.c **** 	Library contains the following functions:
+   8:../lib/NS73.c **** 	
+   9:../lib/NS73.c **** 	void ns73Config(void);
+  10:../lib/NS73.c **** 	void ns73Init(void);
+  11:../lib/NS73.c **** 	void ns73SerialReset(void);
+  12:../lib/NS73.c **** 	void ns73SetChannel(int radio_channel);
+  13:../lib/NS73.c **** 	
+  14:../lib/NS73.c **** 	Written by Ryan Owens - 2/1/2008
+  15:../lib/NS73.c ****   ********************************************************* */
+  16:../lib/NS73.c **** 
+  17:../lib/NS73.c **** //**********************************************************
+  18:../lib/NS73.c **** //                  Header files
+  19:../lib/NS73.c **** //**********************************************************
+  20:../lib/NS73.c **** #include "LPC214x.h"		//Common LPC2148 definitions
+  21:../lib/NS73.c **** #include "MP3dev.h"			//
+  22:../lib/NS73.c **** #include "NS73.h"			//Contains Registers/Bit Masks for vs1002
+  23:../lib/NS73.c **** #include "rprintf.h"
+  24:../lib/NS73.c **** 
+  25:../lib/NS73.c **** 	/**********************************************************
+  26:../lib/NS73.c ****                        Functions
+  27:../lib/NS73.c **** **********************************************************/
+  28:../lib/NS73.c **** //Usage: ns73_config();
+  29:../lib/NS73.c **** //Inputs: None
+  30:../lib/NS73.c **** //Outputs: None
+  31:../lib/NS73.c **** //Description: Configures the LPC2148 for communication with the ns73 module
+  32:../lib/NS73.c **** void ns73Config(void)
+  33:../lib/NS73.c **** {
+  34:../lib/NS73.c ****     //Setup Ports
+  35:../lib/NS73.c **** 	IODIR1 |= (FM_SCLK | FM_DIO);		//Setup FM Trans. I/O Lines
+  36:../lib/NS73.c **** 	IODIR1 |= FM_LA;					//**This has been done in the bootup() routine
+  37:../lib/NS73.c **** 	IODIR0 &= ~FM_TEB;
+  38:../lib/NS73.c **** 	IOSET1 |= FM_SCLK | FM_DIO;
+  39:../lib/NS73.c **** 	delay_ms(1);
+  40:../lib/NS73.c **** }
+  41:../lib/NS73.c **** 
+  42:../lib/NS73.c **** //Usage: ns73_init()
+  43:../lib/NS73.c **** //Inputs: None
+  44:../lib/NS73.c **** //Outputs: None
+  45:../lib/NS73.c **** //Description: Resets the ns73 module and restores the default values to each register
+  46:../lib/NS73.c **** void ns73Init(void){
+  47:../lib/NS73.c **** 	ns73Send(R14, R14_RESET); //Software reset
+  48:../lib/NS73.c **** 	delay_ms(1);				 //
+  49:../lib/NS73.c **** 	
+  50:../lib/NS73.c ****     //Load register values with initial default values
+  51:../lib/NS73.c ****     ns73Send(R1, R1_DEFAULT); 		//Register 1 defaults
+  52:../lib/NS73.c ****     ns73Send(R2, R2_DEFAULT); 		//Register 2 defaults
+  53:../lib/NS73.c ****     ns73Send(R3, 0x8A); 			//Set broadcast freq to 97.3
+  54:../lib/NS73.c ****     ns73Send(R4, 0x2E);
+  55:../lib/NS73.c **** 	ns73Send(R8, R8_DEFAULT); 		//Register 8 defaults
+  56:../lib/NS73.c ****     ns73Send(R0, MUTE); 			//Flip the power switch
+  57:../lib/NS73.c ****     ns73Send(R14, R14_RESET); 		//Software reset
+  58:../lib/NS73.c ****     ns73Send(R6, R6_DEFAULT); 		//Set Register 6
+  59:../lib/NS73.c **** }
+  60:../lib/NS73.c **** 
+  61:../lib/NS73.c **** //Usage: ns73Send(R1, R1_DEFAULT);
+  62:../lib/NS73.c **** //Inputs: unsigned char outgoing_address - address of the ns73 register to be written to
+  63:../lib/NS73.c **** //		  unsigned char outgoing_data - data to be written to the register
+  64:../lib/NS73.c **** //Outputs: None
+  65:../lib/NS73.c **** //Description: Basic SPI send address and data bytes to ns73 module
+  66:../lib/NS73.c **** unsigned char ns73Send(unsigned char outgoing_address, unsigned char outgoing_data)
+  67:../lib/NS73.c **** {
+  68:../lib/NS73.c ****     unsigned char incoming_byte=0, x;
+  69:../lib/NS73.c **** 
+  70:../lib/NS73.c ****     UNLATCH;
+  71:../lib/NS73.c ****     delay_ms(10);
+  72:../lib/NS73.c ****     for(x = 0 ; x < 4 ; x++)
+  73:../lib/NS73.c ****     {
+  74:../lib/NS73.c ****         CLKDWN; //Toggle the SPI clock
+  75:../lib/NS73.c ****         if((outgoing_address & 0x01)==0x01){
+  76:../lib/NS73.c **** 			IOSET1 |= FM_DIO; //Put bit on SPI data bus
+  77:../lib/NS73.c **** 		}	
+  78:../lib/NS73.c **** 		else IOCLR1 |= FM_DIO;
+  79:../lib/NS73.c **** 		outgoing_address >>= 1; //Rotate 1 bit to the right
+  80:../lib/NS73.c **** 		delay_ms(1);
+  81:../lib/NS73.c ****         CLKUP;
+  82:../lib/NS73.c **** 		delay_ms(1);
+  83:../lib/NS73.c ****     }
+  84:../lib/NS73.c **** 
+  85:../lib/NS73.c ****     for(x = 0 ; x < 8 ; x++)
+  86:../lib/NS73.c ****     {
+  87:../lib/NS73.c ****         CLKDWN; //Toggle the SPI clock
+  88:../lib/NS73.c **** 		ledRedOn();
+  89:../lib/NS73.c ****         if((outgoing_data & 0x01)==0x01){
+  90:../lib/NS73.c **** 			IOSET1 |= FM_DIO; //Put bit on SPI data bus
+  91:../lib/NS73.c **** 		}
+  92:../lib/NS73.c **** 		else IOCLR1 |= FM_DIO;
+  93:../lib/NS73.c **** 		outgoing_data >>= 1; //Rotate 1 bit to the right
+  94:../lib/NS73.c **** 		delay_ms(1);
+  95:../lib/NS73.c ****         CLKUP;
+  96:../lib/NS73.c **** 		delay_ms(1);
+  97:../lib/NS73.c ****     }
+  98:../lib/NS73.c ****     LATCH; //Latch this trasfer
+  99:../lib/NS73.c ****     delay_ms(10); //Minimum tLAH is 250nS
+ 100:../lib/NS73.c ****     UNLATCH;
+ 101:../lib/NS73.c **** 	CLKDWN;
+ 102:../lib/NS73.c ****     return(incoming_byte);
+ 103:../lib/NS73.c **** }
+ 104:../lib/NS73.c **** 
+ 105:../lib/NS73.c **** //Usage: ns73SerialReset()
+ 106:../lib/NS73.c **** //Inputs: None
+ 107:../lib/NS73.c **** //Outputs: None
+ 108:../lib/NS73.c **** //Description:  Resets the ns73 module
+ 109:../lib/NS73.c **** void ns73SerialReset(void){
+  16              	@ Function supports interworking.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              		stmfd	sp!, {r4, r5, lr}
+  20 0000 30402DE9 	.LCFI0:
+  21              		.loc 1 111 0
+ 110:../lib/NS73.c **** 		delay_ms(10);
+ 111:../lib/NS73.c **** 		IOCLR1 |= FM_DIO;
+  22              	4, .L7
+  23 0004 EC409FE5 		.loc 1 110 0
+  24              		mov	r0, #10
+  25 0008 0A00A0E3 		bl	delay_ms
+  26 000c FEFFFFEB 		.loc 1 111 0
+  27              		ldr	r3, [r4, #28]
+  28 0010 1C3094E5 		orr	r3, r3, #67108864
+  29 0014 013383E3 		.loc 1 112 0
+ 112:../lib/NS73.c **** 		delay_ms(10);
+  30              	 #10
+  31 0018 0A00A0E3 		.loc 1 111 0
+  32              		str	r3, [r4, #28]
+  33 001c 1C3084E5 		.loc 1 112 0
+  34              		bl	delay_ms
+  35 0020 FEFFFFEB 		.loc 1 113 0
+ 113:../lib/NS73.c **** 		IOCLR1 |= FM_SCLK;
+  36              	3, [r4, #28]
+  37 0024 1C3094E5 		orr	r3, r3, #134217728
+  38 0028 023383E3 		str	r3, [r4, #28]
+  39 002c 1C3084E5 		.loc 1 114 0
+ 114:../lib/NS73.c **** 		delay_ms(10);
+  40              		r0, #10
+  41 0030 0A00A0E3 		bl	delay_ms
+  42 0034 FEFFFFEB 		.loc 1 115 0
+ 115:../lib/NS73.c **** 		IOSET1 |= FM_DIO;
+  43              	r	r3, [r4, #20]
+  44 0038 143094E5 		orr	r3, r3, #67108864
+  45 003c 013383E3 		str	r3, [r4, #20]
+  46 0040 143084E5 		mov	r5, #0
+  47 0044 0050A0E3 	.LVL0:
+  48              	.L2:
+  49              	.LBB2:
+  50              		.loc 1 117 0
+ 116:../lib/NS73.c **** 		for(int i=0; i<26; i++){
+ 117:../lib/NS73.c **** 			IOSET1 |= FM_SCLK;
+  51              	 .L7
+  52 0048 A8409FE5 		ldr	r3, [r4, #20]
+  53 004c 143094E5 		orr	r3, r3, #134217728
+  54 0050 023383E3 		.loc 1 118 0
+ 118:../lib/NS73.c **** 			delay_ms(10);
+  55              		r0, #10
+  56 0054 0A00A0E3 		.loc 1 117 0
+  57              		str	r3, [r4, #20]
+  58 0058 143084E5 		.loc 1 118 0
+  59              		bl	delay_ms
+  60 005c FEFFFFEB 		.loc 1 119 0
+ 119:../lib/NS73.c **** 			IOCLR1 |= FM_SCLK;
+  61              	3, [r4, #28]
+  62 0060 1C3094E5 		orr	r3, r3, #134217728
+  63 0064 023383E3 		.loc 1 116 0
+  64              		add	r5, r5, #1
+  65 0068 015085E2 		.loc 1 120 0
+ 120:../lib/NS73.c **** 			delay_ms(10);
+  66              	r0, #10
+  67 006c 0A00A0E3 		.loc 1 119 0
+  68              		str	r3, [r4, #28]
+  69 0070 1C3084E5 		.loc 1 120 0
+  70              		bl	delay_ms
+  71 0074 FEFFFFEB 		.loc 1 116 0
+  72              		cmp	r5, #26
+  73 0078 1A0055E3 		bne	.L2
+  74 007c F1FFFF1A 	.LBE2:
+  75              		.loc 1 122 0
+ 121:../lib/NS73.c **** 		}
+ 122:../lib/NS73.c **** 		IOSET1 |= FM_SCLK;
+  76              	r4, #20]
+  77 0080 143094E5 		orr	r3, r3, #134217728
+  78 0084 023383E3 		.loc 1 123 0
+ 123:../lib/NS73.c **** 		delay_ms(10);
+  79              	v	r0, #10
+  80 0088 0A00A0E3 		.loc 1 122 0
+  81              		str	r3, [r4, #20]
+  82 008c 143084E5 		.loc 1 123 0
+  83              		bl	delay_ms
+  84 0090 FEFFFFEB 		.loc 1 124 0
+ 124:../lib/NS73.c **** 		IOCLR1 |= FM_DIO;
+  85              	3, [r4, #28]
+  86 0094 1C3094E5 		orr	r3, r3, #67108864
+  87 0098 013383E3 		.loc 1 125 0
+ 125:../lib/NS73.c **** 		delay_ms(10);
+  88              	v	r0, #10
+  89 009c 0A00A0E3 		.loc 1 124 0
+  90              		str	r3, [r4, #28]
+  91 00a0 1C3084E5 		.loc 1 125 0
+  92              		bl	delay_ms
+  93 00a4 FEFFFFEB 		.loc 1 126 0
+ 126:../lib/NS73.c **** 		IOCLR1 |= FM_SCLK;
+  94              	3, [r4, #28]
+  95 00a8 1C3094E5 		orr	r3, r3, #134217728
+  96 00ac 023383E3 		.loc 1 127 0
+ 127:../lib/NS73.c **** 		delay_ms(10);
+  97              	v	r0, #10
+  98 00b0 0A00A0E3 		.loc 1 126 0
+  99              		str	r3, [r4, #28]
+ 100 00b4 1C3084E5 		.loc 1 127 0
+ 101              		bl	delay_ms
+ 102 00b8 FEFFFFEB 		.loc 1 128 0
+ 128:../lib/NS73.c **** 		IOSET1 |= FM_SCLK;
+ 103              	3, [r4, #20]
+ 104 00bc 143094E5 		orr	r3, r3, #134217728
+ 105 00c0 023383E3 		.loc 1 129 0
+ 129:../lib/NS73.c **** 		delay_ms(10);
+ 106              	v	r0, #10
+ 107 00c4 0A00A0E3 		.loc 1 128 0
+ 108              		str	r3, [r4, #20]
+ 109 00c8 143084E5 		.loc 1 129 0
+ 110              		bl	delay_ms
+ 111 00cc FEFFFFEB 		.loc 1 130 0
+ 130:../lib/NS73.c **** 		IOSET1 |= FM_DIO;
+ 112              	3, [r4, #20]
+ 113 00d0 143094E5 		orr	r3, r3, #67108864
+ 114 00d4 013383E3 		str	r3, [r4, #20]
+ 115 00d8 143084E5 		.loc 1 131 0
+ 131:../lib/NS73.c **** 		delay_ms(10);
+ 116              		r0, #10
+ 117 00dc 0A00A0E3 		bl	delay_ms
+ 118 00e0 FEFFFFEB 		.loc 1 132 0
+ 132:../lib/NS73.c **** 		IOCLR1 |= FM_SCLK;
+ 119              	r	r3, [r4, #28]
+ 120 00e4 1C3094E5 		orr	r3, r3, #134217728
+ 121 00e8 023383E3 		str	r3, [r4, #28]
+ 122 00ec 1C3084E5 		.loc 1 133 0
+ 133:../lib/NS73.c **** }
+ 123              	fd	sp!, {r4, r5, lr}
+ 124 00f0 3040BDE8 		bx	lr
+ 125 00f4 1EFF2FE1 	.L8:
+ 126              		.align	2
+ 127              	.L7:
+ 128              		.word	-536707072
+ 129 00f8 008002E0 	.LFE5:
+ 131              		.align	2
+ 132              		.global	ns73Send
+ 134              	ns73Send:
+ 135              	.LFB4:
+ 136              		.loc 1 67 0
+ 137              		@ Function supports interworking.
+ 138              		@ args = 0, pretend = 0, frame = 0
+ 139              		@ frame_needed = 0, uses_anonymous_args = 0
+ 140              	.LVL1:
+ 141              		.loc 1 70 0
+ 142              		ldr	r3, .L23
+ 143 00fc 00319FE5 		mov	r2, #33554432
+ 144 0100 0224A0E3 		.loc 1 67 0
+ 145              		stmfd	sp!, {r4, r5, r6, r7, lr}
+ 146 0104 F0402DE9 	.LCFI1:
+ 147              		.loc 1 67 0
+ 148              		mov	ip, r0
+ 149 0108 00C0A0E1 		.loc 1 70 0
+ 150              		str	r2, [r3, #28]
+ 151 010c 1C2083E5 		.loc 1 71 0
+ 152              		mov	r0, #10
+ 153 0110 0A00A0E3 	.LVL2:
+ 154              		.loc 1 67 0
+ 155              		and	r4, ip, #255
+ 156 0114 FF400CE2 		and	r6, r1, #255
+ 157 0118 FF6001E2 		.loc 1 71 0
+ 158              		bl	delay_ms
+ 159 011c FEFFFFEB 	.LVL3:
+ 160              		mov	r5, #0
+ 161 0120 0050A0E3 	.LVL4:
+ 162              	.L10:
+ 163              		.loc 1 74 0
+ 164              		ldr	r2, .L23
+ 165 0124 D8209FE5 		mov	r3, #134217728
+ 166 0128 0233A0E3 		str	r3, [r2, #28]
+ 167 012c 1C3082E5 		.loc 1 75 0
+ 168              		tst	r4, #1
+ 169 0130 010014E3 		.loc 1 76 0
+ 170              		ldrne	r3, [r2, #20]
+ 171 0134 14309215 		.loc 1 78 0
+ 172              		ldreq	r3, [r2, #28]
+ 173 0138 1C309205 		.loc 1 76 0
+ 174              		orrne	r3, r3, #67108864
+ 175 013c 01338313 		.loc 1 78 0
+ 176              		orreq	r3, r3, #67108864
+ 177 0140 01338303 		.loc 1 76 0
+ 178              		strne	r3, [r2, #20]
+ 179 0144 14308215 		.loc 1 78 0
+ 180              		streq	r3, [r2, #28]
+ 181 0148 1C308205 		.loc 1 80 0
+ 182              		mov	r0, #1
+ 183 014c 0100A0E3 		.loc 1 79 0
+ 184              		mov	r4, r4, lsr r0
+ 185 0150 3440A0E1 		.loc 1 80 0
+ 186              		bl	delay_ms
+ 187 0154 FEFFFFEB 		.loc 1 81 0
+ 188              		ldr	r2, .L23
+ 189 0158 A4209FE5 		mov	r3, #134217728
+ 190 015c 0233A0E3 		str	r3, [r2, #20]
+ 191 0160 143082E5 		.loc 1 82 0
+ 192              		mov	r0, #1
+ 193 0164 0100A0E3 		bl	delay_ms
+ 194 0168 FEFFFFEB 		.loc 1 72 0
+ 195              		add	r3, r5, #1
+ 196 016c 013085E2 		and	r5, r3, #255
+ 197 0170 FF5003E2 		cmp	r5, #4
+ 198 0174 040055E3 		bne	.L10
+ 199 0178 E9FFFF1A 		.loc 1 79 0
+ 200              		mov	r4, #0
+ 201 017c 0040A0E3 	.LVL5:
+ 202              	.L16:
+ 203              		.loc 1 87 0
+ 204              		ldr	r2, .L23
+ 205 0180 7C209FE5 		mov	r3, #134217728
+ 206 0184 0233A0E3 		str	r3, [r2, #28]
+ 207 0188 1C3082E5 		.loc 1 88 0
+ 208              		add	r3, r3, #939524096
+ 209 018c 0E3383E2 		str	r3, [r2, #12]
+ 210 0190 0C3082E5 		.loc 1 89 0
+ 211              		tst	r6, #1
+ 212 0194 010016E3 		.loc 1 90 0
+ 213              		ldrne	r3, [r2, #20]
+ 214 0198 14309215 		.loc 1 92 0
+ 215              		ldreq	r3, [r2, #28]
+ 216 019c 1C309205 		.loc 1 90 0
+ 217              		orrne	r3, r3, #67108864
+ 218 01a0 01338313 		.loc 1 92 0
+ 219              		orreq	r3, r3, #67108864
+ 220 01a4 01338303 		.loc 1 95 0
+ 221              		ldr	r5, .L23
+ 222 01a8 54509FE5 	.LVL6:
+ 223              		.loc 1 90 0
+ 224              		strne	r3, [r2, #20]
+ 225 01ac 14308215 		.loc 1 92 0
+ 226              		streq	r3, [r2, #28]
+ 227 01b0 1C308205 		.loc 1 94 0
+ 228              		mov	r0, #1
+ 229 01b4 0100A0E3 		.loc 1 95 0
+ 230              		mov	r7, #134217728
+ 231 01b8 0273A0E3 		.loc 1 93 0
+ 232              		mov	r6, r6, lsr r0
+ 233 01bc 3660A0E1 		.loc 1 94 0
+ 234              		bl	delay_ms
+ 235 01c0 FEFFFFEB 		.loc 1 96 0
+ 236              		mov	r0, #1
+ 237 01c4 0100A0E3 		.loc 1 95 0
+ 238              		str	r7, [r5, #20]
+ 239 01c8 147085E5 		.loc 1 96 0
+ 240              		bl	delay_ms
+ 241 01cc FEFFFFEB 		.loc 1 85 0
+ 242              		add	r3, r4, #1
+ 243 01d0 013084E2 		and	r4, r3, #255
+ 244 01d4 FF4003E2 		cmp	r4, #8
+ 245 01d8 080054E3 		bne	.L16
+ 246 01dc E7FFFF1A 		.loc 1 98 0
+ 247              		mov	r4, #33554432
+ 248 01e0 0244A0E3 	.LVL7:
+ 249              		.loc 1 99 0
+ 250              		mov	r0, #10
+ 251 01e4 0A00A0E3 		.loc 1 98 0
+ 252              		str	r4, [r5, #20]
+ 253 01e8 144085E5 		.loc 1 99 0
+ 254              		bl	delay_ms
+ 255 01ec FEFFFFEB 		.loc 1 103 0
+ 256              		mov	r0, #0
+ 257 01f0 0000A0E3 		.loc 1 100 0
+ 258              		str	r4, [r5, #28]
+ 259 01f4 1C4085E5 		.loc 1 101 0
+ 260              		str	r7, [r5, #28]
+ 261 01f8 1C7085E5 		.loc 1 103 0
+ 262              		ldmfd	sp!, {r4, r5, r6, r7, lr}
+ 263 01fc F040BDE8 		bx	lr
+ 264 0200 1EFF2FE1 	.L24:
+ 265              		.align	2
+ 266              	.L23:
+ 267              		.word	-536707072
+ 268 0204 008002E0 	.LFE4:
+ 270              		.align	2
+ 271              		.global	ns73SetChannel
+ 273              	ns73SetChannel:
+ 274              	.LFB6:
+ 275              		.loc 1 139 0
+ 134:../lib/NS73.c **** 
+ 135:../lib/NS73.c **** //Usage: ns73SetChannel(973);
+ 136:../lib/NS73.c **** //Inputs: int radio_channel - Desired Radio Channel (should be input in MHz*10 so 97.3FM becomes 97
+ 137:../lib/NS73.c **** //Outputs: None
+ 138:../lib/NS73.c **** //Description: Tunes the ns73 module to "radio_channel."
+ 139:../lib/NS73.c **** void ns73SetChannel(int radio_channel){
+ 276              	dr	r3, .L27+4
+ 277              		.loc 1 139 0
+ 278              		stmfd	sp!, {r4, lr}
+ 279              	.LCFI2:
+ 280              		.loc 1 143 0
+ 140:../lib/NS73.c **** 	long int channel=radio_channel*100000;
+ 141:../lib/NS73.c **** 	unsigned char low_byte, high_byte;
+ 142:../lib/NS73.c **** 	
+ 143:../lib/NS73.c **** 	channel += 304000;
+ 281              	r4, r0, r2, r3
+ 282 0208 3C209FE5 	.LVL9:
+ 283 020c 3C309FE5 		.loc 1 144 0
+ 284              		add	r3, r4, #8128
+ 285 0210 10402DE9 		cmp	r4, #0
+ 286              		add	r3, r3, #63
+ 287              		movlt	r4, r3
+ 288 0214 903224E0 		.loc 1 148 0
+ 289              		mov	r1, r4, lsr #13
+ 144:../lib/NS73.c **** 	channel /= 8192;
+ 290              	r1, #255
+ 291 0218 7F3D84E2 		mov	r0, #3
+ 292 021c 000054E3 	.LVL10:
+ 293 0220 3F3083E2 		bl	ns73Send
+ 294 0224 0340A0B1 		.loc 1 149 0
+ 145:../lib/NS73.c **** 	low_byte = channel & 0xFF;
+ 146:../lib/NS73.c **** 	high_byte = (channel >> 8) & 0xFF;
+ 147:../lib/NS73.c **** 	
+ 148:../lib/NS73.c **** 	ns73Send(R3, low_byte);
+ 295              	r4, r4, lsr #21
+ 296 0228 A416A0E1 	.LVL11:
+ 297 022c FF1001E2 		and	r1, r4, #255
+ 298 0230 0300A0E3 		mov	r0, #4
+ 299              		.loc 1 150 0
+ 300 0234 FEFFFFEB 		ldmfd	sp!, {r4, lr}
+ 149:../lib/NS73.c **** 	ns73Send(R4, high_byte);
+ 301              	1 149 0
+ 302 0238 A44AA0E1 		b	ns73Send
+ 303              	.L28:
+ 304 023c FF1004E2 		.align	2
+ 305 0240 0400A0E3 	.L27:
+ 150:../lib/NS73.c **** }
+ 306              	d	100000
+ 307 0244 1040BDE8 		.word	304000
+ 308              	.LFE6:
+ 310              		.align	2
+ 311              		.global	ns73Init
+ 313 024c A0860100 	ns73Init:
+ 314 0250 80A30400 	.LFB3:
+ 315              		.loc 1 46 0
+ 316              		@ Function supports interworking.
+ 317              		@ args = 0, pretend = 0, frame = 0
+ 318              		@ frame_needed = 0, uses_anonymous_args = 0
+ 319              		str	lr, [sp, #-4]!
+ 320              	.LCFI3:
+ 321              		.loc 1 47 0
+ 322              		mov	r1, #5
+ 323              		mov	r0, #14
+ 324              		bl	ns73Send
+ 325              		.loc 1 48 0
+ 326 0254 04E02DE5 		mov	r0, #1
+ 327              		bl	delay_ms
+ 328              		.loc 1 51 0
+ 329 0258 0510A0E3 		mov	r1, #180
+ 330 025c 0E00A0E3 		mov	r0, #1
+ 331 0260 FEFFFFEB 		bl	ns73Send
+ 332              		.loc 1 52 0
+ 333 0264 0100A0E3 		mov	r1, #6
+ 334 0268 FEFFFFEB 		mov	r0, #2
+ 335              		bl	ns73Send
+ 336 026c B410A0E3 		.loc 1 53 0
+ 337 0270 0100A0E3 		mov	r1, #138
+ 338 0274 FEFFFFEB 		mov	r0, #3
+ 339              		bl	ns73Send
+ 340 0278 0610A0E3 		.loc 1 54 0
+ 341 027c 0200A0E3 		mov	r1, #46
+ 342 0280 FEFFFFEB 		mov	r0, #4
+ 343              		bl	ns73Send
+ 344 0284 8A10A0E3 		.loc 1 55 0
+ 345 0288 0300A0E3 		mov	r1, #26
+ 346 028c FEFFFFEB 		mov	r0, #8
+ 347              		bl	ns73Send
+ 348 0290 2E10A0E3 		.loc 1 56 0
+ 349 0294 0400A0E3 		mov	r1, #4
+ 350 0298 FEFFFFEB 		mov	r0, #0
+ 351              		bl	ns73Send
+ 352 029c 1A10A0E3 		.loc 1 57 0
+ 353 02a0 0800A0E3 		mov	r1, #5
+ 354 02a4 FEFFFFEB 		mov	r0, #14
+ 355              		bl	ns73Send
+ 356 02a8 0410A0E3 		.loc 1 58 0
+ 357 02ac 0000A0E3 		mov	r0, #6
+ 358 02b0 FEFFFFEB 		mov	r1, #30
+ 359              		.loc 1 59 0
+ 360 02b4 0510A0E3 		ldr	lr, [sp], #4
+ 361 02b8 0E00A0E3 		.loc 1 58 0
+ 362 02bc FEFFFFEB 		b	ns73Send
+ 363              	.LFE3:
+ 365 02c4 1E10A0E3 		.align	2
+ 366              		.global	ns73Config
+ 368              	ns73Config:
+ 369 02cc FEFFFFEA 	.LFB2:
+ 370              		.loc 1 33 0
+ 371              		@ Function supports interworking.
+ 372              		@ args = 0, pretend = 0, frame = 0
+ 373              		@ frame_needed = 0, uses_anonymous_args = 0
+ 374              		.loc 1 35 0
+ 375              		ldr	r2, .L33
+ 376              		ldr	r3, [r2, #24]
+ 377              		orr	r3, r3, #201326592
+ 378              		str	r3, [r2, #24]
+ 379              		.loc 1 36 0
+ 380              		ldr	r3, [r2, #24]
+ 381              		orr	r3, r3, #33554432
+ 382 02d0 40209FE5 		str	r3, [r2, #24]
+ 383 02d4 183092E5 		.loc 1 37 0
+ 384 02d8 033383E3 		ldr	r3, [r2, #8]
+ 385 02dc 183082E5 		bic	r3, r3, #65536
+ 386              		str	r3, [r2, #8]
+ 387 02e0 183092E5 		.loc 1 38 0
+ 388 02e4 023483E3 		ldr	r3, [r2, #20]
+ 389 02e8 183082E5 		orr	r3, r3, #201326592
+ 390              		.loc 1 33 0
+ 391 02ec 083092E5 		str	lr, [sp, #-4]!
+ 392 02f0 0138C3E3 	.LCFI4:
+ 393 02f4 083082E5 		.loc 1 39 0
+ 394              		mov	r0, #1
+ 395 02f8 143092E5 		.loc 1 38 0
+ 396 02fc 033383E3 		str	r3, [r2, #20]
+ 397              		.loc 1 39 0
+ 398 0300 04E02DE5 		bl	delay_ms
+ 399              		.loc 1 40 0
+ 400              		ldr	lr, [sp], #4
+ 401 0304 0100A0E3 		bx	lr
+ 402              	.L34:
+ 403 0308 143082E5 		.align	2
+ 404              	.L33:
+ 405 030c FEFFFFEB 		.word	-536707072
+ 406              	.LFE2:
+ 408 0314 1EFF2FE1 		.section	.debug_frame,"",%progbits
+ 409              	.Lframe0:
+ 410              		.4byte	.LECIE0-.LSCIE0
+ 411              	.LSCIE0:
+ 412 0318 008002E0 		.4byte	0xffffffff
+ 413              		.byte	0x1
+ 414              		.ascii	"\000"
+ 515              		.byte	0x5d
+DEFINED SYMBOLS
+                            *ABS*:00000000 NS73.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:13     .text:00000000 ns73SerialReset
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:20     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:129    .text:000000f8 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:135    .text:000000fc ns73Send
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:143    .text:000000fc $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:268    .text:00000204 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:274    .text:00000208 ns73SetChannel
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:282    .text:00000208 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:313    .text:0000024c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:320    .text:00000254 ns73Init
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:326    .text:00000254 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:375    .text:000002d0 ns73Config
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccKcaaaa.s:412    .text:00000318 $d
+
+UNDEFINED SYMBOLS
+delay_ms

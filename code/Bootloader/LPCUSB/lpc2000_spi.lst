@@ -1,0 +1,499 @@
+   1              		.file	"lpc2000_spi.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	SPISetSpeed
+  13              	SPISetSpeed:
+  14              	.LFB3:
+  15              		.file 1 "../Bootloader/LPCUSB/lpc2000_spi.c"
+   1:../Bootloader/LPCUSB/lpc2000_spi.c **** /*****************************************************************************\
+   2:../Bootloader/LPCUSB/lpc2000_spi.c **** *              efs - General purpose Embedded Filesystem library              *
+   3:../Bootloader/LPCUSB/lpc2000_spi.c **** *          --------------------- -----------------------------------          *
+   4:../Bootloader/LPCUSB/lpc2000_spi.c **** *                                                                             *
+   5:../Bootloader/LPCUSB/lpc2000_spi.c **** * Filename : lpc2000_spi.c                                                     *
+   6:../Bootloader/LPCUSB/lpc2000_spi.c **** * Description : This  contains the functions needed to use efs for        *
+   7:../Bootloader/LPCUSB/lpc2000_spi.c **** *               accessing files on an SD-card connected to an LPC2xxx.        *
+   8:../Bootloader/LPCUSB/lpc2000_spi.c **** *                                                                             *
+   9:../Bootloader/LPCUSB/lpc2000_spi.c **** * This library is free software; you can redistribute it and/or               *
+  10:../Bootloader/LPCUSB/lpc2000_spi.c **** * modify it under the terms of the GNU Lesser General Public                  *
+  11:../Bootloader/LPCUSB/lpc2000_spi.c **** * License as published by the Free Software Foundation; either                *
+  12:../Bootloader/LPCUSB/lpc2000_spi.c **** * version 2.1 of the License, or (at your option) any later version.          *
+  13:../Bootloader/LPCUSB/lpc2000_spi.c **** *                                                                             *
+  14:../Bootloader/LPCUSB/lpc2000_spi.c **** * This library is distributed in the hope that it will be useful,             *
+  15:../Bootloader/LPCUSB/lpc2000_spi.c **** * but WITHOUT ANY WARRANTY; without even the implied warranty of              *
+  16:../Bootloader/LPCUSB/lpc2000_spi.c **** * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU           *
+  17:../Bootloader/LPCUSB/lpc2000_spi.c **** * Lesser General Public License for more details.                             *
+  18:../Bootloader/LPCUSB/lpc2000_spi.c **** *                                                                             *
+  19:../Bootloader/LPCUSB/lpc2000_spi.c **** *                                                    (c)2005 Martin Thomas    *
+  20:../Bootloader/LPCUSB/lpc2000_spi.c **** *                                                                             *
+  21:../Bootloader/LPCUSB/lpc2000_spi.c **** \*****************************************************************************/
+  22:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  23:../Bootloader/LPCUSB/lpc2000_spi.c **** /*
+  24:../Bootloader/LPCUSB/lpc2000_spi.c ****     2006, Bertrik Sikken, modified for LPCUSB
+  25:../Bootloader/LPCUSB/lpc2000_spi.c **** */
+  26:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  27:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  28:../Bootloader/LPCUSB/lpc2000_spi.c **** /*****************************************************************************/
+  29:../Bootloader/LPCUSB/lpc2000_spi.c **** #include "type.h"
+  30:../Bootloader/LPCUSB/lpc2000_spi.c **** #include <stdio.h>
+  31:../Bootloader/LPCUSB/lpc2000_spi.c **** #include "rprintf.h"
+  32:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  33:../Bootloader/LPCUSB/lpc2000_spi.c **** #include "spi.h"
+  34:../Bootloader/LPCUSB/lpc2000_spi.c **** /*****************************************************************************/
+  35:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  36:../Bootloader/LPCUSB/lpc2000_spi.c **** /* SPI0 (Serial Peripheral Interface 0) */
+  37:../Bootloader/LPCUSB/lpc2000_spi.c **** #define S0SPCR         (*((volatile unsigned char *) 0xE0020000))
+  38:../Bootloader/LPCUSB/lpc2000_spi.c **** #define S0SPSR         (*((volatile unsigned char *) 0xE0020004))
+  39:../Bootloader/LPCUSB/lpc2000_spi.c **** #define S0SPDR         (*((volatile unsigned char *) 0xE0020008))
+  40:../Bootloader/LPCUSB/lpc2000_spi.c **** #define S0SPCCR        (*((volatile unsigned char *) 0xE002000C))
+  41:../Bootloader/LPCUSB/lpc2000_spi.c **** #define S0SPTCR        (*((volatile unsigned char *) 0xE0020010))
+  42:../Bootloader/LPCUSB/lpc2000_spi.c **** #define S0SPTSR        (*((volatile unsigned char *) 0xE0020014))
+  43:../Bootloader/LPCUSB/lpc2000_spi.c **** #define S0SPTOR        (*((volatile unsigned char *) 0xE0020018))
+  44:../Bootloader/LPCUSB/lpc2000_spi.c **** #define S0SPINT        (*((volatile unsigned char *) 0xE002001C))
+  45:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  46:../Bootloader/LPCUSB/lpc2000_spi.c **** /* General Purpose Input/Output (GPIO) */
+  47:../Bootloader/LPCUSB/lpc2000_spi.c **** #define IOPIN0         (*((volatile unsigned long *) 0xE0028000))
+  48:../Bootloader/LPCUSB/lpc2000_spi.c **** #define IOSET0         (*((volatile unsigned long *) 0xE0028004))
+  49:../Bootloader/LPCUSB/lpc2000_spi.c **** #define IODIR0         (*((volatile unsigned long *) 0xE0028008))
+  50:../Bootloader/LPCUSB/lpc2000_spi.c **** #define IOCLR0         (*((volatile unsigned long *) 0xE002800C))
+  51:../Bootloader/LPCUSB/lpc2000_spi.c **** #define IOPIN1         (*((volatile unsigned long *) 0xE0028010))
+  52:../Bootloader/LPCUSB/lpc2000_spi.c **** #define IOSET1         (*((volatile unsigned long *) 0xE0028014))
+  53:../Bootloader/LPCUSB/lpc2000_spi.c **** #define IODIR1         (*((volatile unsigned long *) 0xE0028018))
+  54:../Bootloader/LPCUSB/lpc2000_spi.c **** #define IOCLR1         (*((volatile unsigned long *) 0xE002801C))
+  55:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  56:../Bootloader/LPCUSB/lpc2000_spi.c **** /* Pin Connect Block */
+  57:../Bootloader/LPCUSB/lpc2000_spi.c **** #define PINSEL0        (*((volatile unsigned long *) 0xE002C000))
+  58:../Bootloader/LPCUSB/lpc2000_spi.c **** #define PINSEL1        (*((volatile unsigned long *) 0xE002C004))
+  59:../Bootloader/LPCUSB/lpc2000_spi.c **** #define PINSEL2        (*((volatile unsigned long *) 0xE002C014))
+  60:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  61:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  62:../Bootloader/LPCUSB/lpc2000_spi.c **** // SP0SPCR  Bit-Definitions
+  63:../Bootloader/LPCUSB/lpc2000_spi.c **** #define CPHA    3
+  64:../Bootloader/LPCUSB/lpc2000_spi.c **** #define CPOL    4
+  65:../Bootloader/LPCUSB/lpc2000_spi.c **** #define MSTR    5
+  66:../Bootloader/LPCUSB/lpc2000_spi.c **** // SP0SPSR  Bit-Definitions
+  67:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPIF    7
+  68:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  69:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_IODIR      IODIR0
+  70:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_SCK_PIN    	4        /* Clock       P0.4  out */
+  71:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_MISO_PIN   	5        /* from Card   P0.5  in  */
+  72:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_MOSI_PIN   	6        /* to Card     P0.6  out */
+  73:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_SS_PIN		7		/* Card-Select P0.7 - GPIO out */
+  74:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  75:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_PINSEL     PINSEL0
+  76:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_SCK_FUNCBIT   8
+  77:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_MISO_FUNCBIT  10
+  78:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_MOSI_FUNCBIT  12
+  79:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  80:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SPI_PRESCALE_REG  S0SPCCR
+  81:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  82:../Bootloader/LPCUSB/lpc2000_spi.c **** #define SELECT_CARD()   IOCLR0 |= (1 << SPI_SS_PIN)
+  83:../Bootloader/LPCUSB/lpc2000_spi.c **** #define UNSELECT_CARD() IOSET0 |= (1 << SPI_SS_PIN)
+  84:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  85:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  86:../Bootloader/LPCUSB/lpc2000_spi.c **** /*****************************************************************************/
+  87:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  88:../Bootloader/LPCUSB/lpc2000_spi.c **** /*****************************************************************************/
+  89:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  90:../Bootloader/LPCUSB/lpc2000_spi.c **** // Utility-functions which does not toogle CS.
+  91:../Bootloader/LPCUSB/lpc2000_spi.c **** // Only needed during card-init. During init
+  92:../Bootloader/LPCUSB/lpc2000_spi.c **** // the automatic chip-select is disabled for SSP
+  93:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  94:../Bootloader/LPCUSB/lpc2000_spi.c **** static U8 my_SPISend(U8 outgoing)
+  95:../Bootloader/LPCUSB/lpc2000_spi.c **** {
+  96:../Bootloader/LPCUSB/lpc2000_spi.c ****     S0SPDR = outgoing;
+  97:../Bootloader/LPCUSB/lpc2000_spi.c ****     while (!(S0SPSR & (1 << SPIF)));
+  98:../Bootloader/LPCUSB/lpc2000_spi.c ****     return S0SPDR;
+  99:../Bootloader/LPCUSB/lpc2000_spi.c **** }
+ 100:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 101:../Bootloader/LPCUSB/lpc2000_spi.c **** /*****************************************************************************/
+ 102:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 103:../Bootloader/LPCUSB/lpc2000_spi.c **** void SPISetSpeed(U8 speed)
+ 104:../Bootloader/LPCUSB/lpc2000_spi.c **** {
+  16              	@ Function supports interworking.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              		@ link register save eliminated.
+  20              	.LVL0:
+  21              		.loc 1 105 0
+ 105:../Bootloader/LPCUSB/lpc2000_spi.c **** ***********************************************************/
+  22              	0, r0, #254
+  23 0000 FE0000E2 	.LVL1:
+  24              		.loc 1 106 0
+ 106:../Bootloader/LPCUSB/lpc2000_spi.c **** rn S0SPDR;
+  25              	p	r0, #7
+  26 0004 070050E3 		.loc 1 110 0
+ 107:../Bootloader/LPCUSB/lpc2000_spi.c **** nd(U8 outgoing)
+ 108:../Bootloader/LPCUSB/lpc2000_spi.c **** {
+ 109:../Bootloader/LPCUSB/lpc2000_spi.c ****     S0SPDR = outgoing;
+ 110:../Bootloader/LPCUSB/lpc2000_spi.c ****     while (!(S0SPSR & (1 << SPIF)));
+  27              	dr	r3, .L5
+  28 0008 08309FE5 		.loc 1 106 0
+  29              		movls	r0, #8
+  30 000c 0800A093 		.loc 1 104 0
+  31              		@ lr needed for prologue
+  32              		.loc 1 110 0
+  33              		strb	r0, [r3, #12]
+  34 0010 0C00C3E5 		.loc 1 111 0
+ 111:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  35              	L6:
+  36 0014 1EFF2FE1 		.align	2
+  37              	.L5:
+  38              		.word	-536739840
+  39              	.LFE3:
+  41              		.align	2
+  42              		.global	SPISend
+  44              	SPISend:
+  45              	.LFB5:
+  46              		.loc 1 156 0
+  47              		@ Function supports interworking.
+ 112:../Bootloader/LPCUSB/lpc2000_spi.c **** ogle CS.
+ 113:../Bootloader/LPCUSB/lpc2000_spi.c **** // Only needed during card-init. During init
+ 114:../Bootloader/LPCUSB/lpc2000_spi.c **** // the automatic chip-select is disabled for SSP
+ 115:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 116:../Bootloader/LPCUSB/lpc2000_spi.c **** static U8 my_SPISend(U8 outgoing)
+ 117:../Bootloader/LPCUSB/lpc2000_spi.c **** {
+ 118:../Bootloader/LPCUSB/lpc2000_spi.c ****     S0SPDR = outgoing;
+ 119:../Bootloader/LPCUSB/lpc2000_spi.c ****     while (!(S0SPSR & (1 << SPIF)));
+ 120:../Bootloader/LPCUSB/lpc2000_spi.c ****     return S0SPDR;
+ 121:../Bootloader/LPCUSB/lpc2000_spi.c **** }
+ 122:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 123:../Bootloader/LPCUSB/lpc2000_spi.c **** /*****************************************************************************/
+ 124:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 125:../Bootloader/LPCUSB/lpc2000_spi.c **** void SPISetSpeed(U8 speed)
+ 126:../Bootloader/LPCUSB/lpc2000_spi.c **** {
+ 127:../Bootloader/LPCUSB/lpc2000_spi.c ****     speed &= 0xFE;
+ 128:../Bootloader/LPCUSB/lpc2000_spi.c ****     if (speed < SPI_PRESCALE_MIN)
+ 129:../Bootloader/LPCUSB/lpc2000_spi.c ****     {
+ 130:../Bootloader/LPCUSB/lpc2000_spi.c ****         speed = SPI_PRESCALE_MIN;
+ 131:../Bootloader/LPCUSB/lpc2000_spi.c ****     }
+ 132:../Bootloader/LPCUSB/lpc2000_spi.c ****     SPI_PRESCALE_REG = speed;
+ 133:../Bootloader/LPCUSB/lpc2000_spi.c **** }
+ 134:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 135:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 136:../Bootloader/LPCUSB/lpc2000_spi.c **** void SPIInit(void)
+ 137:../Bootloader/LPCUSB/lpc2000_spi.c **** {
+ 138:../Bootloader/LPCUSB/lpc2000_spi.c ****     U8 i;
+ 139:../Bootloader/LPCUSB/lpc2000_spi.c ****     //U32 j;
+ 140:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 141:../Bootloader/LPCUSB/lpc2000_spi.c ****     rprintf("spiInit for SPI(0)\n");
+ 142:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 143:../Bootloader/LPCUSB/lpc2000_spi.c ****     // setup GPIO
+ 144:../Bootloader/LPCUSB/lpc2000_spi.c ****     PINSEL2 = 0;
+ 145:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 146:../Bootloader/LPCUSB/lpc2000_spi.c **** 	SPI_IODIR |= (1 << SPI_SCK_PIN) | (1 << SPI_MOSI_PIN);
+ 147:../Bootloader/LPCUSB/lpc2000_spi.c ****     IODIR0 |= (1 << SPI_SS_PIN);			//Changed to Port0 for MP3 Player
+ 148:../Bootloader/LPCUSB/lpc2000_spi.c ****     SPI_IODIR &= ~(1 << SPI_MISO_PIN);
+ 149:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 150:../Bootloader/LPCUSB/lpc2000_spi.c ****     // reset Pin-Functions
+ 151:../Bootloader/LPCUSB/lpc2000_spi.c ****     SPI_PINSEL &= ~((3 << SPI_SCK_FUNCBIT) | (3 << SPI_MISO_FUNCBIT) | (3 << SPI_MOSI_FUNCBIT));
+ 152:../Bootloader/LPCUSB/lpc2000_spi.c ****     SPI_PINSEL |= ((1 << SPI_SCK_FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 153:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 154:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 &= ~(3 << (SPI_SS_FUNCBIT));*/
+ 155:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 |= (0 << (SPI_SS_FUNCBIT));*/
+ 156:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  48              	pretend = 0, frame = 0
+  49              		@ frame_needed = 0, uses_anonymous_args = 0
+  50              		@ link register save eliminated.
+  51              	.LVL2:
+  52              		.loc 1 159 0
+  53              		ldr	r2, .L13
+ 157:../Bootloader/LPCUSB/lpc2000_spi.c **** IT));*/
+ 158:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 |= (0 << (SPI_SS_FUNCBIT));*/
+ 159:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  54              	3, [r2, #12]
+  55 001c 3C209FE5 		orr	r3, r3, #128
+  56 0020 0C3092E5 		str	r3, [r2, #12]
+  57 0024 803083E3 		.loc 1 160 0
+  58 0028 0C3082E5 		ldr	r3, .L13+4
+ 160:../Bootloader/LPCUSB/lpc2000_spi.c **** IT));*/
+  59              	 1 156 0
+  60 002c 30309FE5 		and	r0, r0, #255
+  61              		.loc 1 160 0
+  62 0030 FF0000E2 		strb	r0, [r3, #8]
+  63              		.loc 1 156 0
+  64 0034 0800C3E5 		@ lr needed for prologue
+  65              	.L8:
+  66              		.loc 1 161 0
+  67              		ldr	r2, .L13+4
+ 161:../Bootloader/LPCUSB/lpc2000_spi.c **** NCBIT));
+  68              	 [r2, #4]	@ zero_extendqisi2
+  69 0038 24209FE5 		tst	r3, #128
+  70 003c 0430D2E5 		beq	.L8
+  71 0040 800013E3 		.loc 1 163 0
+  72 0044 FBFFFF0A 		ldr	r3, .L13
+ 162:../Bootloader/LPCUSB/lpc2000_spi.c **** K_FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 163:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+  73              	 1 162 0
+  74 0048 10309FE5 		ldrb	r0, [r2, #8]	@ zero_extendqisi2
+  75              	.LVL3:
+  76 004c 0800D2E5 		.loc 1 163 0
+  77              		ldr	r2, [r3, #4]
+  78              		orr	r2, r2, #128
+  79 0050 042093E5 		str	r2, [r3, #4]
+  80 0054 802082E3 		.loc 1 166 0
+  81 0058 042083E5 		bx	lr
+ 164:../Bootloader/LPCUSB/lpc2000_spi.c **** FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 165:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 166:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 &= ~(3 << (SPI_SS_FUNCBIT));*/
+  82              	lign	2
+  83 005c 1EFF2FE1 	.L13:
+  84              		.word	-536707072
+  85              		.word	-536739840
+  86              	.LFE5:
+  88 0064 000002E0 		.align	2
+  89              		.global	SPISendN
+  91              	SPISendN:
+  92              	.LFB6:
+  93              		.loc 1 169 0
+  94              		@ Function supports interworking.
+  95              		@ args = 0, pretend = 0, frame = 0
+ 167:../Bootloader/LPCUSB/lpc2000_spi.c **** NCBIT));
+ 168:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 169:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 &= ~(3 << (SPI_SS_FUNCBIT));*/
+  96              	d = 0, uses_anonymous_args = 0
+  97              		@ link register save eliminated.
+  98              	.LVL4:
+  99              		.loc 1 172 0
+ 100              		ldr	r2, .L24
+ 101              		ldr	r3, [r2, #12]
+ 170:../Bootloader/LPCUSB/lpc2000_spi.c **** NCBIT));
+ 171:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 172:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 &= ~(3 << (SPI_SS_FUNCBIT));*/
+ 102              	p, #0
+ 103 0068 4C209FE5 	.LVL5:
+ 104 006c 0C3092E5 		orr	r3, r3, #128
+ 105 0070 00C0A0E3 		.loc 1 169 0
+ 106              		@ lr needed for prologue
+ 107 0074 803083E3 		.loc 1 172 0
+ 108              		str	r3, [r2, #12]
+ 109              		b	.L16
+ 110              	.L17:
+ 111 0078 0C3082E5 		.loc 1 175 0
+ 112 007c 070000EA 		ldrb	r2, [r0, ip]	@ zero_extendqisi2
+ 113              		ldr	r3, .L24+4
+ 173:../Bootloader/LPCUSB/lpc2000_spi.c **** NCBIT));
+ 174:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 175:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 &= ~(3 << (SPI_SS_FUNCBIT));*/
+ 114              	3, #8]
+ 115 0080 0C20D0E7 	.L18:
+ 116 0084 34309FE5 		.loc 1 176 0
+ 117 0088 0820C3E5 		ldr	r3, .L24+4
+ 118              		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 176:../Bootloader/LPCUSB/lpc2000_spi.c **** NCBIT));
+ 119              	r3, #128
+ 120 008c 2C309FE5 		beq	.L18
+ 121 0090 0430D3E5 		.loc 1 173 0
+ 122 0094 800013E3 		add	ip, ip, #1
+ 123 0098 FBFFFF0A 	.L16:
+ 124              		cmp	ip, r1
+ 125 009c 01C08CE2 		blt	.L17
+ 126              		.loc 1 178 0
+ 127 00a0 01005CE1 		ldr	r2, .L24
+ 128 00a4 F5FFFFBA 		ldr	r3, [r2, #4]
+ 177:../Bootloader/LPCUSB/lpc2000_spi.c **** K_FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 178:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 129              	3, #128
+ 130 00a8 0C209FE5 		str	r3, [r2, #4]
+ 131 00ac 043092E5 		.loc 1 179 0
+ 132 00b0 803083E3 		bx	lr
+ 133 00b4 043082E5 	.L25:
+ 179:../Bootloader/LPCUSB/lpc2000_spi.c **** FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 134              	gn	2
+ 135 00b8 1EFF2FE1 	.L24:
+ 136              		.word	-536707072
+ 137              		.word	-536739840
+ 138              	.LFE6:
+ 140 00c0 000002E0 		.align	2
+ 141              		.global	SPIRecvN
+ 143              	SPIRecvN:
+ 144              	.LFB7:
+ 145              		.loc 1 182 0
+ 146              		@ Function supports interworking.
+ 147              		@ args = 0, pretend = 0, frame = 0
+ 180:../Bootloader/LPCUSB/lpc2000_spi.c **** K_FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 181:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 182:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 &= ~(3 << (SPI_SS_FUNCBIT));*/
+ 148              	d = 0, uses_anonymous_args = 0
+ 149              		@ link register save eliminated.
+ 150              	.LVL6:
+ 151              		.loc 1 185 0
+ 152              		ldr	r2, .L35
+ 153              		ldr	r3, [r2, #12]
+ 183:../Bootloader/LPCUSB/lpc2000_spi.c **** NCBIT));
+ 184:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 185:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 &= ~(3 << (SPI_SS_FUNCBIT));*/
+ 154              	p, #0
+ 155 00c4 54209FE5 	.LVL7:
+ 156 00c8 0C3092E5 		orr	r3, r3, #128
+ 157 00cc 00C0A0E3 		.loc 1 182 0
+ 158              		@ lr needed for prologue
+ 159 00d0 803083E3 		.loc 1 185 0
+ 160              		str	r3, [r2, #12]
+ 161              		b	.L27
+ 162              	.L28:
+ 163 00d4 0C3082E5 		.loc 1 188 0
+ 164 00d8 090000EA 		ldr	r3, .L35+4
+ 165              		mvn	r2, #0
+ 186:../Bootloader/LPCUSB/lpc2000_spi.c **** NCBIT));
+ 187:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 188:../Bootloader/LPCUSB/lpc2000_spi.c ****     /*        PINSEL0 &= ~(3 << (SPI_SS_FUNCBIT));*/
+ 166              	3, #8]
+ 167 00dc 40309FE5 	.L29:
+ 168 00e0 0020E0E3 		.loc 1 189 0
+ 169 00e4 0820C3E5 		ldr	r2, .L35+4
+ 170              		ldrb	r3, [r2, #4]	@ zero_extendqisi2
+ 189:../Bootloader/LPCUSB/lpc2000_spi.c **** NCBIT));
+ 171              	r3, #128
+ 172 00e8 34209FE5 		beq	.L29
+ 173 00ec 0430D2E5 		.loc 1 190 0
+ 174 00f0 800013E3 		ldrb	r3, [r2, #8]	@ zero_extendqisi2
+ 175 00f4 FBFFFF0A 		strb	r3, [r0, ip]
+ 190:../Bootloader/LPCUSB/lpc2000_spi.c **** K_FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 176              	 1 186 0
+ 177 00f8 0830D2E5 		add	ip, ip, #1
+ 178 00fc 0C30C0E7 	.L27:
+ 179              		cmp	ip, r1
+ 180 0100 01C08CE2 		blt	.L28
+ 181              		.loc 1 192 0
+ 182 0104 01005CE1 		ldr	r2, .L35
+ 183 0108 F3FFFFBA 		ldr	r3, [r2, #4]
+ 191:../Bootloader/LPCUSB/lpc2000_spi.c **** K_FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 192:../Bootloader/LPCUSB/lpc2000_spi.c **** 
+ 184              	 r3, #128
+ 185 010c 0C209FE5 		str	r3, [r2, #4]
+ 186 0110 043092E5 		.loc 1 193 0
+ 187 0114 803083E3 		bx	lr
+ 188 0118 043082E5 	.L36:
+ 193:../Bootloader/LPCUSB/lpc2000_spi.c **** FUNCBIT) | (1 << SPI_MISO_FUNCBIT) | (1 << SPI_MOSI_FUNCBIT));
+ 189              	gn	2
+ 190 011c 1EFF2FE1 	.L35:
+ 191              		.word	-536707072
+ 192              		.word	-536739840
+ 193              	.LFE7:
+ 195 0124 000002E0 		.section	.rodata.str1.4,"aMS",%progbits,1
+ 196              		.align	2
+ 197              	.LC0:
+ 198              		.ascii	"spiInit for SPI(0)\012\000"
+ 199              		.text
+ 200              		.align	2
+ 201 0000 73706949 		.global	SPIInit
+ 201      6E697420 
+ 201      666F7220 
+ 201      53504928 
+ 201      30290A00 
+ 203              	SPIInit:
+ 204              	.LFB4:
+ 205              		.loc 1 115 0
+ 206              		@ Function supports interworking.
+ 207              		@ args = 0, pretend = 0, frame = 0
+ 208              		@ frame_needed = 0, uses_anonymous_args = 0
+ 209              		.loc 1 119 0
+ 210              		ldr	r0, .L47
+ 211              		.loc 1 115 0
+ 212              		str	lr, [sp, #-4]!
+ 213 0128 A8009FE5 	.LCFI0:
+ 214              		.loc 1 119 0
+ 215 012c 04E02DE5 		bl	rprintf
+ 216              		.loc 1 122 0
+ 217              		ldr	r1, .L47+4
+ 218 0130 FEFFFFEB 		mov	r0, #0
+ 219              		str	r0, [r1, #20]
+ 220 0134 A0109FE5 		.loc 1 124 0
+ 221 0138 0000A0E3 		ldr	r2, .L47+8
+ 222 013c 140081E5 		ldr	r3, [r2, #8]
+ 223              		orr	r3, r3, #80
+ 224 0140 98209FE5 		str	r3, [r2, #8]
+ 225 0144 083092E5 		.loc 1 125 0
+ 226 0148 503083E3 		ldr	r3, [r2, #8]
+ 227 014c 083082E5 		orr	r3, r3, #128
+ 228              		str	r3, [r2, #8]
+ 229 0150 083092E5 		.loc 1 126 0
+ 230 0154 803083E3 		ldr	r3, [r2, #8]
+ 231 0158 083082E5 		bic	r3, r3, #32
+ 232              		str	r3, [r2, #8]
+ 233 015c 083092E5 		.loc 1 129 0
+ 234 0160 2030C3E3 		ldr	r3, [r1, #0]
+ 235 0164 083082E5 		bic	r3, r3, #16128
+ 236              		str	r3, [r1, #0]
+ 237 0168 003091E5 		.loc 1 130 0
+ 238 016c 3F3CC3E3 		ldr	r3, [r1, #0]
+ 239 0170 003081E5 		orr	r3, r3, #5376
+ 240              		str	r3, [r1, #0]
+ 241 0174 003091E5 		.loc 1 136 0
+ 242 0178 153C83E3 		ldr	r3, [r2, #4]
+ 243 017c 003081E5 		orr	r3, r3, #128
+ 244              		str	r3, [r2, #4]
+ 245 0180 043092E5 		.loc 1 139 0
+ 246 0184 803083E3 		sub	r1, r1, #49152
+ 247 0188 043082E5 		mov	r3, #32
+ 248              		strb	r3, [r1, #0]
+ 249 018c 031941E2 	.LBB6:
+ 250 0190 2030A0E3 	.LBB7:
+ 251 0194 0030C1E5 		.loc 1 110 0
+ 252              		mvn	r3, #1
+ 253              		strb	r3, [r1, #12]
+ 254              	.LVL8:
+ 255 0198 0130E0E3 	.L38:
+ 256 019c 0C30C1E5 	.LBE7:
+ 257              	.LBE6:
+ 258              	.LBB8:
+ 259              	.LBB9:
+ 260              		.loc 1 96 0
+ 261              		ldr	r3, .L47+12
+ 262              		mvn	r2, #0
+ 263              		strb	r2, [r3, #8]
+ 264 01a0 3C309FE5 	.L39:
+ 265 01a4 0020E0E3 		.loc 1 97 0
+ 266 01a8 0820C3E5 		ldr	r2, .L47+12
+ 267              		ldrb	r3, [r2, #4]	@ zero_extendqisi2
+ 268              		tst	r3, #128
+ 269 01ac 30209FE5 		beq	.L39
+ 270 01b0 0430D2E5 	.LBE9:
+ 271 01b4 800013E3 	.LBE8:
+ 272 01b8 FBFFFF0A 		.loc 1 145 0
+ 273              		add	r3, r0, #1
+ 274              		and	r0, r3, #255
+ 275              		cmp	r0, #21
+ 276 01bc 013080E2 	.LBB10:
+ 277 01c0 FF0003E2 	.LBB11:
+ 278 01c4 150050E3 		.loc 1 98 0
+ 279              		ldrb	r3, [r2, #8]	@ zero_extendqisi2
+ 280              	.LBE11:
+ 281              	.LBE10:
+ 282 01c8 0830D2E5 		.loc 1 145 0
+ 283              		bne	.L38
+ 284              		.loc 1 149 0
+ 285              		ldr	lr, [sp], #4
+ 286 01cc F3FFFF1A 		bx	lr
+ 287              	.L48:
+ 288 01d0 04E09DE4 		.align	2
+ 289 01d4 1EFF2FE1 	.L47:
+ 290              		.word	.LC0
+ 291              		.word	-536690688
+ 292              		.word	-536707072
+ 293 01d8 00000000 		.word	-536739840
+ 294 01dc 00C002E0 	.LFE4:
+ 296 01e4 000002E0 		.section	.debug_frame,"",%progbits
+ 297              	.Lframe0:
+ 298              		.4byte	.LECIE0-.LSCIE0
+ 362              	.LLST1:
+DEFINED SYMBOLS
+                            *ABS*:00000000 lpc2000_spi.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:13     .text:00000000 SPISetSpeed
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:23     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:40     .text:00000018 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:46     .text:0000001c SPISend
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:55     .text:0000001c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:87     .text:00000060 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:94     .text:00000068 SPISendN
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:103    .text:00000068 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:139    .text:000000bc $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:146    .text:000000c4 SPIRecvN
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:155    .text:000000c4 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:194    .text:00000120 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:206    .text:00000128 SPIInit
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:213    .text:00000128 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccyiaaaa.s:293    .text:000001d8 $d
+
+UNDEFINED SYMBOLS
+rprintf

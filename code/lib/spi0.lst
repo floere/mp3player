@@ -1,0 +1,118 @@
+   1              		.file	"spi0.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	SPI0_send_recv
+  13              	SPI0_send_recv:
+  14              	.LFB4:
+  15              		.file 1 "../lib/spi0.c"
+   1:../lib/spi0.c **** /*
+   2:../lib/spi0.c ****     SPI Communication for LPC2148 SPI0.
+   3:../lib/spi0.c **** 	2/1/2008
+   4:../lib/spi0.c **** 	Ryan Owens
+   5:../lib/spi0.c **** 
+   6:../lib/spi0.c **** 
+   7:../lib/spi0.c **** */
+   8:../lib/spi0.c **** 
+   9:../lib/spi0.c **** #include "spi0.h"
+  10:../lib/spi0.c **** #include "LPC214x.h"
+  11:../lib/spi0.c **** #include <stdio.h>
+  12:../lib/spi0.c **** 
+  13:../lib/spi0.c **** void SPI0_send(char c)
+  14:../lib/spi0.c **** {
+  15:../lib/spi0.c ****     SPI0_send_recv(c);
+  16:../lib/spi0.c **** }
+  17:../lib/spi0.c **** 
+  18:../lib/spi0.c **** char SPI0_recv(void)
+  19:../lib/spi0.c **** {
+  20:../lib/spi0.c ****     return SPI0_send_recv(0xff);
+  21:../lib/spi0.c **** }
+  22:../lib/spi0.c **** 
+  23:../lib/spi0.c **** char SPI0_send_recv(char c)
+  24:../lib/spi0.c **** {
+  16              	 Function supports interworking.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              		@ link register save eliminated.
+  20              	.LVL0:
+  21              		.loc 1 27 0
+  25:../lib/spi0.c **** char c)
+  26:../lib/spi0.c **** {
+  27:../lib/spi0.c ****     char in;
+  22              	3, .L7
+  23 0000 24309FE5 		.loc 1 24 0
+  24              		and	r0, r0, #255
+  25 0004 FF0000E2 		.loc 1 27 0
+  26              		str	r0, [r3, #8]
+  27 0008 080083E5 		.loc 1 24 0
+  28              		@ lr needed for prologue
+  29              	.L2:
+  30              		.loc 1 28 0
+  28:../lib/spi0.c **** char in;
+  31              	.L7
+  32 000c 18209FE5 		ldr	r3, [r2, #4]
+  33 0010 043092E5 		tst	r3, #128
+  34 0014 800013E3 		beq	.L2
+  35 0018 FBFFFF0A 		.loc 1 29 0
+  29:../lib/spi0.c **** char in;
+  36              	r3, [r2, #4]
+  37 001c 043092E5 		.loc 1 30 0
+  30:../lib/spi0.c **** char in;
+  38              	dr	r0, [r2, #8]
+  39 0020 080092E5 	.LVL1:
+  40              		and	r0, r0, #255
+  41 0024 FF0000E2 		.loc 1 33 0
+  31:../lib/spi0.c **** char in;
+  32:../lib/spi0.c **** 
+  33:../lib/spi0.c ****     S0SPDR = c;						//Place data to be sent into SPI data register
+  42              	lr
+  43 0028 1EFF2FE1 	.L8:
+  44              		.align	2
+  45              	.L7:
+  46              		.word	-536739840
+  47 002c 000002E0 	.LFE4:
+  49              		.align	2
+  50              		.global	SPI0_recv
+  52              	SPI0_recv:
+  53              	.LFB3:
+  54              		.loc 1 19 0
+  55              		@ Function supports interworking.
+  56              		@ args = 0, pretend = 0, frame = 0
+  57              		@ frame_needed = 0, uses_anonymous_args = 0
+  58              		str	lr, [sp, #-4]!
+  59 0030 04E02DE5 	.LCFI0:
+  60              		.loc 1 20 0
+  61              		mov	r0, #255
+  62 0034 FF00A0E3 		bl	SPI0_send_recv
+  63 0038 FEFFFFEB 		.loc 1 21 0
+  64              		ldr	lr, [sp], #4
+  65 003c 04E09DE4 		bx	lr
+  66 0040 1EFF2FE1 	.LFE3:
+  68              		.align	2
+  69              		.global	SPI0_send
+  71              	SPI0_send:
+  72              	.LFB2:
+  73              		.loc 1 14 0
+  74              		@ Function supports interworking.
+  75              		@ args = 0, pretend = 0, frame = 0
+  76              		@ frame_needed = 0, uses_anonymous_args = 0
+  77              		@ link register save eliminated.
+  78              	.LVL2:
+  79              		and	r0, r0, #255
+  80 0044 FF0000E2 		@ lr needed for prologue
+  81              		.loc 1 16 0
+  82              		.loc 1 15 0
+  83              		b	SPI0_send_recv
+  84 0048 FEFFFFEA 	.LVL3:
+  85              	.LFE2:
+  87              		.section	.debug_frame,"",%progbits
+ 134              		.section	.debug_loc,"",%progbits
+DEFINED SYMBOLS
+                            *ABS*:00000000 spi0.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccysaaaa.s:13     .text:00000000 SPI0_send_recv
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccysaaaa.s:23     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccysaaaa.s:47     .text:0000002c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccysaaaa.s:53     .text:00000030 SPI0_recv
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccysaaaa.s:59     .text:00000030 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccysaaaa.s:72     .text:00000044 SPI0_send
+
+NO UNDEFINED SYMBOLS

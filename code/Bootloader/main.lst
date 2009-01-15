@@ -1,0 +1,233 @@
+   1              		.file	"main.c"
+   9              	.Ltext0:
+  10              		.section	.rodata.str1.4,"aMS",%progbits,1
+  11              		.align	2
+  12              	.LC0:
+  13 0000 426F6F74 		.ascii	"Boot up complete\012\000"
+  13      20757020 
+  13      636F6D70 
+  13      6C657465 
+  13      0A00
+  14 0012 0000     		.align	2
+  15              	.LC1:
+  16 0014 4E6F2055 		.ascii	"No USB Detected\012\000"
+  16      53422044 
+  16      65746563 
+  16      7465640A 
+  16      00
+  17 0025 000000   		.align	2
+  18              	.LC2:
+  19 0028 526F6F74 		.ascii	"Root open\012\000"
+  19      206F7065 
+  19      6E0A00
+  20 0033 00       		.align	2
+  21              	.LC3:
+  22 0034 46572E53 		.ascii	"FW.SFE\000"
+  22      464500
+  23 003b 00       		.align	2
+  24              	.LC4:
+  25 003c 4E657720 		.ascii	"New firmware found\012\000"
+  25      6669726D 
+  25      77617265 
+  25      20666F75 
+  25      6E640A00 
+  26              		.align	2
+  27              	.LC5:
+  28 0050 4E657720 		.ascii	"New firmware loaded\012\000"
+  28      6669726D 
+  28      77617265 
+  28      206C6F61 
+  28      6465640A 
+  29 0065 000000   		.align	2
+  30              	.LC6:
+  31 0068 4E6F2053 		.ascii	"No SD Card Detected\012\000"
+  31      44204361 
+  31      72642044 
+  31      65746563 
+  31      7465640A 
+  32 007d 000000   		.align	2
+  33              	.LC7:
+  34 0080 426F6F74 		.ascii	"Boot Done. Calling firmware...\012\000"
+  34      20446F6E 
+  34      652E2043 
+  34      616C6C69 
+  34      6E672066 
+  35              		.text
+  36              		.align	2
+  37              		.global	main
+  39              	main:
+  40              	.LFB2:
+  41              		.file 1 "main.c"
+   1:main.c        **** /*
+   2:main.c        **** 	Nate's ARM Bootloader
+   3:main.c        **** 	10/25/07
+   4:main.c        **** 	
+   5:main.c        **** 	Bootload binary file over USB
+   6:main.c        **** 	
+   7:main.c        **** 	11-2-2007: All bugs from the MSP side seem to be elimiated. There was the wastetime glitch not 
+   8:main.c        **** 	servicing interrupts. And there was the line switch from v12 to mark2b. Removing MOSFETs.
+   9:main.c        **** 	
+  10:main.c        **** 	12-11-07: Trying to figure out how to get a bootloader version number in here. Bootloader
+  11:main.c        **** 	spans from sector 0 to sector 8. 8 is where all the user settings are at (0x8000-0xFFFF).
+  12:main.c        **** 	We will put the user settings at 0x8000 and the BL serial number at 0xFFF3
+  13:main.c        **** */	
+  14:main.c        **** 
+  15:main.c        **** #include "LPC214x.h"
+  16:main.c        **** 
+  17:main.c        **** //UART0 Debugging
+  18:main.c        **** #include "serial.h"
+  19:main.c        **** #include "rprintf.h"
+  20:main.c        **** 
+  21:main.c        **** //Memory manipulation and basic system stuff
+  22:main.c        **** #include "firmware.h"
+  23:main.c        **** #include "system.h"
+  24:main.c        **** 
+  25:main.c        **** //SD Logging
+  26:main.c        **** #include "rootdir.h"
+  27:main.c        **** #include "sd_raw.h"
+  28:main.c        **** 
+  29:main.c        **** //USB
+  30:main.c        **** #include "main_msc.h"
+  31:main.c        **** 
+  32:main.c        **** //This is the file name that the bootloader will scan for
+  33:main.c        **** #define FW_FILE "FW.SFE"
+  34:main.c        **** 
+  35:main.c        **** const char bl_version[] __attribute__ ((section(".bl_version_number"))) = "v2.1";
+  36:main.c        **** 
+  37:main.c        **** #define ON	0
+  38:main.c        **** #define OFF	1
+  39:main.c        **** 
+  40:main.c        **** 
+  41:main.c        **** int main (void)
+  42:main.c        **** {
+  42              	rking.
+  43              		@ args = 0, pretend = 0, frame = 0
+  44              		@ frame_needed = 0, uses_anonymous_args = 0
+  45              		str	lr, [sp, #-4]!
+  46 0000 04E02DE5 	.LCFI0:
+  47              		.loc 1 44 0
+  43:main.c        **** 
+  44:main.c        **** 	boot_up();
+  48              	ot_up
+  49 0004 FEFFFFEB 		.loc 1 45 0
+  45:main.c        **** 	rprintf("Boot up complete\n");
+  50              	dr	r0, .L11
+  51 0008 84009FE5 		bl	rprintf
+  52 000c FEFFFFEB 		.loc 1 47 0
+  46:main.c        **** 
+  47:main.c        **** 	if(IOPIN0 & (1<<23))
+  53              	r	r3, .L11+4
+  54 0010 80309FE5 		ldr	r3, [r3, #0]
+  55 0014 003093E5 		tst	r3, #8388608
+  56 0018 020513E3 		beq	.L2
+  57 001c 0100000A 		.loc 1 49 0
+  48:main.c        **** 	{
+  49:main.c        **** 		main_msc();
+  58              	ain_msc
+  59 0020 FEFFFFEB 		b	.L4
+  60 0024 010000EA 	.L2:
+  61              		.loc 1 52 0
+  50:main.c        **** 	}
+  51:main.c        **** 	else{
+  52:main.c        **** 		rprintf("No USB Detected\n");
+  62              		r0, .L11+8
+  63 0028 6C009FE5 		bl	rprintf
+  64 002c FEFFFFEB 	.L4:
+  65              		.loc 1 56 0
+  53:main.c        **** 	}
+  54:main.c        **** 	
+  55:main.c        **** 	//Init SD
+  56:main.c        **** 	if(sd_raw_init())
+  66              	sd_raw_init
+  67 0030 FEFFFFEB 		cmp	r0, #0
+  68 0034 000050E3 		beq	.L5
+  69 0038 0D00000A 		.loc 1 58 0
+  57:main.c        **** 	{
+  58:main.c        **** 		openroot();
+  70              	openroot
+  71 003c FEFFFFEB 		.loc 1 59 0
+  59:main.c        **** 		rprintf("Root open\n");
+  72              	dr	r0, .L11+12
+  73 0040 58009FE5 		bl	rprintf
+  74 0044 FEFFFFEB 		.loc 1 60 0
+  60:main.c        **** 		if(root_file_exists(FW_FILE))
+  75              	r	r0, .L11+16
+  76 0048 54009FE5 		bl	root_file_exists
+  77 004c FEFFFFEB 		cmp	r0, #0
+  78 0050 000050E3 		beq	.L7
+  79 0054 0A00000A 		.loc 1 62 0
+  61:main.c        **** 		{
+  62:main.c        **** 			rprintf("New firmware found\n");
+  80              	r0, .L11+20
+  81 0058 48009FE5 		bl	rprintf
+  82 005c FEFFFFEB 		.loc 1 63 0
+  63:main.c        **** 			load_fw(FW_FILE);
+  83              	r	r0, .L11+16
+  84 0060 3C009FE5 		bl	load_fw
+  85 0064 FEFFFFEB 		.loc 1 64 0
+  64:main.c        **** 			rprintf("New firmware loaded\n");
+  86              	r	r0, .L11+24
+  87 0068 3C009FE5 		bl	rprintf
+  88 006c FEFFFFEB 		b	.L7
+  89 0070 030000EA 	.L5:
+  90              		.loc 1 69 0
+  65:main.c        **** 		}
+  66:main.c        **** 	}
+  67:main.c        **** 	else{
+  68:main.c        **** 		//Didn't find a card to initialize
+  69:main.c        **** 		rprintf("No SD Card Detected\n");
+  91              	r0, .L11+28
+  92 0074 34009FE5 		bl	rprintf
+  93 0078 FEFFFFEB 		.loc 1 70 0
+  70:main.c        **** 		delay_ms(250);
+  94              	v	r0, #250
+  95 007c FA00A0E3 		bl	delay_ms
+  96 0080 FEFFFFEB 	.L7:
+  97              		.loc 1 72 0
+  71:main.c        **** 	}
+  72:main.c        **** 	rprintf("Boot Done. Calling firmware...\n");
+  98              		r0, .L11+32
+  99 0084 28009FE5 		bl	rprintf
+ 100 0088 FEFFFFEB 		.loc 1 73 0
+  73:main.c        **** 	call_firmware();
+ 101              		call_firmware
+ 102 008c FEFFFFEB 	.L9:
+ 103              		b	.L9
+ 104 0090 FEFFFFEA 	.L12:
+ 105              		.align	2
+ 106              	.L11:
+ 107              		.word	.LC0
+ 108 0094 00000000 		.word	-536707072
+ 109 0098 008002E0 		.word	.LC1
+ 110 009c 14000000 		.word	.LC2
+ 111 00a0 28000000 		.word	.LC3
+ 112 00a4 34000000 		.word	.LC4
+ 113 00a8 3C000000 		.word	.LC5
+ 114 00ac 50000000 		.word	.LC6
+ 115 00b0 68000000 		.word	.LC7
+ 116 00b4 80000000 	.LFE2:
+ 118              		.global	bl_version
+ 119              		.section	.bl_version_number,"a",%progbits
+ 120              		.align	2
+ 123              	bl_version:
+ 124              		.ascii	"v2.1\000"
+ 125 0000 76322E31 		.section	.debug_frame,"",%progbits
+ 125      00
+ 156              		.section	.debug_loc,"",%progbits
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccy2aaaa.s:39     .text:00000000 main
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccy2aaaa.s:46     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccy2aaaa.s:108    .text:00000094 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccy2aaaa.s:124    .bl_version_number:00000000 bl_version
+
+UNDEFINED SYMBOLS
+boot_up
+rprintf
+main_msc
+sd_raw_init
+openroot
+root_file_exists
+load_fw
+delay_ms
+call_firmware

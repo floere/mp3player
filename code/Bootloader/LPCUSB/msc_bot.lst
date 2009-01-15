@@ -1,0 +1,1013 @@
+   1              		.file	"msc_bot.c"
+   9              	.Ltext0:
+  10              		.align	2
+  12              	SendCSW:
+  13              	.LFB3:
+  14              		.file 1 "../Bootloader/LPCUSB/msc_bot.c"
+   1:../Bootloader/LPCUSB/msc_bot.c **** /*
+   2:../Bootloader/LPCUSB/msc_bot.c ****     LPCUSB, an USB device driver for LPC microcontrollers
+   3:../Bootloader/LPCUSB/msc_bot.c ****     Copyright (C) 2006 Bertrik Sikken (bertrik@sikken.nl)
+   4:../Bootloader/LPCUSB/msc_bot.c **** 
+   5:../Bootloader/LPCUSB/msc_bot.c ****     This library is free software; you can redistribute it and/or
+   6:../Bootloader/LPCUSB/msc_bot.c ****     modify it under the terms of the GNU Lesser General Public
+   7:../Bootloader/LPCUSB/msc_bot.c ****     License as published by the Free Software Foundation; either
+   8:../Bootloader/LPCUSB/msc_bot.c ****     version 2.1 of the License, or (at your option) any later version.
+   9:../Bootloader/LPCUSB/msc_bot.c **** 
+  10:../Bootloader/LPCUSB/msc_bot.c ****     This library is distributed in the hope that it will be useful,
+  11:../Bootloader/LPCUSB/msc_bot.c ****     but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:../Bootloader/LPCUSB/msc_bot.c ****     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  13:../Bootloader/LPCUSB/msc_bot.c ****     Lesser General Public License for more details.
+  14:../Bootloader/LPCUSB/msc_bot.c **** 
+  15:../Bootloader/LPCUSB/msc_bot.c ****     You should have received a copy of the GNU Lesser General Public
+  16:../Bootloader/LPCUSB/msc_bot.c ****     License along with this library; if not, write to the Free Software
+  17:../Bootloader/LPCUSB/msc_bot.c ****     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  18:../Bootloader/LPCUSB/msc_bot.c **** */
+  19:../Bootloader/LPCUSB/msc_bot.c **** 
+  20:../Bootloader/LPCUSB/msc_bot.c **** #include <string.h>
+  21:../Bootloader/LPCUSB/msc_bot.c **** 
+  22:../Bootloader/LPCUSB/msc_bot.c **** #include "type.h"
+  23:../Bootloader/LPCUSB/msc_bot.c **** #include <stdio.h>
+  24:../Bootloader/LPCUSB/msc_bot.c **** #include "rprintf.h"
+  25:../Bootloader/LPCUSB/msc_bot.c **** 
+  26:../Bootloader/LPCUSB/msc_bot.c **** #include "usbapi.h"
+  27:../Bootloader/LPCUSB/msc_bot.c **** #include "usbdebug.h"
+  28:../Bootloader/LPCUSB/msc_bot.c **** 
+  29:../Bootloader/LPCUSB/msc_bot.c **** #include "msc_bot.h"
+  30:../Bootloader/LPCUSB/msc_bot.c **** #include "msc_scsi.h"
+  31:../Bootloader/LPCUSB/msc_bot.c **** 
+  32:../Bootloader/LPCUSB/msc_bot.c **** #undef MIN
+  33:../Bootloader/LPCUSB/msc_bot.c **** #define MIN(x,y)	((x)<(y)?(x):(y))	/**< MIN */
+  34:../Bootloader/LPCUSB/msc_bot.c **** 
+  35:../Bootloader/LPCUSB/msc_bot.c **** 
+  36:../Bootloader/LPCUSB/msc_bot.c **** typedef struct
+  37:../Bootloader/LPCUSB/msc_bot.c **** {
+  38:../Bootloader/LPCUSB/msc_bot.c ****     U32     dwCBWSignature;
+  39:../Bootloader/LPCUSB/msc_bot.c ****     U32     dwCBWTag;
+  40:../Bootloader/LPCUSB/msc_bot.c ****     U32     dwCBWDataTransferLength;
+  41:../Bootloader/LPCUSB/msc_bot.c ****     U8      bmCBWFlags;
+  42:../Bootloader/LPCUSB/msc_bot.c ****     U8      bCBWLun;
+  43:../Bootloader/LPCUSB/msc_bot.c ****     U8      bCBWCBLength;
+  44:../Bootloader/LPCUSB/msc_bot.c ****     U8      CBWCB[16];
+  45:../Bootloader/LPCUSB/msc_bot.c **** }
+  46:../Bootloader/LPCUSB/msc_bot.c **** TCBW;
+  47:../Bootloader/LPCUSB/msc_bot.c **** 
+  48:../Bootloader/LPCUSB/msc_bot.c **** typedef struct
+  49:../Bootloader/LPCUSB/msc_bot.c **** {
+  50:../Bootloader/LPCUSB/msc_bot.c ****     U32     dwCSWSignature;
+  51:../Bootloader/LPCUSB/msc_bot.c ****     U32     dwCSWTag;
+  52:../Bootloader/LPCUSB/msc_bot.c ****     U32     dwCSWDataResidue;
+  53:../Bootloader/LPCUSB/msc_bot.c ****     U8      bmCSWStatus;
+  54:../Bootloader/LPCUSB/msc_bot.c **** }
+  55:../Bootloader/LPCUSB/msc_bot.c **** TCSW;
+  56:../Bootloader/LPCUSB/msc_bot.c **** 
+  57:../Bootloader/LPCUSB/msc_bot.c **** typedef enum
+  58:../Bootloader/LPCUSB/msc_bot.c **** {
+  59:../Bootloader/LPCUSB/msc_bot.c ****     eCBW,
+  60:../Bootloader/LPCUSB/msc_bot.c ****     eDataOut,
+  61:../Bootloader/LPCUSB/msc_bot.c ****     eDataIn,
+  62:../Bootloader/LPCUSB/msc_bot.c ****     eCSW,
+  63:../Bootloader/LPCUSB/msc_bot.c ****     eStalled
+  64:../Bootloader/LPCUSB/msc_bot.c **** }
+  65:../Bootloader/LPCUSB/msc_bot.c **** EBotState;
+  66:../Bootloader/LPCUSB/msc_bot.c **** 
+  67:../Bootloader/LPCUSB/msc_bot.c **** 
+  68:../Bootloader/LPCUSB/msc_bot.c **** #define CBW_SIGNATURE   0x43425355
+  69:../Bootloader/LPCUSB/msc_bot.c **** #define CSW_SIGNATURE   0x53425355
+  70:../Bootloader/LPCUSB/msc_bot.c **** 
+  71:../Bootloader/LPCUSB/msc_bot.c **** #define STATUS_PASSED       0x00
+  72:../Bootloader/LPCUSB/msc_bot.c **** #define STATUS_FAILED       0x01
+  73:../Bootloader/LPCUSB/msc_bot.c **** #define STATUS_PHASE_ERR    0x02
+  74:../Bootloader/LPCUSB/msc_bot.c **** 
+  75:../Bootloader/LPCUSB/msc_bot.c **** static U32          dwTransferSize;     // total size of data transfer
+  76:../Bootloader/LPCUSB/msc_bot.c **** static U32          dwOffset;           // offset in current data transfer
+  77:../Bootloader/LPCUSB/msc_bot.c **** 
+  78:../Bootloader/LPCUSB/msc_bot.c **** static TCBW         CBW;
+  79:../Bootloader/LPCUSB/msc_bot.c **** static TCSW         CSW;
+  80:../Bootloader/LPCUSB/msc_bot.c **** 
+  81:../Bootloader/LPCUSB/msc_bot.c **** static EBotState    eState;
+  82:../Bootloader/LPCUSB/msc_bot.c **** 
+  83:../Bootloader/LPCUSB/msc_bot.c **** static U8           *pbData;
+  84:../Bootloader/LPCUSB/msc_bot.c **** 
+  85:../Bootloader/LPCUSB/msc_bot.c **** 
+  86:../Bootloader/LPCUSB/msc_bot.c **** 
+  87:../Bootloader/LPCUSB/msc_bot.c **** void MSCBotReset(void)
+  88:../Bootloader/LPCUSB/msc_bot.c **** {
+  89:../Bootloader/LPCUSB/msc_bot.c ****     DBG("BOT reset in state %d\n", eState);
+  90:../Bootloader/LPCUSB/msc_bot.c ****     // reset BOT state
+  91:../Bootloader/LPCUSB/msc_bot.c ****     eState = eCBW;
+  92:../Bootloader/LPCUSB/msc_bot.c ****     // reset SCSI
+  93:../Bootloader/LPCUSB/msc_bot.c ****     SCSIReset();
+  94:../Bootloader/LPCUSB/msc_bot.c **** }
+  95:../Bootloader/LPCUSB/msc_bot.c **** 
+  96:../Bootloader/LPCUSB/msc_bot.c **** 
+  97:../Bootloader/LPCUSB/msc_bot.c **** static void SendCSW(U8 bStatus)
+  98:../Bootloader/LPCUSB/msc_bot.c **** {
+  15              	@ Function supports interworking.
+  16              		@ args = 0, pretend = 0, frame = 0
+  17              		@ frame_needed = 0, uses_anonymous_args = 0
+  18              		@ link register save eliminated.
+  19              	.LVL0:
+  20              		.loc 1 101 0
+  99:../Bootloader/LPCUSB/msc_bot.c ****     int iResidue;
+ 100:../Bootloader/LPCUSB/msc_bot.c **** 
+ 101:../Bootloader/LPCUSB/msc_bot.c ****     iResidue = CBW.dwCBWDataTransferLength - dwTransferSize;
+  21              	2, .L3
+  22 0000 3C209FE5 		ldr	r3, .L3+4
+  23 0004 3C309FE5 		ldr	r1, [r2, #8]
+  24 0008 081092E5 		ldr	r3, [r3, #0]
+  25 000c 003093E5 		.loc 1 105 0
+ 102:../Bootloader/LPCUSB/msc_bot.c **** 
+ 103:../Bootloader/LPCUSB/msc_bot.c ****     // construct CSW
+ 104:../Bootloader/LPCUSB/msc_bot.c ****     CSW.dwCSWSignature      = CSW_SIGNATURE;
+ 105:../Bootloader/LPCUSB/msc_bot.c ****     CSW.dwCSWTag            = CBW.dwCBWTag;
+  26              	ip, [r2, #4]
+  27 0010 04C092E5 		.loc 1 104 0
+  28              		ldr	r2, .L3+8
+  29 0014 30209FE5 		.loc 1 101 0
+  30              		rsb	r1, r3, r1
+  31 0018 011063E0 	.LVL1:
+  32              		.loc 1 112 0
+ 106:../Bootloader/LPCUSB/msc_bot.c ****     CSW.dwCSWDataResidue    = MAX(iResidue, 0);
+ 107:../Bootloader/LPCUSB/msc_bot.c ****     CSW.bmCSWStatus         = bStatus;
+ 108:../Bootloader/LPCUSB/msc_bot.c **** 
+ 109:../Bootloader/LPCUSB/msc_bot.c ****     DBG("CSW: status=%x, residue=%d\n", bStatus, CSW.dwCSWDataResidue);
+ 110:../Bootloader/LPCUSB/msc_bot.c **** 
+ 111:../Bootloader/LPCUSB/msc_bot.c ****     // next state
+ 112:../Bootloader/LPCUSB/msc_bot.c ****     eState = eCSW;
+  33              	, .L3+12
+  34 001c 2C309FE5 		.loc 1 107 0
+  35              		strb	r0, [r2, #12]
+  36 0020 0C00C2E5 		.loc 1 112 0
+  37              		mov	r0, #3
+  38 0024 0300A0E3 	.LVL2:
+  39              		str	r0, [r3, #0]
+  40 0028 000083E5 		.loc 1 104 0
+  41              		ldr	r3, .L3+16
+  42 002c 20309FE5 		.loc 1 106 0
+  43              		cmp	r1, #0
+  44 0030 000051E3 		movlt	r1, #0
+  45 0034 0010A0B3 	.LVL3:
+  46              		.loc 1 98 0
+  47              		@ lr needed for prologue
+  48              		.loc 1 104 0
+  49              		stmia	r2, {r3, ip}	@ phole stm
+  50 0038 081082E8 		.loc 1 106 0
+  51              		str	r1, [r2, #8]
+  52 003c 081082E5 		.loc 1 113 0
+ 113:../Bootloader/LPCUSB/msc_bot.c **** }
+  53              	2
+  54 0040 1EFF2FE1 	.L3:
+  55              		.word	CBW
+  56              		.word	dwTransferSize
+  57              		.word	CSW
+  58 0044 08000000 		.word	eState
+  59 0048 00000000 		.word	1396855637
+  60 004c 28000000 	.LFE3:
+  62 0054 55534253 		.align	2
+  64              	BOTStall:
+  65              	.LFB5:
+  66              		.loc 1 165 0
+  67              		@ Function supports interworking.
+  68              		@ args = 0, pretend = 0, frame = 0
+ 114:../Bootloader/LPCUSB/msc_bot.c **** 
+ 115:../Bootloader/LPCUSB/msc_bot.c **** 
+ 116:../Bootloader/LPCUSB/msc_bot.c **** /*************************************************************************
+ 117:../Bootloader/LPCUSB/msc_bot.c ****     CheckCBW
+ 118:../Bootloader/LPCUSB/msc_bot.c ****     ========
+ 119:../Bootloader/LPCUSB/msc_bot.c ****         Checks if CBW is valid and meaningful
+ 120:../Bootloader/LPCUSB/msc_bot.c **** 
+ 121:../Bootloader/LPCUSB/msc_bot.c ****     IN      pCBW    Command block wrapper
+ 122:../Bootloader/LPCUSB/msc_bot.c ****             iLen    Length of CBW
+ 123:../Bootloader/LPCUSB/msc_bot.c **** 
+ 124:../Bootloader/LPCUSB/msc_bot.c ****     Returns TRUE if valid and meaningful
+ 125:../Bootloader/LPCUSB/msc_bot.c **** **************************************************************************/
+ 126:../Bootloader/LPCUSB/msc_bot.c **** static BOOL CheckCBW(TCBW *pCBW, int iLen)
+ 127:../Bootloader/LPCUSB/msc_bot.c **** {
+ 128:../Bootloader/LPCUSB/msc_bot.c ****     // CBW valid?
+ 129:../Bootloader/LPCUSB/msc_bot.c ****     if (iLen != 31)
+ 130:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 131:../Bootloader/LPCUSB/msc_bot.c ****         DBG("Invalid length (%d)\n", iLen);
+ 132:../Bootloader/LPCUSB/msc_bot.c ****         return FALSE;
+ 133:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 134:../Bootloader/LPCUSB/msc_bot.c ****     if (pCBW->dwCBWSignature != CBW_SIGNATURE)
+ 135:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 136:../Bootloader/LPCUSB/msc_bot.c ****         DBG("Invalid signature %x\n", pCBW->dwCBWSignature);
+ 137:../Bootloader/LPCUSB/msc_bot.c ****         return FALSE;
+ 138:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 139:../Bootloader/LPCUSB/msc_bot.c **** 
+ 140:../Bootloader/LPCUSB/msc_bot.c ****     // CBW meaningful?
+ 141:../Bootloader/LPCUSB/msc_bot.c ****     if (pCBW->bCBWLun != 0)
+ 142:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 143:../Bootloader/LPCUSB/msc_bot.c ****         DBG("Invalid LUN %d\n", pCBW->bCBWLun);
+ 144:../Bootloader/LPCUSB/msc_bot.c ****         return FALSE;
+ 145:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 146:../Bootloader/LPCUSB/msc_bot.c ****     if ((pCBW->bCBWCBLength < 1) || (pCBW->bCBWCBLength > 16))
+ 147:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 148:../Bootloader/LPCUSB/msc_bot.c ****         DBG("Invalid CB len %d\n", pCBW->bCBWCBLength);
+ 149:../Bootloader/LPCUSB/msc_bot.c ****         return FALSE;
+ 150:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 151:../Bootloader/LPCUSB/msc_bot.c ****     return TRUE;
+ 152:../Bootloader/LPCUSB/msc_bot.c **** }
+ 153:../Bootloader/LPCUSB/msc_bot.c **** 
+ 154:../Bootloader/LPCUSB/msc_bot.c **** 
+ 155:../Bootloader/LPCUSB/msc_bot.c **** /*************************************************************************
+ 156:../Bootloader/LPCUSB/msc_bot.c ****     BOTStall
+ 157:../Bootloader/LPCUSB/msc_bot.c ****     ========
+ 158:../Bootloader/LPCUSB/msc_bot.c ****         Local function to stall ongoing transfer
+ 159:../Bootloader/LPCUSB/msc_bot.c **** 
+ 160:../Bootloader/LPCUSB/msc_bot.c ****     Which endpoint to stall is determined by looking at the transfer
+ 161:../Bootloader/LPCUSB/msc_bot.c ****     direction intended by the host.
+ 162:../Bootloader/LPCUSB/msc_bot.c **** 
+ 163:../Bootloader/LPCUSB/msc_bot.c **** **************************************************************************/
+ 164:../Bootloader/LPCUSB/msc_bot.c **** static void BOTStall(void)
+ 165:../Bootloader/LPCUSB/msc_bot.c **** {
+  69              	= 0, uses_anonymous_args = 0
+  70              		str	lr, [sp, #-4]!
+  71              	.LCFI0:
+  72              		.loc 1 166 0
+  73 0058 04E02DE5 		ldr	r2, .L12
+  74              		ldrsb	r3, [r2, #12]
+ 166:../Bootloader/LPCUSB/msc_bot.c ****     if ((CBW.bmCBWFlags & 0x80) || (CBW.dwCBWDataTransferLength == 0))
+  75              	3, #0
+  76 005c 2C209FE5 		.loc 1 169 0
+  77 0060 DC30D2E1 		mov	r0, #133
+  78 0064 000053E3 		mov	r1, #1
+ 167:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 168:../Bootloader/LPCUSB/msc_bot.c ****         // stall data-in or CSW
+ 169:../Bootloader/LPCUSB/msc_bot.c ****         USBHwEPStall(MSC_BULK_IN_EP, TRUE);
+  79              	c 1 166 0
+  80 0068 8500A0E3 		blt	.L11
+  81 006c 0110A0E3 		ldr	r3, [r2, #8]
+  82              		cmp	r3, #0
+  83 0070 030000BA 		.loc 1 174 0
+  84 0074 083092E5 		movne	r0, #2
+  85 0078 000053E3 		movne	r1, #1
+ 170:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 171:../Bootloader/LPCUSB/msc_bot.c ****     else
+ 172:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 173:../Bootloader/LPCUSB/msc_bot.c ****         // stall data-out
+ 174:../Bootloader/LPCUSB/msc_bot.c ****         USBHwEPStall(MSC_BULK_OUT_EP, TRUE);
+  86              	bl	USBHwEPStall
+  87 007c 0200A013 		.loc 1 176 0
+  88 0080 0110A013 		ldr	lr, [sp], #4
+  89              		bx	lr
+  90 0084 FEFFFFEB 	.L13:
+ 175:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 176:../Bootloader/LPCUSB/msc_bot.c **** }
+  91              	gn	2
+  92 0088 04E09DE4 	.L12:
+  93 008c 1EFF2FE1 		.word	CBW
+  94              	.LFE5:
+  96              		.align	2
+  98              	HandleDataIn:
+  99              	.LFB6:
+ 100              		.loc 1 186 0
+ 101              		@ Function supports interworking.
+ 102              		@ args = 0, pretend = 0, frame = 0
+ 103              		@ frame_needed = 0, uses_anonymous_args = 0
+ 177:../Bootloader/LPCUSB/msc_bot.c **** 
+ 178:../Bootloader/LPCUSB/msc_bot.c **** 
+ 179:../Bootloader/LPCUSB/msc_bot.c **** /*************************************************************************
+ 180:../Bootloader/LPCUSB/msc_bot.c ****     HandleDataIn
+ 181:../Bootloader/LPCUSB/msc_bot.c ****     ============
+ 182:../Bootloader/LPCUSB/msc_bot.c ****         Handles data from device-to-host
+ 183:../Bootloader/LPCUSB/msc_bot.c **** 
+ 184:../Bootloader/LPCUSB/msc_bot.c **** **************************************************************************/
+ 185:../Bootloader/LPCUSB/msc_bot.c **** static void HandleDataIn(void)
+ 186:../Bootloader/LPCUSB/msc_bot.c **** {
+ 104              	r4, r5, r6, r7, lr}
+ 105              	.LCFI1:
+ 106              		.loc 1 190 0
+ 107              		ldr	r6, .L25
+ 108 0094 F0402DE9 		ldr	r4, .L25+4
+ 109              		ldr	r5, .L25+8
+ 187:../Bootloader/LPCUSB/msc_bot.c ****     int iChunk;
+ 188:../Bootloader/LPCUSB/msc_bot.c **** 
+ 189:../Bootloader/LPCUSB/msc_bot.c ****     // process data for host in SCSI layer
+ 190:../Bootloader/LPCUSB/msc_bot.c ****     pbData = SCSIHandleData(CBW.CBWCB, CBW.bCBWCBLength, pbData, dwOffset);
+ 110              	r1, [r6, #14]	@ zero_extendqisi2
+ 111 0098 9C609FE5 		ldr	r2, [r4, #0]
+ 112 009c 9C409FE5 		ldr	r3, [r5, #0]
+ 113 00a0 9C509FE5 		add	r0, r6, #15
+ 114 00a4 0E10D6E5 		bl	SCSIHandleData
+ 115 00a8 002094E5 		.loc 1 191 0
+ 116 00ac 003095E5 		cmp	r0, #0
+ 117 00b0 0F0086E2 		.loc 1 199 0
+ 118 00b4 FEFFFFEB 		ldr	r7, .L25+12
+ 191:../Bootloader/LPCUSB/msc_bot.c ****     if (pbData == NULL)
+ 119              	90 0
+ 120 00b8 000050E3 		str	r0, [r4, #0]
+ 192:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 193:../Bootloader/LPCUSB/msc_bot.c ****         BOTStall();
+ 194:../Bootloader/LPCUSB/msc_bot.c ****         SendCSW(STATUS_FAILED);
+ 195:../Bootloader/LPCUSB/msc_bot.c ****         return;
+ 196:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 197:../Bootloader/LPCUSB/msc_bot.c **** 
+ 198:../Bootloader/LPCUSB/msc_bot.c ****     // send data to host?
+ 199:../Bootloader/LPCUSB/msc_bot.c ****     if (dwOffset < dwTransferSize)
+ 121              	loc 1 191 0
+ 122 00bc 84709FE5 		bne	.L15
+ 123              		.loc 1 193 0
+ 124 00c0 000084E5 		bl	BOTStall
+ 125              		.loc 1 194 0
+ 126 00c4 0200001A 		mov	r0, #1
+ 127              		b	.L24
+ 128 00c8 E2FFFFEB 	.L15:
+ 129              		.loc 1 199 0
+ 130 00cc 0100A0E3 		ldr	r2, [r5, #0]
+ 131 00d0 150000EA 		ldr	r3, [r7, #0]
+ 132              		cmp	r2, r3
+ 133              		.loc 1 202 0
+ 134 00d4 002095E5 		mov	r1, r0
+ 135 00d8 003097E5 		.loc 1 201 0
+ 136 00dc 030052E1 		rsb	r4, r2, r3
+ 200:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 201:../Bootloader/LPCUSB/msc_bot.c ****         iChunk = MIN(64, dwTransferSize - dwOffset);
+ 202:../Bootloader/LPCUSB/msc_bot.c ****         USBHwEPWrite(MSC_BULK_IN_EP, pbData, iChunk);
+ 137              	02 0
+ 138 00e0 0010A0E1 		mov	r0, #133
+ 139              		.loc 1 199 0
+ 140 00e4 034062E0 		bcs	.L17
+ 141              		.loc 1 201 0
+ 142              		cmp	r4, #64
+ 143 00e8 8500A0E3 		movcs	r4, #64
+ 144              		.loc 1 202 0
+ 145 00ec 0600002A 		mov	r2, r4
+ 146              		bl	USBHwEPWrite
+ 147 00f0 400054E3 		.loc 1 203 0
+ 148 00f4 4040A023 		ldr	r3, [r5, #0]
+ 149              		add	r3, r3, r4
+ 150 00f8 0420A0E1 		str	r3, [r5, #0]
+ 151 00fc FEFFFFEB 	.L17:
+ 203:../Bootloader/LPCUSB/msc_bot.c ****         dwOffset += iChunk;
+ 152              	ldr	r2, [r5, #0]
+ 153 0100 003095E5 		ldr	r3, [r7, #0]
+ 154 0104 043083E0 		cmp	r2, r3
+ 155 0108 003085E5 		bne	.L23
+ 156              		.loc 1 209 0
+ 204:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 205:../Bootloader/LPCUSB/msc_bot.c **** 
+ 206:../Bootloader/LPCUSB/msc_bot.c ****     // are we done now?
+ 207:../Bootloader/LPCUSB/msc_bot.c ****     if (dwOffset == dwTransferSize)
+ 157              	r3, [r6, #8]
+ 158 010c 002095E5 		cmp	r2, r3
+ 159 0110 003097E5 		.loc 1 213 0
+ 160 0114 030052E1 		blne	BOTStall
+ 161 0118 0500001A 	.L21:
+ 208:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 209:../Bootloader/LPCUSB/msc_bot.c ****         if (dwOffset != CBW.dwCBWDataTransferLength)
+ 162              	 1 216 0
+ 163 011c 083096E5 		mov	r0, #0
+ 164 0120 030052E1 	.L24:
+ 210:../Bootloader/LPCUSB/msc_bot.c ****         {
+ 211:../Bootloader/LPCUSB/msc_bot.c ****             // stall pipe
+ 212:../Bootloader/LPCUSB/msc_bot.c ****             DBG("stalling DIN");
+ 213:../Bootloader/LPCUSB/msc_bot.c ****             BOTStall();
+ 165              	oc 1 218 0
+ 166 0124 CBFFFF1B 		ldmfd	sp!, {r4, r5, r6, r7, lr}
+ 167              		.loc 1 216 0
+ 214:../Bootloader/LPCUSB/msc_bot.c ****         }
+ 215:../Bootloader/LPCUSB/msc_bot.c ****         // done
+ 216:../Bootloader/LPCUSB/msc_bot.c ****         SendCSW(STATUS_PASSED);
+ 168              	SendCSW
+ 169 0128 0000A0E3 	.L23:
+ 170              		.loc 1 218 0
+ 217:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 218:../Bootloader/LPCUSB/msc_bot.c **** }
+ 171              	mfd	sp!, {r4, r5, r6, r7, lr}
+ 172 012c F040BDE8 		bx	lr
+ 173              	.L26:
+ 174 0130 B2FFFFEA 		.align	2
+ 175              	.L25:
+ 176              		.word	CBW
+ 177 0134 F040BDE8 		.word	pbData
+ 178 0138 1EFF2FE1 		.word	dwOffset
+ 179              		.word	dwTransferSize
+ 180              	.LFE6:
+ 182 013c 08000000 		.align	2
+ 183 0140 3C000000 		.global	MSCBotBulkIn
+ 185 0148 00000000 	MSCBotBulkIn:
+ 186              	.LFB9:
+ 187              		.loc 1 381 0
+ 188              		@ Function supports interworking.
+ 189              		@ args = 0, pretend = 0, frame = 0
+ 190              		@ frame_needed = 0, uses_anonymous_args = 0
+ 191              	.LVL5:
+ 192              		stmfd	sp!, {r4, r5, lr}
+ 219:../Bootloader/LPCUSB/msc_bot.c **** 
+ 220:../Bootloader/LPCUSB/msc_bot.c **** 
+ 221:../Bootloader/LPCUSB/msc_bot.c **** /*************************************************************************
+ 222:../Bootloader/LPCUSB/msc_bot.c ****     HandleDataOut
+ 223:../Bootloader/LPCUSB/msc_bot.c ****     =============
+ 224:../Bootloader/LPCUSB/msc_bot.c ****         Handles data from host-to-device
+ 225:../Bootloader/LPCUSB/msc_bot.c **** 
+ 226:../Bootloader/LPCUSB/msc_bot.c **** **************************************************************************/
+ 227:../Bootloader/LPCUSB/msc_bot.c **** static void HandleDataOut(void)
+ 228:../Bootloader/LPCUSB/msc_bot.c **** {
+ 229:../Bootloader/LPCUSB/msc_bot.c ****     int iChunk;
+ 230:../Bootloader/LPCUSB/msc_bot.c **** 
+ 231:../Bootloader/LPCUSB/msc_bot.c ****     if (dwOffset < dwTransferSize)
+ 232:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 233:../Bootloader/LPCUSB/msc_bot.c ****         // get data from host
+ 234:../Bootloader/LPCUSB/msc_bot.c ****         iChunk = USBHwEPRead(MSC_BULK_OUT_EP, pbData, dwTransferSize - dwOffset);
+ 235:../Bootloader/LPCUSB/msc_bot.c ****         // process data in SCSI layer
+ 236:../Bootloader/LPCUSB/msc_bot.c ****         pbData = SCSIHandleData(CBW.CBWCB, CBW.bCBWCBLength, pbData, dwOffset);
+ 237:../Bootloader/LPCUSB/msc_bot.c ****         if (pbData == NULL)
+ 238:../Bootloader/LPCUSB/msc_bot.c ****         {
+ 239:../Bootloader/LPCUSB/msc_bot.c ****             BOTStall();
+ 240:../Bootloader/LPCUSB/msc_bot.c ****             SendCSW(STATUS_FAILED);
+ 241:../Bootloader/LPCUSB/msc_bot.c ****             return;
+ 242:../Bootloader/LPCUSB/msc_bot.c ****         }
+ 243:../Bootloader/LPCUSB/msc_bot.c ****         dwOffset += iChunk;
+ 244:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 245:../Bootloader/LPCUSB/msc_bot.c **** 
+ 246:../Bootloader/LPCUSB/msc_bot.c ****     // are we done now?
+ 247:../Bootloader/LPCUSB/msc_bot.c ****     if (dwOffset == dwTransferSize)
+ 248:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 249:../Bootloader/LPCUSB/msc_bot.c ****         if (dwOffset != CBW.dwCBWDataTransferLength)
+ 250:../Bootloader/LPCUSB/msc_bot.c ****         {
+ 251:../Bootloader/LPCUSB/msc_bot.c ****             // stall pipe
+ 252:../Bootloader/LPCUSB/msc_bot.c ****             DBG("stalling DOUT");
+ 253:../Bootloader/LPCUSB/msc_bot.c ****             BOTStall();
+ 254:../Bootloader/LPCUSB/msc_bot.c ****         }
+ 255:../Bootloader/LPCUSB/msc_bot.c ****         SendCSW(STATUS_PASSED);
+ 256:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 257:../Bootloader/LPCUSB/msc_bot.c **** }
+ 258:../Bootloader/LPCUSB/msc_bot.c **** 
+ 259:../Bootloader/LPCUSB/msc_bot.c **** 
+ 260:../Bootloader/LPCUSB/msc_bot.c **** /*************************************************************************
+ 261:../Bootloader/LPCUSB/msc_bot.c ****     MSCBotBulkOut
+ 262:../Bootloader/LPCUSB/msc_bot.c ****     ===============
+ 263:../Bootloader/LPCUSB/msc_bot.c ****         Handles the BOT bulk OUT endpoint
+ 264:../Bootloader/LPCUSB/msc_bot.c **** 
+ 265:../Bootloader/LPCUSB/msc_bot.c ****     IN      bEP         Endpoint number
+ 266:../Bootloader/LPCUSB/msc_bot.c ****             bEPStatus   Endpoint status (indicates NAK, STALL, etc)
+ 267:../Bootloader/LPCUSB/msc_bot.c **** 
+ 268:../Bootloader/LPCUSB/msc_bot.c **** **************************************************************************/
+ 269:../Bootloader/LPCUSB/msc_bot.c **** void MSCBotBulkOut(U8 bEP, U8 bEPStatus)
+ 270:../Bootloader/LPCUSB/msc_bot.c **** {
+ 271:../Bootloader/LPCUSB/msc_bot.c ****     int     iLen, iChunk;
+ 272:../Bootloader/LPCUSB/msc_bot.c ****     BOOL    fHostIn, fDevIn;
+ 273:../Bootloader/LPCUSB/msc_bot.c **** 
+ 274:../Bootloader/LPCUSB/msc_bot.c ****     // ignore events on stalled EP
+ 275:../Bootloader/LPCUSB/msc_bot.c ****     if (bEPStatus & EP_STATUS_STALLED)
+ 276:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 277:../Bootloader/LPCUSB/msc_bot.c ****         return;
+ 278:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 279:../Bootloader/LPCUSB/msc_bot.c **** 
+ 280:../Bootloader/LPCUSB/msc_bot.c ****     switch (eState)
+ 281:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 282:../Bootloader/LPCUSB/msc_bot.c **** 
+ 283:../Bootloader/LPCUSB/msc_bot.c ****         case eCBW:
+ 284:../Bootloader/LPCUSB/msc_bot.c ****             iLen = USBHwEPRead(bEP, (U8 *)&CBW, sizeof(CBW));
+ 285:../Bootloader/LPCUSB/msc_bot.c **** 
+ 286:../Bootloader/LPCUSB/msc_bot.c ****             // check if we got a good CBW
+ 287:../Bootloader/LPCUSB/msc_bot.c ****             if (!CheckCBW(&CBW, iLen))
+ 288:../Bootloader/LPCUSB/msc_bot.c ****             {
+ 289:../Bootloader/LPCUSB/msc_bot.c ****                 // see 6.6.1
+ 290:../Bootloader/LPCUSB/msc_bot.c ****                 USBHwEPStall(MSC_BULK_IN_EP, TRUE);
+ 291:../Bootloader/LPCUSB/msc_bot.c ****                 USBHwEPStall(MSC_BULK_OUT_EP, TRUE);
+ 292:../Bootloader/LPCUSB/msc_bot.c ****                 eState = eStalled;
+ 293:../Bootloader/LPCUSB/msc_bot.c ****                 break;
+ 294:../Bootloader/LPCUSB/msc_bot.c ****             }
+ 295:../Bootloader/LPCUSB/msc_bot.c **** 
+ 296:../Bootloader/LPCUSB/msc_bot.c ****             DBG("CBW: len=%d, flags=%x, cmd=%x, cmdlen=%d\n",
+ 297:../Bootloader/LPCUSB/msc_bot.c ****                     CBW.dwCBWDataTransferLength, CBW.bmCBWFlags, CBW.CBWCB[0], CBW.bCBWCBLength);
+ 298:../Bootloader/LPCUSB/msc_bot.c **** 
+ 299:../Bootloader/LPCUSB/msc_bot.c ****             dwOffset = 0;
+ 300:../Bootloader/LPCUSB/msc_bot.c ****             dwTransferSize = 0;
+ 301:../Bootloader/LPCUSB/msc_bot.c ****             fHostIn = ((CBW.bmCBWFlags & 0x80) != 0);
+ 302:../Bootloader/LPCUSB/msc_bot.c **** 
+ 303:../Bootloader/LPCUSB/msc_bot.c ****             // verify request
+ 304:../Bootloader/LPCUSB/msc_bot.c ****             pbData = SCSIHandleCmd(CBW.CBWCB, CBW.bCBWCBLength, &iLen, &fDevIn);
+ 305:../Bootloader/LPCUSB/msc_bot.c ****             if (pbData == NULL)
+ 306:../Bootloader/LPCUSB/msc_bot.c ****             {
+ 307:../Bootloader/LPCUSB/msc_bot.c ****                 // unknown command
+ 308:../Bootloader/LPCUSB/msc_bot.c ****                 BOTStall();
+ 309:../Bootloader/LPCUSB/msc_bot.c ****                 SendCSW(STATUS_FAILED);
+ 310:../Bootloader/LPCUSB/msc_bot.c ****                 break;
+ 311:../Bootloader/LPCUSB/msc_bot.c ****             }
+ 312:../Bootloader/LPCUSB/msc_bot.c **** 
+ 313:../Bootloader/LPCUSB/msc_bot.c ****             // rule: if device and host disagree on direction, send CSW with status 2
+ 314:../Bootloader/LPCUSB/msc_bot.c ****             if ((iLen > 0) &&
+ 315:../Bootloader/LPCUSB/msc_bot.c ****                 ((fHostIn && !fDevIn) ||
+ 316:../Bootloader/LPCUSB/msc_bot.c ****                 (!fHostIn && fDevIn)))
+ 317:../Bootloader/LPCUSB/msc_bot.c ****             {
+ 318:../Bootloader/LPCUSB/msc_bot.c ****                 DBG("Host and device disagree on direction\n");
+ 319:../Bootloader/LPCUSB/msc_bot.c ****                 BOTStall();
+ 320:../Bootloader/LPCUSB/msc_bot.c ****                 SendCSW(STATUS_PHASE_ERR);
+ 321:../Bootloader/LPCUSB/msc_bot.c ****                 break;
+ 322:../Bootloader/LPCUSB/msc_bot.c ****             }
+ 323:../Bootloader/LPCUSB/msc_bot.c **** 
+ 324:../Bootloader/LPCUSB/msc_bot.c ****             // rule: if D > H, send CSW with status 2
+ 325:../Bootloader/LPCUSB/msc_bot.c ****             if (iLen > CBW.dwCBWDataTransferLength)
+ 326:../Bootloader/LPCUSB/msc_bot.c ****             {
+ 327:../Bootloader/LPCUSB/msc_bot.c ****                 DBG("Negative residue\n");
+ 328:../Bootloader/LPCUSB/msc_bot.c ****                 BOTStall();
+ 329:../Bootloader/LPCUSB/msc_bot.c ****                 SendCSW(STATUS_PHASE_ERR);
+ 330:../Bootloader/LPCUSB/msc_bot.c ****                 break;
+ 331:../Bootloader/LPCUSB/msc_bot.c ****             }
+ 332:../Bootloader/LPCUSB/msc_bot.c **** 
+ 333:../Bootloader/LPCUSB/msc_bot.c ****             dwTransferSize = iLen;
+ 334:../Bootloader/LPCUSB/msc_bot.c ****             if ((dwTransferSize == 0) || fDevIn)
+ 335:../Bootloader/LPCUSB/msc_bot.c ****             {
+ 336:../Bootloader/LPCUSB/msc_bot.c ****                 // data from device-to-host
+ 337:../Bootloader/LPCUSB/msc_bot.c ****                 eState = eDataIn;
+ 338:../Bootloader/LPCUSB/msc_bot.c ****                 HandleDataIn();
+ 339:../Bootloader/LPCUSB/msc_bot.c ****             }
+ 340:../Bootloader/LPCUSB/msc_bot.c ****             else
+ 341:../Bootloader/LPCUSB/msc_bot.c ****             {
+ 342:../Bootloader/LPCUSB/msc_bot.c ****                 // data from host-to-device
+ 343:../Bootloader/LPCUSB/msc_bot.c ****                 eState = eDataOut;
+ 344:../Bootloader/LPCUSB/msc_bot.c ****             }
+ 345:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 346:../Bootloader/LPCUSB/msc_bot.c **** 
+ 347:../Bootloader/LPCUSB/msc_bot.c ****         case eDataOut:
+ 348:../Bootloader/LPCUSB/msc_bot.c ****             HandleDataOut();
+ 349:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 350:../Bootloader/LPCUSB/msc_bot.c **** 
+ 351:../Bootloader/LPCUSB/msc_bot.c ****         case eDataIn:
+ 352:../Bootloader/LPCUSB/msc_bot.c ****         case eCSW:
+ 353:../Bootloader/LPCUSB/msc_bot.c ****             iChunk = USBHwEPRead(bEP, NULL, 0);
+ 354:../Bootloader/LPCUSB/msc_bot.c ****             DBG("Phase error in state %d, %d bytes\n", eState, iChunk);
+ 355:../Bootloader/LPCUSB/msc_bot.c ****             eState = eCBW;
+ 356:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 357:../Bootloader/LPCUSB/msc_bot.c **** 
+ 358:../Bootloader/LPCUSB/msc_bot.c ****         case eStalled:
+ 359:../Bootloader/LPCUSB/msc_bot.c ****         // keep stalling
+ 360:../Bootloader/LPCUSB/msc_bot.c ****             USBHwEPStall(MSC_BULK_OUT_EP, TRUE);
+ 361:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 362:../Bootloader/LPCUSB/msc_bot.c **** 
+ 363:../Bootloader/LPCUSB/msc_bot.c ****         default:
+ 364:../Bootloader/LPCUSB/msc_bot.c ****             DBG("Invalid state %d\n", eState);
+ 365:../Bootloader/LPCUSB/msc_bot.c **** //            ASSERT(FALSE);
+ 366:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 367:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 368:../Bootloader/LPCUSB/msc_bot.c **** }
+ 369:../Bootloader/LPCUSB/msc_bot.c **** 
+ 370:../Bootloader/LPCUSB/msc_bot.c **** 
+ 371:../Bootloader/LPCUSB/msc_bot.c **** /*************************************************************************
+ 372:../Bootloader/LPCUSB/msc_bot.c ****     MSCBotBulkIn
+ 373:../Bootloader/LPCUSB/msc_bot.c ****     ============
+ 374:../Bootloader/LPCUSB/msc_bot.c ****         Handles the BOT bulk IN endpoint
+ 375:../Bootloader/LPCUSB/msc_bot.c **** 
+ 376:../Bootloader/LPCUSB/msc_bot.c ****     IN      bEP         Endpoint number
+ 377:../Bootloader/LPCUSB/msc_bot.c ****             bEPStatus   Endpoint status (indicates NAK, STALL, etc)
+ 378:../Bootloader/LPCUSB/msc_bot.c **** 
+ 379:../Bootloader/LPCUSB/msc_bot.c **** **************************************************************************/
+ 380:../Bootloader/LPCUSB/msc_bot.c **** void MSCBotBulkIn(U8 bEP, U8 bEPStatus)
+ 381:../Bootloader/LPCUSB/msc_bot.c **** {
+ 193              		ands	r4, r1, #2
+ 194              		.loc 1 388 0
+ 195              		ldr	r5, .L34
+ 196              		.loc 1 383 0
+ 197              		bne	.L33
+ 198 014c 30402DE9 		.loc 1 388 0
+ 199              		ldr	r3, [r5, #0]
+ 382:../Bootloader/LPCUSB/msc_bot.c ****     // ignore events on stalled EP
+ 383:../Bootloader/LPCUSB/msc_bot.c ****     if (bEPStatus & EP_STATUS_STALLED)
+ 200              	, #3
+ 201 0150 024011E2 		.loc 1 402 0
+ 384:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 385:../Bootloader/LPCUSB/msc_bot.c ****         return;
+ 386:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 387:../Bootloader/LPCUSB/msc_bot.c **** 
+ 388:../Bootloader/LPCUSB/msc_bot.c ****     switch (eState)
+ 202              	ov	r0, #133
+ 203 0154 4C509FE5 	.LVL6:
+ 204              		ldr	r1, .L34+4
+ 205 0158 1000001A 	.LVL7:
+ 206              		mov	r2, #13
+ 207 015c 003095E5 		.loc 1 388 0
+ 208 0160 030053E3 		beq	.L31
+ 389:../Bootloader/LPCUSB/msc_bot.c ****     {
+ 390:../Bootloader/LPCUSB/msc_bot.c **** 
+ 391:../Bootloader/LPCUSB/msc_bot.c ****         case eCBW:
+ 392:../Bootloader/LPCUSB/msc_bot.c ****         case eDataOut:
+ 393:../Bootloader/LPCUSB/msc_bot.c ****         // ignore possibly old ACKs
+ 394:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 395:../Bootloader/LPCUSB/msc_bot.c **** 
+ 396:../Bootloader/LPCUSB/msc_bot.c ****         case eDataIn:
+ 397:../Bootloader/LPCUSB/msc_bot.c ****             HandleDataIn();
+ 398:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 399:../Bootloader/LPCUSB/msc_bot.c **** 
+ 400:../Bootloader/LPCUSB/msc_bot.c ****         case eCSW:
+ 401:../Bootloader/LPCUSB/msc_bot.c ****         // wait for an IN token, then send the CSW
+ 402:../Bootloader/LPCUSB/msc_bot.c ****             USBHwEPWrite(MSC_BULK_IN_EP, (U8 *)&CSW, 13);
+ 209              	, #4
+ 210 0164 8500A0E3 		.loc 1 408 0
+ 211              		mov	r1, #1
+ 212 0168 3C109FE5 		.loc 1 388 0
+ 213              		beq	.L32
+ 214 016c 0D20A0E3 		cmp	r3, #2
+ 215              		bne	.L33
+ 216 0170 0600000A 		.loc 1 416 0
+ 217 0174 040053E3 		ldmfd	sp!, {r4, r5, lr}
+ 403:../Bootloader/LPCUSB/msc_bot.c ****             eState = eCBW;
+ 404:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 405:../Bootloader/LPCUSB/msc_bot.c **** 
+ 406:../Bootloader/LPCUSB/msc_bot.c ****         case eStalled:
+ 407:../Bootloader/LPCUSB/msc_bot.c ****         // keep stalling
+ 408:../Bootloader/LPCUSB/msc_bot.c ****             USBHwEPStall(MSC_BULK_IN_EP, TRUE);
+ 218              	97 0
+ 219 0178 0110A0E3 		b	HandleDataIn
+ 220              	.L31:
+ 221 017c 0600000A 		.loc 1 402 0
+ 222 0180 020053E3 		bl	USBHwEPWrite
+ 223 0184 0500001A 		.loc 1 403 0
+ 409:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 410:../Bootloader/LPCUSB/msc_bot.c **** 
+ 411:../Bootloader/LPCUSB/msc_bot.c ****         default:
+ 412:../Bootloader/LPCUSB/msc_bot.c ****             DBG("Invalid state %d\n", eState);
+ 413:../Bootloader/LPCUSB/msc_bot.c **** //            ASSERT(FALSE);
+ 414:../Bootloader/LPCUSB/msc_bot.c ****             break;
+ 415:../Bootloader/LPCUSB/msc_bot.c ****     }
+ 416:../Bootloader/LPCUSB/msc_bot.c **** }
+ 224              	4, [r5, #0]
+ 225 0188 3040BDE8 		b	.L33
+ 226              	.L32:
+ 227 018c C0FFFFEA 		.loc 1 408 0
+ 228              		bl	USBHwEPStall
+ 229              	.LVL8:
+ 230 0190 FEFFFFEB 	.L33:
+ 231              		.loc 1 416 0
+ 232 0194 004085E5 		ldmfd	sp!, {r4, r5, lr}
+ 233 0198 000000EA 		bx	lr
+ 234              	.L35:
+ 235              		.align	2
+ 236 019c FEFFFFEB 	.L34:
+ 237              		.word	eState
+ 238              		.word	CSW
+ 239              	.LFE9:
+ 241 01a4 1EFF2FE1 		.align	2
+ 242              		.global	MSCBotBulkOut
+ 244              	MSCBotBulkOut:
+ 245 01a8 38000000 	.LFB8:
+ 246 01ac 28000000 		.loc 1 270 0
+ 247              		@ Function supports interworking.
+ 248              		@ args = 0, pretend = 0, frame = 8
+ 249              		@ frame_needed = 0, uses_anonymous_args = 0
+ 250              	.LVL9:
+ 251              		stmfd	sp!, {r4, r5, r6, lr}
+ 252              	.LCFI3:
+ 253              		.loc 1 275 0
+ 254              		tst	r1, #2
+ 255              		.loc 1 270 0
+ 256              		sub	sp, sp, #8
+ 257              	.LCFI4:
+ 258              		.loc 1 270 0
+ 259 01b0 70402DE9 		and	r0, r0, #255
+ 260              		.loc 1 275 0
+ 261              		bne	.L68
+ 262 01b4 020011E3 		.loc 1 280 0
+ 263              		ldr	r3, .L73
+ 264 01b8 08D04DE2 		ldr	r3, [r3, #0]
+ 265              		cmp	r3, #4
+ 266              		ldrls	pc, [pc, r3, asl #2]
+ 267 01bc FF0000E2 		b	.L68
+ 268              		.p2align 2
+ 269 01c0 8300001A 	.L43:
+ 270              		.word	.L39
+ 271 01c4 14329FE5 		.word	.L40
+ 272 01c8 003093E5 		.word	.L41
+ 273 01cc 040053E3 		.word	.L41
+ 274 01d0 03F19F97 		.word	.L42
+ 275 01d4 7E0000EA 	.L39:
+ 276              		.loc 1 284 0
+ 277              		ldr	r4, .L73+4
+ 278 01d8 EC010000 		mov	r2, #32
+ 279 01dc D4020000 		mov	r1, r4
+ 280 01e0 70030000 	.LVL10:
+ 281 01e4 70030000 		bl	USBHwEPRead
+ 282 01e8 8C030000 	.LVL11:
+ 283              	.LBB6:
+ 284              	.LBB7:
+ 285 01ec F0419FE5 		.loc 1 129 0
+ 286 01f0 2020A0E3 		cmp	r0, #31
+ 287 01f4 0410A0E1 	.LBE7:
+ 288              	.LBE6:
+ 289 01f8 FEFFFFEB 		.loc 1 284 0
+ 290              		str	r0, [sp, #0]
+ 291              	.LVL12:
+ 292              	.LBB8:
+ 293              	.LBB9:
+ 294 01fc 1F0050E3 		.loc 1 129 0
+ 295              		bne	.L44
+ 296              		.loc 1 134 0
+ 297              		ldr	r2, [r4, #0]
+ 298 0200 00008DE5 		ldr	r3, .L73+8
+ 299              		cmp	r2, r3
+ 300              		bne	.L44
+ 301              		.loc 1 141 0
+ 302              		ldrb	lr, [r4, #13]	@ zero_extendqisi2
+ 303 0204 0A00001A 		cmp	lr, #0
+ 304              		bne	.L44
+ 305 0208 002094E5 		.loc 1 146 0
+ 306 020c D4319FE5 		ldrb	r1, [r4, #14]	@ zero_extendqisi2
+ 307 0210 030052E1 		sub	r3, r1, #1
+ 308 0214 0600001A 		cmp	r3, #15
+ 309              		bls	.L48
+ 310 0218 0DE0D4E5 	.L44:
+ 311 021c 00005EE3 	.LBE9:
+ 312 0220 0300001A 	.LBE8:
+ 313              		.loc 1 290 0
+ 314 0224 0E10D4E5 		mov	r0, #133
+ 315 0228 013041E2 		mov	r1, #1
+ 316 022c 0F0053E3 		bl	USBHwEPStall
+ 317 0230 5900009A 		.loc 1 291 0
+ 318              		mov	r0, #2
+ 319              		mov	r1, #1
+ 320              		bl	USBHwEPStall
+ 321              		.loc 1 292 0
+ 322 0234 8500A0E3 		mov	r2, #4
+ 323 0238 0110A0E3 		b	.L70
+ 324 023c FEFFFFEB 	.L69:
+ 325              		.loc 1 314 0
+ 326 0240 0200A0E3 		ldr	r2, [sp, #0]
+ 327 0244 0110A0E3 		cmp	r2, #0
+ 328 0248 FEFFFFEB 		ble	.L51
+ 329              		tst	r4, #128
+ 330 024c 0420A0E3 	.LVL13:
+ 331 0250 4A0000EA 		ldr	r3, [sp, #4]
+ 332              		beq	.L53
+ 333              	.LVL14:
+ 334 0254 00209DE5 		cmp	r3, #0
+ 335 0258 000052E3 		beq	.L55
+ 336 025c 0B0000DA 		b	.L51
+ 337 0260 800014E3 	.L53:
+ 338              		cmp	r3, #0
+ 339 0264 04309DE5 		beq	.L51
+ 340 0268 0200000A 	.LVL15:
+ 341              	.L55:
+ 342 026c 000053E3 		.loc 1 319 0
+ 343 0270 0200000A 		bl	BOTStall
+ 344 0274 050000EA 		.loc 1 320 0
+ 345              		mov	r0, #2
+ 346 0278 000053E3 	.LVL16:
+ 347 027c 0300000A 	.L71:
+ 348              		bl	SendCSW
+ 349              		b	.L68
+ 350              	.LVL17:
+ 351 0280 74FFFFEB 	.L51:
+ 352              		.loc 1 325 0
+ 353 0284 0200A0E3 		ldr	r3, .L73+4
+ 354              	.LVL18:
+ 355              		ldr	r3, [r3, #8]
+ 356 0288 5CFFFFEB 		cmp	r2, r3
+ 357 028c 500000EA 		bhi	.L55
+ 358              		.loc 1 333 0
+ 359              		ldr	r3, .L73+12
+ 360              		.loc 1 334 0
+ 361 0290 4C319FE5 		cmp	r2, #0
+ 362              		.loc 1 333 0
+ 363 0294 083093E5 		str	r2, [r3, #0]
+ 364 0298 030052E1 		.loc 1 334 0
+ 365 029c F7FFFF8A 		beq	.L58
+ 366              		ldr	r3, [sp, #4]
+ 367 02a0 44319FE5 		cmp	r3, #0
+ 368              		.loc 1 343 0
+ 369 02a4 000052E3 		moveq	r2, #1
+ 370              		.loc 1 334 0
+ 371 02a8 002083E5 		beq	.L70
+ 372              	.L58:
+ 373 02ac 0300000A 		.loc 1 337 0
+ 374 02b0 04309DE5 		ldr	r3, .L73
+ 375 02b4 000053E3 		mov	r2, #2
+ 376              		str	r2, [r3, #0]
+ 377 02b8 0120A003 		.loc 1 338 0
+ 378              		bl	HandleDataIn
+ 379 02bc 2F00000A 		b	.L68
+ 380              	.LVL19:
+ 381              	.L40:
+ 382 02c0 18319FE5 	.LBB10:
+ 383 02c4 0220A0E3 	.LBB11:
+ 384 02c8 002083E5 		.loc 1 231 0
+ 385              		ldr	r5, .L73+16
+ 386 02cc 70FFFFEB 		ldr	r3, .L73+12
+ 387 02d0 3F0000EA 		ldr	r1, [r5, #0]
+ 388              	.LVL20:
+ 389              		ldr	r2, [r3, #0]
+ 390              		cmp	r1, r2
+ 391              		bcs	.L61
+ 392              	.LBE11:
+ 393 02d4 14519FE5 		.loc 1 234 0
+ 394 02d8 0C319FE5 		ldr	r4, .L73+20
+ 395 02dc 001095E5 		rsb	r2, r1, r2
+ 396              		mov	r0, #2
+ 397 02e0 002093E5 	.LVL21:
+ 398 02e4 020051E1 		ldr	r1, [r4, #0]
+ 399 02e8 1400002A 		bl	USBHwEPRead
+ 400              		mov	r6, r0
+ 401              	.LVL22:
+ 402 02ec 00419FE5 		.loc 1 236 0
+ 403 02f0 022061E0 		ldr	r0, .L73+4
+ 404 02f4 0200A0E3 		ldr	r3, [r5, #0]
+ 405              		ldrb	r1, [r0, #14]	@ zero_extendqisi2
+ 406 02f8 001094E5 		ldr	r2, [r4, #0]
+ 407 02fc FEFFFFEB 		add	r0, r0, #15
+ 408 0300 0060A0E1 		bl	SCSIHandleData
+ 409              	.LBB12:
+ 410              		.loc 1 237 0
+ 411 0304 D8009FE5 		cmp	r0, #0
+ 412 0308 003095E5 		.loc 1 243 0
+ 413 030c 0E10D0E5 		ldrne	r3, [r5, #0]
+ 414 0310 002094E5 		addne	r3, r3, r6
+ 415 0314 0F0080E2 		.loc 1 236 0
+ 416 0318 FEFFFFEB 		str	r0, [r4, #0]
+ 417              		.loc 1 243 0
+ 418              		strne	r3, [r5, #0]
+ 419 031c 000050E3 		.loc 1 237 0
+ 420              		bne	.L61
+ 421 0320 00309515 	.LVL23:
+ 422 0324 06308310 	.L72:
+ 423              		.loc 1 239 0
+ 424 0328 000084E5 		bl	BOTStall
+ 425              		.loc 1 240 0
+ 426 032c 00308515 		mov	r0, #1
+ 427              		b	.L71
+ 428 0330 0200001A 	.LVL24:
+ 429              	.L61:
+ 430              		.loc 1 247 0
+ 431              		ldr	r3, .L73+16
+ 432 0334 47FFFFEB 		ldr	r2, [r3, #0]
+ 433              		ldr	r3, .L73+12
+ 434 0338 0100A0E3 		ldr	r3, [r3, #0]
+ 435 033c D1FFFFEA 		cmp	r2, r3
+ 436              		bne	.L68
+ 437              		.loc 1 249 0
+ 438              		ldr	r3, .L73+4
+ 439 0340 A8309FE5 		ldr	r3, [r3, #8]
+ 440 0344 002093E5 		cmp	r2, r3
+ 441 0348 9C309FE5 		.loc 1 253 0
+ 442 034c 003093E5 		blne	BOTStall
+ 443 0350 030052E1 	.LVL25:
+ 444 0354 1E00001A 	.L66:
+ 445              		.loc 1 255 0
+ 446 0358 84309FE5 		mov	r0, #0
+ 447 035c 083093E5 	.LVL26:
+ 448 0360 030052E1 		b	.L71
+ 449              	.LVL27:
+ 450 0364 3BFFFF1B 	.L41:
+ 451              	.LBE12:
+ 452              	.LBE10:
+ 453              		.loc 1 353 0
+ 454 0368 0000A0E3 		mov	r1, #0
+ 455              	.LVL28:
+ 456 036c C5FFFFEA 		mov	r2, r1
+ 457              		bl	USBHwEPRead
+ 458              	.LVL29:
+ 459              		.loc 1 355 0
+ 460              		mov	r2, #0
+ 461              	.LVL30:
+ 462 0370 0010A0E3 	.L70:
+ 463              		ldr	r3, .L73
+ 464 0374 0120A0E1 	.LVL31:
+ 465 0378 FEFFFFEB 		str	r2, [r3, #0]
+ 466              		b	.L68
+ 467              	.LVL32:
+ 468 037c 0020A0E3 	.L42:
+ 469              		.loc 1 360 0
+ 470              		mov	r0, #2
+ 471 0380 58309FE5 	.LVL33:
+ 472              		mov	r1, #1
+ 473 0384 002083E5 	.LVL34:
+ 474 0388 110000EA 		bl	USBHwEPStall
+ 475              		b	.L68
+ 476              	.LVL35:
+ 477              	.L48:
+ 478 038c 0200A0E3 		.loc 1 300 0
+ 479              		ldr	ip, .L73+12
+ 480 0390 0110A0E3 		str	lr, [ip, #0]
+ 481              		.loc 1 299 0
+ 482 0394 FEFFFFEB 		ldr	ip, .L73+16
+ 483 0398 0D0000EA 		.loc 1 304 0
+ 484              		add	r0, r4, #15
+ 485              		add	r3, sp, #4
+ 486              		mov	r2, sp
+ 487 039c 48C09FE5 		.loc 1 299 0
+ 488 03a0 00E08CE5 		str	lr, [ip, #0]
+ 489              		.loc 1 301 0
+ 490 03a4 44C09FE5 		ldrb	r4, [r4, #12]	@ zero_extendqisi2
+ 491              		.loc 1 304 0
+ 492 03a8 0F0084E2 		bl	SCSIHandleCmd
+ 493 03ac 04308DE2 		ldr	r3, .L73+20
+ 494 03b0 0D20A0E1 		.loc 1 305 0
+ 495              		cmp	r0, #0
+ 496 03b4 00E08CE5 		.loc 1 304 0
+ 497              		str	r0, [r3, #0]
+ 498 03b8 0C40D4E5 		.loc 1 305 0
+ 499              		bne	.L69
+ 500 03bc FEFFFFEB 		b	.L72
+ 501 03c0 2C309FE5 	.LVL36:
+ 502              	.L68:
+ 503 03c4 000050E3 		.loc 1 368 0
+ 504              		add	sp, sp, #8
+ 505 03c8 000083E5 		ldmfd	sp!, {r4, r5, r6, lr}
+ 506              		bx	lr
+ 507 03cc A0FFFF1A 	.L74:
+ 508 03d0 D7FFFFEA 		.align	2
+ 509              	.L73:
+ 510              		.word	eState
+ 511              		.word	CBW
+ 512 03d4 08D08DE2 		.word	1128420181
+ 513 03d8 7040BDE8 		.word	dwTransferSize
+ 514 03dc 1EFF2FE1 		.word	dwOffset
+ 515              		.word	pbData
+ 516              	.LFE8:
+ 518 03e0 38000000 		.align	2
+ 519 03e4 08000000 		.global	MSCBotReset
+ 521 03ec 00000000 	MSCBotReset:
+ 522 03f0 04000000 	.LFB2:
+ 523 03f4 3C000000 		.loc 1 88 0
+ 524              		@ Function supports interworking.
+ 525              		@ args = 0, pretend = 0, frame = 0
+ 526              		@ frame_needed = 0, uses_anonymous_args = 0
+ 527              		.loc 1 91 0
+ 528              		ldr	r3, .L77
+ 529              		mov	r2, #0
+ 530              		.loc 1 88 0
+ 531              		str	lr, [sp, #-4]!
+ 532              	.LCFI5:
+ 533              		.loc 1 91 0
+ 534              		str	r2, [r3, #0]
+ 535              		.loc 1 93 0
+ 536 03f8 14309FE5 		bl	SCSIReset
+ 537 03fc 0020A0E3 		.loc 1 94 0
+ 538              		ldr	lr, [sp], #4
+ 539 0400 04E02DE5 		bx	lr
+ 540              	.L78:
+ 541              		.align	2
+ 542 0404 002083E5 	.L77:
+ 543              		.word	eState
+ 544 0408 FEFFFFEB 	.LFE2:
+ 546 040c 04E09DE4 		.bss
+ 547 0410 1EFF2FE1 		.align	2
+ 548              	dwTransferSize:
+ 549              		.space	4
+ 550              		.align	2
+ 551 0414 38000000 	dwOffset:
+ 552              		.space	4
+ 553              		.align	2
+ 554              	CBW:
+ 555              		.space	32
+ 556              		.align	2
+ 557 0000 00000000 	CSW:
+ 558              		.space	16
+ 559              		.align	2
+ 560 0004 00000000 	eState:
+ 561              		.space	4
+ 562              		.align	2
+ 563 0008 00000000 	pbData:
+ 563      00000000 
+ 563      00000000 
+ 563      00000000 
+ 563      00000000 
+ 564              		.space	4
+ 565              		.section	.debug_frame,"",%progbits
+ 566 0028 00000000 	.Lframe0:
+ 566      00000000 
+ 566      00000000 
+ 566      00000000 
+ 567              		.4byte	.LECIE0-.LSCIE0
+ 568              	.LSCIE0:
+ 569 0038 00000000 		.4byte	0xffffffff
+ 570              		.byte	0x1
+ 571              		.ascii	"\000"
+ 572 003c 00000000 		.uleb128 0x1
+ 690              		.4byte	0x0
+DEFINED SYMBOLS
+                            *ABS*:00000000 msc_bot.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:12     .text:00000000 SendCSW
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:22     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:58     .text:00000044 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:562    .bss:00000008 CBW
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:556    .bss:00000000 dwTransferSize
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:565    .bss:00000028 CSW
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:568    .bss:00000038 eState
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:67     .text:00000058 BOTStall
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:73     .text:00000058 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:97     .text:00000090 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:102    .text:00000094 HandleDataIn
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:108    .text:00000094 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:182    .text:0000013c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:571    .bss:0000003c pbData
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:559    .bss:00000004 dwOffset
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:191    .text:0000014c MSCBotBulkIn
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:198    .text:0000014c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:245    .text:000001a8 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:252    .text:000001b0 MSCBotBulkOut
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:259    .text:000001b0 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:278    .text:000001d8 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:285    .text:000001ec $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:518    .text:000003e0 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:529    .text:000003f8 MSCBotReset
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:536    .text:000003f8 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccAVaaaa.s:551    .text:00000414 $d
+
+UNDEFINED SYMBOLS
+USBHwEPStall
+SCSIHandleData
+USBHwEPWrite
+USBHwEPRead
+SCSIHandleCmd
+SCSIReset

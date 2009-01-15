@@ -1,0 +1,635 @@
+   1              		.file	"rprintf.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	rprintf_devopen
+  13              	rprintf_devopen:
+  14              	.LFB2:
+  15              		.file 1 "../lib/rprintf.c"
+   1:../lib/rprintf.c **** //#########################################################################
+   2:../lib/rprintf.c **** // printf.c
+   3:../lib/rprintf.c **** //
+   4:../lib/rprintf.c **** // *** printf() based on sprintf() from gcctest9.c Volker Oth
+   5:../lib/rprintf.c **** //
+   6:../lib/rprintf.c **** // *** Changes made by Holger Klabunde
+   7:../lib/rprintf.c **** // Now takes format strings from FLASH (was into RAM ! before)
+   8:../lib/rprintf.c **** // Fixed bug for %i, %I. u_val was used before it had the right value
+   9:../lib/rprintf.c **** // Added %d, %D (is same as %i, %I)
+  10:../lib/rprintf.c **** // Support for long variables %li, %ld, %Lu, %LX ....
+  11:../lib/rprintf.c **** // %x, %X now gives upper case hex characters A,B,C,D,E,F
+  12:../lib/rprintf.c **** // Output can be redirected in a single function: myputchar()
+  13:../lib/rprintf.c **** // Make printf() smaller by commenting out a few #defines
+  14:../lib/rprintf.c **** // Added some SPACE and ZERO padding %02x or % 3u up to 9 characters
+  15:../lib/rprintf.c **** //
+  16:../lib/rprintf.c **** // Todo:
+  17:../lib/rprintf.c **** // %f, %F for floating point numbers
+  18:../lib/rprintf.c **** //
+  19:../lib/rprintf.c **** // *** Changes made by Martin Thomas for the efsl debug output:
+  20:../lib/rprintf.c **** // - removed AVR "progmem"
+  21:../lib/rprintf.c **** // - added function pointer for "putchar"
+  22:../lib/rprintf.c **** // - devopen function
+  23:../lib/rprintf.c **** //
+  24:../lib/rprintf.c **** //#########################################################################
+  25:../lib/rprintf.c **** 
+  26:../lib/rprintf.c **** #include <stdarg.h>
+  27:../lib/rprintf.c **** #include <string.h>
+  28:../lib/rprintf.c **** #include "rprintf.h"
+  29:../lib/rprintf.c **** #include "MP3Dev.h" //Needed for delay_ms
+  30:../lib/rprintf.c **** 
+  31:../lib/rprintf.c **** #define SCRATCH 12  //32Bits go up to 4GB + 1 Byte for \0
+  32:../lib/rprintf.c **** 
+  33:../lib/rprintf.c **** //Spare some program space by making a comment of all not used format flag lines
+  34:../lib/rprintf.c **** #define USE_LONG    // %lx, %Lu and so on, else only 16 bit integer is allowed
+  35:../lib/rprintf.c **** //#define USE_OCTAL // %o, %O Octal output. Who needs this ?
+  36:../lib/rprintf.c **** #define USE_STRING      // %s, %S Strings as parameters
+  37:../lib/rprintf.c **** #define USE_CHAR    // %c, %C Chars as parameters
+  38:../lib/rprintf.c **** #define USE_INTEGER // %i, %I Remove this format flag. %d, %D does the same
+  39:../lib/rprintf.c **** #define USE_HEX     // %x, %X Hexadezimal output
+  40:../lib/rprintf.c **** #define USE_UPPERHEX    // %x, %X outputs A,B,C... else a,b,c...
+  41:../lib/rprintf.c **** #ifndef USE_HEX
+  42:../lib/rprintf.c ****     #undef USE_UPPERHEX    // ;)
+  43:../lib/rprintf.c **** #endif
+  44:../lib/rprintf.c **** #define USE_UPPER   // uncommenting this removes %C,%D,%I,%O,%S,%U,%X and %L..
+  45:../lib/rprintf.c **** // only lowercase format flags are used
+  46:../lib/rprintf.c **** #define PADDING         //SPACE and ZERO padding
+  47:../lib/rprintf.c **** 
+  48:../lib/rprintf.c **** 
+  49:../lib/rprintf.c **** static int (*putcharfunc)(int c);
+  50:../lib/rprintf.c **** 
+  51:../lib/rprintf.c **** void rprintf_devopen( int(*put)(int) )
+  52:../lib/rprintf.c **** {
+  16              	 Function supports interworking.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              		@ link register save eliminated.
+  20              	.LVL0:
+  21              		.loc 1 53 0
+  53:../lib/rprintf.c ****     putcharfunc = put;
+  22              	3, .L3
+  23 0000 04309FE5 		.loc 1 52 0
+  24              		@ lr needed for prologue
+  25              		.loc 1 53 0
+  26              		str	r0, [r3, #0]
+  27 0004 000083E5 		.loc 1 54 0
+  54:../lib/rprintf.c **** }
+  28              	
+  29 0008 1EFF2FE1 	.L4:
+  30              		.align	2
+  31              	.L3:
+  32              		.word	putcharfunc
+  33 000c 00000000 	.LFE2:
+  35              		.align	2
+  37              	myputchar:
+  38              	.LFB3:
+  39              		.loc 1 57 0
+  55:../lib/rprintf.c **** 
+  56:../lib/rprintf.c **** static void myputchar(unsigned char c)
+  57:../lib/rprintf.c **** {
+  40              	 supports interworking.
+  41              		@ args = 0, pretend = 0, frame = 0
+  42              		@ frame_needed = 0, uses_anonymous_args = 0
+  43              	.LVL1:
+  44              		stmfd	sp!, {r4, lr}
+  45 0010 10402DE9 	.LCFI0:
+  46              		.loc 1 57 0
+  47              		and	r4, r0, #255
+  48 0014 FF4000E2 		.loc 1 58 0
+  58:../lib/rprintf.c ****     if(c == '\n') putcharfunc('\r');
+  49              	#10
+  50 0018 0A0054E3 		mov	r0, #13
+  51 001c 0D00A0E3 	.LVL2:
+  52              		ldreq	r3, .L9
+  53 0020 24309F05 		ldreq	ip, [r3, #0]
+  54 0024 00C09305 		moveq	lr, pc
+  55 0028 0FE0A001 		bxeq	ip
+  56 002c 1CFF2F01 	.L6:
+  57              		.loc 1 59 0
+  59:../lib/rprintf.c ****     putcharfunc(c);
+  58              	r4
+  59 0030 0400A0E1 		ldr	r3, .L9
+  60 0034 10309FE5 		ldr	ip, [r3, #0]
+  61 0038 00C093E5 		mov	lr, pc
+  62 003c 0FE0A0E1 		bx	ip
+  63 0040 1CFF2FE1 		.loc 1 60 0
+  60:../lib/rprintf.c **** }
+  64              		sp!, {r4, lr}
+  65 0044 1040BDE8 		bx	lr
+  66 0048 1EFF2FE1 	.L10:
+  67              		.align	2
+  68              	.L9:
+  69              		.word	putcharfunc
+  70 004c 00000000 	.LFE3:
+  72              		.global	__umodsi3
+  73              		.global	__udivsi3
+  74              		.align	2
+  75              		.global	rprintf
+  77              	rprintf:
+  78              	.LFB4:
+  79              		.loc 1 63 0
+  61:../lib/rprintf.c **** 
+  62:../lib/rprintf.c **** void rprintf(char const *format, ...)
+  63:../lib/rprintf.c **** {
+  80              	orts interworking.
+  81              		@ args = 4, pretend = 16, frame = 16
+  82              		@ frame_needed = 0, uses_anonymous_args = 1
+  83              	.LVL3:
+  84              		stmfd	sp!, {r0, r1, r2, r3}
+  85 0050 0F002DE9 	.LCFI1:
+  86              		stmfd	sp!, {r4, r5, r6, r7, r8, sl, lr}
+  87 0054 F0452DE9 	.LCFI2:
+  88              		sub	sp, sp, #16
+  89 0058 10D04DE2 	.LCFI3:
+  90              		.loc 1 84 0
+  64:../lib/rprintf.c ****     unsigned char scratch[SCRATCH];
+  65:../lib/rprintf.c ****     unsigned char format_flag;
+  66:../lib/rprintf.c ****     unsigned short base;
+  67:../lib/rprintf.c ****     unsigned char *ptr;
+  68:../lib/rprintf.c ****     unsigned char issigned=0;
+  69:../lib/rprintf.c ****     va_list ap;
+  70:../lib/rprintf.c **** 
+  71:../lib/rprintf.c ****     #ifdef USE_LONG
+  72:../lib/rprintf.c ****         // #warning "use long"
+  73:../lib/rprintf.c ****         unsigned char islong=0;
+  74:../lib/rprintf.c ****         unsigned long u_val=0;
+  75:../lib/rprintf.c ****         long s_val=0;
+  76:../lib/rprintf.c ****     #else
+  77:../lib/rprintf.c ****         unsigned int u_val=0;
+  78:../lib/rprintf.c ****         int s_val=0;
+  79:../lib/rprintf.c ****     #endif
+  80:../lib/rprintf.c **** 
+  81:../lib/rprintf.c ****     unsigned char fill;
+  82:../lib/rprintf.c ****     unsigned char width;
+  83:../lib/rprintf.c **** 
+  84:../lib/rprintf.c ****     va_start (ap, format);
+  91              	, #48
+  92 005c 30308DE2 		str	r3, [sp, #12]
+  93 0060 0C308DE5 	.LVL4:
+  94              		.loc 1 63 0
+  95              		ldr	r5, [sp, #44]
+  96 0064 2C509DE5 	.LVL5:
+  97              	.L67:
+  98              		.loc 1 87 0
+  85:../lib/rprintf.c ****     for (;;)
+  86:../lib/rprintf.c ****     {
+  87:../lib/rprintf.c **** 		delay_ms(1); //Added for VCOM testing - without it, rprintf will overrun the VCOM buffer causing 
+  99              	 #1
+ 100 0068 0100A0E3 		bl	delay_ms
+ 101 006c FEFFFFEB 	.LVL6:
+ 102              		b	.L13
+ 103 0070 020000EA 	.LVL7:
+ 104              	.L14:
+ 105              		.loc 1 91 0
+  88:../lib/rprintf.c **** 		
+  89:../lib/rprintf.c ****         while ((format_flag = *(format++)) != '%')
+  90:../lib/rprintf.c ****         {      // Until '%' or '\0'
+  91:../lib/rprintf.c ****             if (!format_flag){va_end (ap); return;}
+ 106              	, #0
+ 107 0074 000053E3 		beq	.L57
+ 108 0078 8E00000A 	.LVL8:
+ 109              		.loc 1 92 0
+  92:../lib/rprintf.c ****                 myputchar(format_flag);
+ 110              	myputchar
+ 111 007c E3FFFFEB 	.LVL9:
+ 112              	.L13:
+ 113              		.loc 1 89 0
+ 114              		ldrb	r3, [r5], #1	@ zero_extendqisi2
+ 115 0080 0130D5E4 	.LVL10:
+ 116              		cmp	r3, #37
+ 117 0084 250053E3 		.loc 1 92 0
+ 118              		mov	r0, r3
+ 119 0088 0300A0E1 		.loc 1 89 0
+ 120              		bne	.L14
+ 121 008c F8FFFF1A 	.LVL11:
+ 122              		.loc 1 98 0
+  93:../lib/rprintf.c ****         }
+  94:../lib/rprintf.c **** 
+  95:../lib/rprintf.c ****         issigned=0; //default unsigned
+  96:../lib/rprintf.c ****         base = 10;
+  97:../lib/rprintf.c **** 
+  98:../lib/rprintf.c ****         format_flag = *format++; //get char after '%'
+ 123              	], #1	@ zero_extendqisi2
+ 124 0090 0120D5E4 	.LVL12:
+ 125              		.loc 1 103 0
+  99:../lib/rprintf.c **** 
+ 100:../lib/rprintf.c ****         #ifdef PADDING
+ 101:../lib/rprintf.c ****             width=0; //no formatting
+ 102:../lib/rprintf.c ****             fill=0;  //no formatting
+ 103:../lib/rprintf.c ****             if(format_flag=='0' || format_flag==' ') //SPACE or ZERO padding  ?
+ 126              	p	r2, #32
+ 127 0094 200052E3 		cmpne	r2, #48
+ 128 0098 30005213 		movne	r3, #0
+ 129 009c 0030A013 		moveq	r3, #1
+ 130 00a0 0130A003 		movne	r7, r3
+ 131 00a4 0370A011 		movne	r0, r2
+ 132 00a8 0200A011 	.LVL13:
+ 133              		movne	sl, r7
+ 134 00ac 07A0A011 		bne	.L20
+ 135 00b0 0700001A 		.loc 1 106 0
+ 104:../lib/rprintf.c ****             {
+ 105:../lib/rprintf.c ****                 fill=format_flag;
+ 106:../lib/rprintf.c ****                 format_flag = *format++; //get char after padding char
+ 136              	[r5], #1	@ zero_extendqisi2
+ 137 00b4 0100D5E4 		.loc 1 107 0
+ 107:../lib/rprintf.c ****                 if(format_flag>='0' && format_flag<='9')
+ 138              	ub	r3, r0, #48
+ 139 00b8 303040E2 		and	r7, r3, #255
+ 140 00bc FF7003E2 		cmp	r7, #9
+ 141 00c0 090057E3 		.loc 1 110 0
+ 108:../lib/rprintf.c ****                 {
+ 109:../lib/rprintf.c ****                     width=format_flag-'0';
+ 110:../lib/rprintf.c ****                     format_flag = *format++; //get char after width char
+ 142              	lsb	r0, [r5], #1	@ zero_extendqisi2
+ 143 00c4 0100D594 		.loc 1 107 0
+ 144              		movhi	sl, r2
+ 145 00c8 02A0A081 		movhi	r7, #0
+ 146 00cc 0070A083 		.loc 1 110 0
+ 147              		movls	sl, r2
+ 148 00d0 02A0A091 	.L20:
+ 149              		.loc 1 118 0
+ 111:../lib/rprintf.c ****                 }
+ 112:../lib/rprintf.c ****             }
+ 113:../lib/rprintf.c ****         #endif
+ 114:../lib/rprintf.c **** 
+ 115:../lib/rprintf.c ****         #ifdef USE_LONG
+ 116:../lib/rprintf.c ****             islong=0; //default int value
+ 117:../lib/rprintf.c ****             #ifdef USE_UPPER
+ 118:../lib/rprintf.c ****             if(format_flag=='l' || format_flag=='L') //Long value
+ 150              	 #76
+ 151 00d4 4C0050E3 		cmpne	r0, #108
+ 152 00d8 6C005013 		.loc 1 124 0
+ 119:../lib/rprintf.c ****             #else
+ 120:../lib/rprintf.c ****             if(format_flag=='l') //Long value
+ 121:../lib/rprintf.c ****             #endif
+ 122:../lib/rprintf.c ****         {
+ 123:../lib/rprintf.c ****             islong=1;
+ 124:../lib/rprintf.c ****             format_flag = *format++; //get char after 'l' or 'L'
+ 153              	reqb	r0, [r5], #1	@ zero_extendqisi2
+ 154 00dc 0100D504 		.loc 1 118 0
+ 155              		movne	r3, #0
+ 156 00e0 0030A013 		moveq	r3, #1
+ 157 00e4 0130A003 		.loc 1 124 0
+ 158              		moveq	r3, #1
+ 159 00e8 0130A003 	.LVL14:
+ 160              		.loc 1 128 0
+ 125:../lib/rprintf.c ****         }
+ 126:../lib/rprintf.c ****         #endif
+ 127:../lib/rprintf.c **** 
+ 128:../lib/rprintf.c ****         switch (format_flag)
+ 161              	 #88
+ 162 00ec 580050E3 		beq	.L31
+ 163 00f0 3E00000A 		bhi	.L32
+ 164 00f4 0B00008A 		cmp	r0, #73
+ 165 00f8 490050E3 		beq	.L28
+ 166 00fc 6A00000A 		bhi	.L33
+ 167 0100 0300008A 		cmp	r0, #67
+ 168 0104 430050E3 		beq	.L27
+ 169 0108 1500000A 		cmp	r0, #68
+ 170 010c 440050E3 		b	.L66
+ 171 0110 0A0000EA 	.L33:
+ 172              		cmp	r0, #83
+ 173 0114 530050E3 		beq	.L29
+ 174 0118 1700000A 		cmp	r0, #85
+ 175 011c 550050E3 		bne	.L26
+ 176 0120 1300001A 		b	.L30
+ 177 0124 200000EA 	.L32:
+ 178              		cmp	r0, #105
+ 179 0128 690050E3 		beq	.L28
+ 180 012c 5E00000A 		bhi	.L34
+ 181 0130 0400008A 		cmp	r0, #99
+ 182 0134 630050E3 		beq	.L27
+ 183 0138 0900000A 		cmp	r0, #100
+ 184 013c 640050E3 	.L66:
+ 185              		bne	.L26
+ 186 0140 0B00001A 		b	.L28
+ 187 0144 580000EA 	.L34:
+ 188              		cmp	r0, #117
+ 189 0148 750050E3 		beq	.L30
+ 190 014c 1600000A 		cmp	r0, #120
+ 191 0150 780050E3 		beq	.L31
+ 192 0154 2500000A 		cmp	r0, #115
+ 193 0158 730050E3 		bne	.L26
+ 194 015c 0400001A 		b	.L29
+ 195 0160 050000EA 	.L27:
+ 196              		.loc 1 135 0
+ 129:../lib/rprintf.c ****         {
+ 130:../lib/rprintf.c ****             #ifdef USE_CHAR
+ 131:../lib/rprintf.c ****                 case 'c':
+ 132:../lib/rprintf.c ****                     #ifdef USE_UPPER
+ 133:../lib/rprintf.c ****                     case 'C':
+ 134:../lib/rprintf.c ****                 #endif
+ 135:../lib/rprintf.c ****                 format_flag = va_arg(ap,int);
+ 197              	r2, #4
+ 198 0164 0C209DE5 	.LVL16:
+ 199              		str	r3, [sp, #12]
+ 200 0168 043082E2 		ldrb	r0, [r2, #0]	@ zero_extendqisi2
+ 201              	.LVL17:
+ 202 016c 0C308DE5 	.L26:
+ 203 0170 0000D2E5 		.loc 1 140 0
+ 204              		bl	myputchar
+ 205              	.LVL18:
+ 136:../lib/rprintf.c ****                 // no break -> run into default
+ 137:../lib/rprintf.c ****             #endif
+ 138:../lib/rprintf.c **** 
+ 139:../lib/rprintf.c ****             default:
+ 140:../lib/rprintf.c ****                 myputchar(format_flag);
+ 206              	LVL19:
+ 207 0174 A5FFFFEB 	.L29:
+ 208              		.loc 1 148 0
+ 209 0178 BAFFFFEA 		ldr	r3, [sp, #12]
+ 210              	.LVL20:
+ 211              		ldr	r6, [r3, #0]
+ 141:../lib/rprintf.c ****                 continue;
+ 142:../lib/rprintf.c **** 
+ 143:../lib/rprintf.c ****                 #ifdef USE_STRING
+ 144:../lib/rprintf.c ****                     #ifdef USE_UPPER
+ 145:../lib/rprintf.c ****                     case 'S':
+ 146:../lib/rprintf.c ****                 #endif
+ 147:../lib/rprintf.c ****                 case 's':
+ 148:../lib/rprintf.c ****                 ptr = (unsigned char*)va_arg(ap,char *);
+ 212              	4, #0
+ 213 017c 0C309DE5 	.LVL21:
+ 214              		add	r3, r3, #4
+ 215 0180 006093E5 		str	r3, [sp, #12]
+ 216 0184 0040A0E3 		b	.L35
+ 217              	.LVL22:
+ 218 0188 043083E2 	.L36:
+ 219 018c 0C308DE5 		.loc 1 149 0
+ 220 0190 000000EA 		bl	myputchar
+ 221              	.LVL23:
+ 222              	.L35:
+ 149:../lib/rprintf.c ****                 while(*ptr) { myputchar(*ptr); ptr++; }
+ 223              	r4, r6]	@ zero_extendqisi2
+ 224 0194 9DFFFFEB 		subs	r0, r3, #0
+ 225              	.LVL24:
+ 226              		add	r4, r4, #1
+ 227 0198 0630D4E7 		bne	.L36
+ 228 019c 000053E2 		b	.L67
+ 229              	.LVL25:
+ 230 01a0 014084E2 	.L30:
+ 231 01a4 FAFFFF1A 		.loc 1 191 0
+ 232 01a8 AEFFFFEA 		mov	r8, #10
+ 233              		b	.L37
+ 234              	.L38:
+ 150:../lib/rprintf.c ****                     continue;
+ 151:../lib/rprintf.c ****                 #endif
+ 152:../lib/rprintf.c **** 
+ 153:../lib/rprintf.c ****                 #ifdef USE_OCTAL
+ 154:../lib/rprintf.c ****                     case 'o':
+ 155:../lib/rprintf.c ****                     #ifdef USE_UPPER
+ 156:../lib/rprintf.c ****                     case 'O':
+ 157:../lib/rprintf.c ****                 #endif
+ 158:../lib/rprintf.c ****                 base = 8;
+ 159:../lib/rprintf.c ****                 myputchar('0');
+ 160:../lib/rprintf.c ****                 goto CONVERSION_LOOP;
+ 161:../lib/rprintf.c ****                 #endif
+ 162:../lib/rprintf.c **** 
+ 163:../lib/rprintf.c ****                 #ifdef USE_INTEGER //don't use %i, is same as %d
+ 164:../lib/rprintf.c ****                     case 'i':
+ 165:../lib/rprintf.c ****                     #ifdef USE_UPPER
+ 166:../lib/rprintf.c ****                     case 'I':
+ 167:../lib/rprintf.c ****                 #endif
+ 168:../lib/rprintf.c ****                 #endif
+ 169:../lib/rprintf.c ****                 case 'd':
+ 170:../lib/rprintf.c ****                 #ifdef USE_UPPER
+ 171:../lib/rprintf.c ****                     case 'D':
+ 172:../lib/rprintf.c ****                 #endif
+ 173:../lib/rprintf.c ****                 issigned=1;
+ 174:../lib/rprintf.c ****                 // no break -> run into next case
+ 175:../lib/rprintf.c ****             case 'u':
+ 176:../lib/rprintf.c ****                 #ifdef USE_UPPER
+ 177:../lib/rprintf.c ****                     case 'U':
+ 178:../lib/rprintf.c ****                 #endif
+ 179:../lib/rprintf.c **** 
+ 180:../lib/rprintf.c ****                 //don't insert some case below this if USE_HEX is undefined !
+ 181:../lib/rprintf.c ****                 //or put       goto CONVERSION_LOOP;  before next case.
+ 182:../lib/rprintf.c ****                 #ifdef USE_HEX
+ 183:../lib/rprintf.c ****                     goto CONVERSION_LOOP;
+ 184:../lib/rprintf.c ****                     case 'x':
+ 185:../lib/rprintf.c ****                     #ifdef USE_UPPER
+ 186:../lib/rprintf.c ****                     case 'X':
+ 187:../lib/rprintf.c ****                 #endif
+ 188:../lib/rprintf.c ****                 base = 16;
+ 189:../lib/rprintf.c ****                 #endif
+ 190:../lib/rprintf.c **** 
+ 191:../lib/rprintf.c ****                 CONVERSION_LOOP:
+ 235              	0
+ 236 01ac 0A80A0E3 		ldr	r3, [sp, #12]
+ 237 01b0 0F0000EA 	.LVL26:
+ 238              		ldr	r4, [r3, #0]
+ 192:../lib/rprintf.c **** 
+ 193:../lib/rprintf.c ****                 if(issigned) //Signed types
+ 194:../lib/rprintf.c ****                 {
+ 195:../lib/rprintf.c ****                     #ifdef USE_LONG
+ 196:../lib/rprintf.c ****                         if(islong) { s_val = va_arg(ap,long); }
+ 239              	27:
+ 240 01b4 0C309DE5 		add	r3, r3, #4
+ 241              		str	r3, [sp, #12]
+ 242 01b8 004093E5 		b	.L39
+ 243              	.LVL28:
+ 244 01bc 043083E2 	.L64:
+ 245 01c0 0C308DE5 		.loc 1 197 0
+ 246 01c4 030000EA 		ldr	r2, [sp, #12]
+ 247              	.LVL29:
+ 248              		add	r3, r2, #4
+ 197:../lib/rprintf.c ****                             else { s_val = va_arg(ap,int); }
+ 249              	tr	r3, [sp, #12]
+ 250 01c8 0C209DE5 		ldr	r4, [r2, #0]
+ 251              	.LVL31:
+ 252 01cc 043082E2 	.L39:
+ 253              		.loc 1 202 0
+ 254 01d0 0C308DE5 		cmp	r4, #0
+ 255 01d4 004092E5 		.loc 1 205 0
+ 256              		movlt	r0, #45
+ 257              	.LVL32:
+ 198:../lib/rprintf.c ****                         #else
+ 199:../lib/rprintf.c ****                         s_val = va_arg(ap,int);
+ 200:../lib/rprintf.c ****                     #endif
+ 201:../lib/rprintf.c **** 
+ 202:../lib/rprintf.c ****                     if(s_val < 0) //Value negativ ?
+ 258              	04 0
+ 259 01d8 000054E3 		rsblt	r4, r4, #0
+ 203:../lib/rprintf.c ****                     {
+ 204:../lib/rprintf.c ****                         s_val = - s_val; //Make it positiv
+ 205:../lib/rprintf.c ****                         myputchar('-');    //Output sign
+ 260              	loc 1 205 0
+ 261 01dc 2D00A0B3 		bllt	myputchar
+ 262              	.LVL33:
+ 263              	.L41:
+ 264 01e0 004064B2 		.loc 1 208 0
+ 265              		mov	r8, #10
+ 266 01e4 89FFFFBB 		b	.L43
+ 267              	.LVL34:
+ 268              	.L31:
+ 206:../lib/rprintf.c ****                     }
+ 207:../lib/rprintf.c **** 
+ 208:../lib/rprintf.c ****                     u_val = (unsigned long)s_val;
+ 269              	#16
+ 270 01e8 0A80A0E3 	.L37:
+ 271 01ec 080000EA 		ldr	r2, [sp, #12]
+ 272              	.LVL35:
+ 273              		.loc 1 213 0
+ 274 01f0 1080A0E3 		cmp	r3, #0
+ 275              		addne	r3, r2, #4
+ 276 01f4 0C209DE5 	.LVL36:
+ 277              		.loc 1 214 0
+ 209:../lib/rprintf.c ****                 }
+ 210:../lib/rprintf.c ****                 else //Unsigned types
+ 211:../lib/rprintf.c ****                 {
+ 212:../lib/rprintf.c ****                     #ifdef USE_LONG
+ 213:../lib/rprintf.c ****                         if(islong) { u_val = va_arg(ap,unsigned long); }
+ 278              	, r2, #4
+ 279 01f8 000053E3 		.loc 1 213 0
+ 280 01fc 04308212 		ldrne	r4, [r2, #0]
+ 281              	.LVL37:
+ 214:../lib/rprintf.c ****                             else { u_val = va_arg(ap,unsigned int); }
+ 282              	ne	r3, [sp, #12]
+ 283 0200 04308202 		.loc 1 214 0
+ 284              		streq	r3, [sp, #12]
+ 285 0204 00409215 		ldreq	r4, [r2, #0]
+ 286              	.LVL38:
+ 287 0208 0C308D15 	.L43:
+ 288              		.loc 1 221 0
+ 289 020c 0C308D05 		mov	r3, #0
+ 290 0210 00409205 		strb	r3, [sp, #11]
+ 291              		add	r6, sp, #11
+ 292              	.LVL39:
+ 215:../lib/rprintf.c ****                         #else
+ 216:../lib/rprintf.c ****                         u_val = va_arg(ap,unsigned int);
+ 217:../lib/rprintf.c ****                     #endif
+ 218:../lib/rprintf.c ****                 }
+ 219:../lib/rprintf.c **** 
+ 220:../lib/rprintf.c ****                 ptr = scratch + SCRATCH;
+ 221:../lib/rprintf.c ****                 *--ptr = 0;
+ 293              	0:
+ 294 0214 0030A0E3 	.LBB2:
+ 295 0218 0B30CDE5 		.loc 1 224 0
+ 296 021c 0B608DE2 		mov	r0, r4
+ 297              	.LVL41:
+ 298              		mov	r1, r8
+ 299              		bl	__umodsi3
+ 300              	.LVL42:
+ 222:../lib/rprintf.c ****                 do
+ 223:../lib/rprintf.c ****                 {
+ 224:../lib/rprintf.c ****                     char ch = u_val % base + '0';
+ 301              	 r0, #48
+ 302 0220 0400A0E1 		and	r3, r0, #255
+ 303              	.LVL43:
+ 304 0224 0810A0E1 		.loc 1 226 0
+ 305 0228 FEFFFFEB 		cmp	r3, #57
+ 306              		.loc 1 230 0
+ 307 022c 300080E2 		add	r2, r3, #7
+ 308 0230 FF3000E2 		andhi	r3, r2, #255
+ 309              		.loc 1 234 0
+ 225:../lib/rprintf.c ****                     #ifdef USE_HEX
+ 226:../lib/rprintf.c ****                         if (ch > '9')
+ 310              	 [r6, #-1]
+ 311 0234 390053E3 		.loc 1 235 0
+ 227:../lib/rprintf.c ****                         {
+ 228:../lib/rprintf.c ****                             ch += 'a' - '9' - 1;
+ 229:../lib/rprintf.c ****                             #ifdef USE_UPPERHEX
+ 230:../lib/rprintf.c ****                             ch-=0x20;
+ 312              	ov	r0, r4
+ 313 0238 072083E2 		mov	r1, r8
+ 314 023c FF300282 		bl	__udivsi3
+ 231:../lib/rprintf.c ****                         #endif
+ 232:../lib/rprintf.c ****                     }
+ 233:../lib/rprintf.c ****                     #endif
+ 234:../lib/rprintf.c ****                     *--ptr = ch;
+ 315              	L44:
+ 316 0240 013046E5 		.loc 1 238 0
+ 235:../lib/rprintf.c ****                     u_val /= base;
+ 317              	mp	r7, #0
+ 318 0244 0400A0E1 		sub	r3, r7, #1
+ 319 0248 0810A0E1 		andne	r7, r3, #255
+ 320 024c FEFFFFEB 	.LBE2:
+ 321              		.loc 1 241 0
+ 236:../lib/rprintf.c **** 
+ 237:../lib/rprintf.c ****                     #ifdef PADDING
+ 238:../lib/rprintf.c ****                         if(width) width--; //calculate number of padding chars
+ 322              	r0, #0
+ 323 0250 000057E3 	.LBB3:
+ 324 0254 013047E2 		.loc 1 238 0
+ 325 0258 FF700312 		sub	r6, r6, #1
+ 326              		.loc 1 235 0
+ 239:../lib/rprintf.c ****                     #endif
+ 240:../lib/rprintf.c ****                 }
+ 241:../lib/rprintf.c ****                 while (u_val);
+ 327              	r4, r0
+ 328 025c 000050E3 	.LBE3:
+ 329              		.loc 1 241 0
+ 330              		bne	.L46
+ 331 0260 016046E2 		mov	r1, r7
+ 332              	.LVL45:
+ 333 0264 0040A0E1 		mov	r2, r6
+ 334              		b	.L52
+ 335              	.L53:
+ 336 0268 ECFFFF1A 		.loc 1 244 0
+ 337 026c 0710A0E1 		strb	sl, [r2, #-1]!
+ 338              	.L52:
+ 339 0270 0620A0E1 		sub	r3, r7, #1
+ 340 0274 000000EA 		and	r7, r3, #255
+ 341              		cmp	r7, #255
+ 242:../lib/rprintf.c **** 
+ 243:../lib/rprintf.c ****                 #ifdef PADDING
+ 244:../lib/rprintf.c ****                     while(width--) *--ptr = fill; //insert padding chars
+ 342              	r4, r1, r6
+ 343 0278 01A062E5 	.LVL46:
+ 344              		b	.L55
+ 345 027c 013047E2 	.L56:
+ 346 0280 FF7003E2 		.loc 1 247 0
+ 347 0284 FF0057E3 		bl	myputchar
+ 348 0288 FAFFFF1A 	.LVL47:
+ 349 028c 064061E0 	.L55:
+ 350              		ldrb	r3, [r4, #0]	@ zero_extendqisi2
+ 351 0290 000000EA 		subs	r0, r3, #0
+ 352              		add	r4, r4, #1
+ 245:../lib/rprintf.c ****                 #endif
+ 246:../lib/rprintf.c **** 
+ 247:../lib/rprintf.c ****                 while(*ptr) { myputchar(*ptr); ptr++; }
+ 353              	b	.L67
+ 354 0294 5DFFFFEB 	.LVL48:
+ 355              	.L28:
+ 356              		.loc 1 196 0
+ 357 0298 0030D4E5 		cmp	r3, #0
+ 358 029c 000053E2 		bne	.L38
+ 359 02a0 014084E2 		b	.L64
+ 360 02a4 FAFFFF1A 	.LVL49:
+ 361 02a8 6EFFFFEA 	.L57:
+ 362              		.loc 1 250 0
+ 363              		add	sp, sp, #16
+ 364              		ldmfd	sp!, {r4, r5, r6, r7, r8, sl, lr}
+ 365 02ac 000053E3 		add	sp, sp, #16
+ 366 02b0 BFFFFF1A 		bx	lr
+ 367 02b4 C3FFFFEA 	.LFE4:
+ 369              		.bss
+ 248:../lib/rprintf.c ****                     }
+ 249:../lib/rprintf.c ****         }
+ 250:../lib/rprintf.c ****     }
+ 370              	func:
+ 371 02b8 10D08DE2 		.space	4
+ 372 02bc F045BDE8 		.section	.debug_frame,"",%progbits
+ 373 02c0 10D08DE2 	.Lframe0:
+ 374 02c4 1EFF2FE1 		.4byte	.LECIE0-.LSCIE0
+ 375              	.LSCIE0:
+ 376              		.4byte	0xffffffff
+ 377              		.byte	0x1
+ 378              		.ascii	"\000"
+ 379              		.uleb128 0x1
+ 380 0000 00000000 		.sleb128 -4
+ 464              		.4byte	.LFE3-.Ltext0
+DEFINED SYMBOLS
+                            *ABS*:00000000 rprintf.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:13     .text:00000000 rprintf_devopen
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:23     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:33     .text:0000000c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:379    .bss:00000000 putcharfunc
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:38     .text:00000010 myputchar
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:45     .text:00000010 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:70     .text:0000004c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:78     .text:00000050 rprintf
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccmcbaaa.s:85     .text:00000050 $a
+                             .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+__umodsi3
+__udivsi3
+delay_ms

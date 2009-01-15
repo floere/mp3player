@@ -1,0 +1,271 @@
+   1              		.file	"partition.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	partition_close
+  13              	partition_close:
+  14              	.LFB3:
+  15              		.file 1 "../lib/partition.c"
+   1:../lib/partition.c **** 
+   2:../lib/partition.c **** /* This program is free software; you can redistribute it and/or modify
+   3:../lib/partition.c ****  * it under the terms of the GNU General Public License version 2 as
+   4:../lib/partition.c ****  * published by the Free Software Foundation.
+   5:../lib/partition.c ****  */
+   6:../lib/partition.c **** 
+   7:../lib/partition.c **** #include "partition.h"
+   8:../lib/partition.c **** 
+   9:../lib/partition.c **** #include <stdlib.h>
+  10:../lib/partition.c **** #include <string.h>
+  11:../lib/partition.c **** 
+  12:../lib/partition.c **** /**
+  13:../lib/partition.c ****  * \addtogroup partition Partition table support
+  14:../lib/partition.c ****  *
+  15:../lib/partition.c ****  * Support for reading partition tables and access to partitions.
+  16:../lib/partition.c ****  *
+  17:../lib/partition.c ****  * @{
+  18:../lib/partition.c ****  */
+  19:../lib/partition.c **** /**
+  20:../lib/partition.c ****  * \file
+  21:../lib/partition.c ****  * Partition table implementation.
+  22:../lib/partition.c ****  *
+  23:../lib/partition.c ****  * \author Roland Riegel
+  24:../lib/partition.c ****  */
+  25:../lib/partition.c **** 
+  26:../lib/partition.c **** /**
+  27:../lib/partition.c ****  * Opens a partition.
+  28:../lib/partition.c ****  *
+  29:../lib/partition.c ****  * Opens a partition by its index number and returns a partition
+  30:../lib/partition.c ****  * handle which describes the opened partition.
+  31:../lib/partition.c ****  *
+  32:../lib/partition.c ****  * \note This function does not support extended partitions.
+  33:../lib/partition.c ****  *
+  34:../lib/partition.c ****  * \param[in] device_read A function pointer which is used to read from the disk.
+  35:../lib/partition.c ****  * \param[in] device_read_interval A function pointer which is used to read in constant intervals f
+  36:../lib/partition.c ****  * \param[in] device_write A function pointer which is used to write to the disk.
+  37:../lib/partition.c ****  * \param[in] index The index of the partition which should be opened, range 0 to 3.
+  38:../lib/partition.c ****  *                  A negative value is allowed as well. In this case, the partition opened is
+  39:../lib/partition.c ****  *                  not checked for existance, begins at offset zero, has a length of zero
+  40:../lib/partition.c ****  *                  and is of an unknown type.
+  41:../lib/partition.c ****  * \returns 0 on failure, a partition descriptor on success.
+  42:../lib/partition.c ****  * \see partition_close
+  43:../lib/partition.c ****  */
+  44:../lib/partition.c **** struct partition_struct* partition_open(device_read_t device_read, device_read_interval_t device_re
+  45:../lib/partition.c **** {
+  46:../lib/partition.c ****     struct partition_struct* new_partition = 0;
+  47:../lib/partition.c ****     uint8_t buffer[0x10];
+  48:../lib/partition.c **** 
+  49:../lib/partition.c ****     if(!device_read || !device_read_interval || index0 >= 4)
+  50:../lib/partition.c ****         return 0;
+  51:../lib/partition.c **** 
+  52:../lib/partition.c ****     if(index0 >= 0)
+  53:../lib/partition.c ****     {
+  54:../lib/partition.c ****         /* read specified partition table index */
+  55:../lib/partition.c ****         if(!device_read(0x01be + index0 * 0x10, buffer, sizeof(buffer)))
+  56:../lib/partition.c ****             return 0;
+  57:../lib/partition.c **** 
+  58:../lib/partition.c ****         /* abort on empty partition entry */
+  59:../lib/partition.c ****         if(buffer[4] == 0x00)
+  60:../lib/partition.c ****             return 0;
+  61:../lib/partition.c ****     }
+  62:../lib/partition.c **** 
+  63:../lib/partition.c ****     /* allocate partition descriptor */
+  64:../lib/partition.c ****     new_partition = malloc(sizeof(*new_partition));
+  65:../lib/partition.c ****     if(!new_partition)
+  66:../lib/partition.c ****         return 0;
+  67:../lib/partition.c ****     memset(new_partition, 0, sizeof(*new_partition));
+  68:../lib/partition.c **** 
+  69:../lib/partition.c ****     /* fill partition descriptor */
+  70:../lib/partition.c ****     new_partition->device_read = device_read;
+  71:../lib/partition.c ****     new_partition->device_read_interval = device_read_interval;
+  72:../lib/partition.c ****     new_partition->device_write = device_write;
+  73:../lib/partition.c **** 
+  74:../lib/partition.c ****     if(index0 >= 0)
+  75:../lib/partition.c ****     {
+  76:../lib/partition.c ****         new_partition->type = buffer[4];
+  77:../lib/partition.c ****         new_partition->offset = ((uint32_t) buffer[8]) |
+  78:../lib/partition.c ****                                 ((uint32_t) buffer[9] << 8) |
+  79:../lib/partition.c ****                                 ((uint32_t) buffer[10] << 16) |
+  80:../lib/partition.c ****                                 ((uint32_t) buffer[11] << 24);
+  81:../lib/partition.c ****         new_partition->length = ((uint32_t) buffer[12]) |
+  82:../lib/partition.c ****                                 ((uint32_t) buffer[13] << 8) |
+  83:../lib/partition.c ****                                 ((uint32_t) buffer[14] << 16) |
+  84:../lib/partition.c ****                                 ((uint32_t) buffer[15] << 24);
+  85:../lib/partition.c ****     }
+  86:../lib/partition.c ****     else
+  87:../lib/partition.c ****     {
+  88:../lib/partition.c ****         new_partition->type = 0xff;
+  89:../lib/partition.c ****     }
+  90:../lib/partition.c **** 
+  91:../lib/partition.c ****     return new_partition;
+  92:../lib/partition.c **** }
+  93:../lib/partition.c **** 
+  94:../lib/partition.c **** /**
+  95:../lib/partition.c ****  * Closes a partition.
+  96:../lib/partition.c ****  *
+  97:../lib/partition.c ****  * This function destroys a partition descriptor which was
+  98:../lib/partition.c ****  * previously obtained from a call to partition_open().
+  99:../lib/partition.c ****  * When this function returns, the given descriptor will be
+ 100:../lib/partition.c ****  * invalid.
+ 101:../lib/partition.c ****  *
+ 102:../lib/partition.c ****  * \param[in] partition The partition descriptor to destroy.
+ 103:../lib/partition.c ****  * \returns 0 on failure, 1 on success.
+ 104:../lib/partition.c ****  * \see partition_open
+ 105:../lib/partition.c ****  */
+ 106:../lib/partition.c **** uint8_t partition_close(struct partition_struct* partition)
+ 107:../lib/partition.c **** {
+  16              	@ Function supports interworking.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              	.LVL0:
+  20              		.loc 1 108 0
+ 108:../lib/partition.c **** partition)
+  21              		r3, r0, #0
+  22 0000 003050E2 		.loc 1 107 0
+  23              		str	lr, [sp, #-4]!
+  24 0004 04E02DE5 	.LCFI0:
+  25              		.loc 1 108 0
+  26              		beq	.L4
+  27 0008 0100000A 	.LVL1:
+  28              		.loc 1 112 0
+ 109:../lib/partition.c **** t* partition)
+ 110:../lib/partition.c **** {
+ 111:../lib/partition.c ****     if(!partition)
+ 112:../lib/partition.c ****         return 0;
+  29              	
+  30 000c FEFFFFEB 	.LVL2:
+  31              		mov	r3, #1
+  32 0010 0130A0E3 	.LVL3:
+  33              	.L4:
+  34              	.LVL4:
+  35              		.loc 1 115 0
+ 113:../lib/partition.c ****  return 0;
+ 114:../lib/partition.c **** 
+ 115:../lib/partition.c ****     /* destroy partition descriptor */
+  36              	0, r3
+  37 0014 0300A0E1 	.LVL5:
+  38              		ldr	lr, [sp], #4
+  39 0018 04E09DE4 		bx	lr
+  40 001c 1EFF2FE1 	.LFE3:
+  42              		.align	2
+  43              		.global	partition_open
+  45              	partition_open:
+  46              	.LFB2:
+  47              		.loc 1 45 0
+  48              		@ Function supports interworking.
+  49              		@ args = 0, pretend = 0, frame = 16
+  50              		@ frame_needed = 0, uses_anonymous_args = 0
+  51              	.LVL6:
+  52              		stmfd	sp!, {r4, r5, r6, r7, r8, lr}
+  53 0020 F0412DE9 	.LCFI1:
+  54              		.loc 1 49 0
+  55              		cmp	r1, #0
+  56 0024 000051E3 		cmpne	r0, #0
+  57 0028 00005013 		.loc 1 45 0
+  58              		sub	sp, sp, #16
+  59 002c 10D04DE2 	.LCFI2:
+  60              		.loc 1 49 0
+  61              		mov	r6, r0
+  62 0030 0060A0E1 		mov	r7, r1
+  63 0034 0170A0E1 		movne	r4, #0
+  64 0038 0040A013 		moveq	r4, #1
+  65 003c 0140A003 		.loc 1 45 0
+  66              		mov	r8, r2
+  67 0040 0280A0E1 		and	r3, r3, #255
+  68 0044 FF3003E2 		.loc 1 49 0
+  69              		beq	.L7
+  70 0048 3300000A 	.LVL7:
+  71              		mov	r3, r3, asl #24
+  72 004c 033CA0E1 	.LVL8:
+  73              		mov	r5, r3, asr #24
+  74 0050 435CA0E1 		cmp	r5, #3
+  75 0054 030055E3 		bgt	.L7
+  76 0058 2F0000CA 		.loc 1 52 0
+  77              		cmp	r5, #0
+  78 005c 000055E3 		blt	.L10
+  79 0060 0B0000BA 		.loc 1 55 0
+  80              		mov	r0, r5, asl #4
+  81 0064 0502A0E1 		add	r0, r0, #444
+  82 0068 6F0F80E2 		add	r0, r0, #2
+  83 006c 020080E2 		mov	r1, sp
+  84 0070 0D10A0E1 		mov	r2, #16
+  85 0074 1020A0E3 		mov	lr, pc
+  86 0078 0FE0A0E1 		bx	r6
+  87 007c 16FF2FE1 		cmp	r0, #0
+  88 0080 000050E3 		beq	.L7
+  89 0084 2400000A 		.loc 1 59 0
+  90              		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+  91 0088 0430DDE5 		cmp	r3, #0
+  92 008c 000053E3 		beq	.L7
+  93 0090 2100000A 	.LVL9:
+  94              	.L10:
+  95              		.loc 1 64 0
+  96              		mov	r0, #24
+  97 0094 1800A0E3 		bl	malloc
+  98 0098 FEFFFFEB 		.loc 1 65 0
+  99              		subs	r3, r0, #0
+ 100 009c 003050E2 		beq	.L7
+ 101 00a0 1D00000A 		.loc 1 67 0
+ 102              		mov	r1, r4
+ 103 00a4 0410A0E1 		mov	r2, #24
+ 104 00a8 1820A0E3 		.loc 1 64 0
+ 105              		mov	r4, r3
+ 106 00ac 0340A0E1 	.LVL10:
+ 107              		.loc 1 67 0
+ 108              		bl	memset
+ 109 00b0 FEFFFFEB 		.loc 1 74 0
+ 110              		cmp	r5, #0
+ 111 00b4 000055E3 		.loc 1 88 0
+ 112              		mvnlt	r3, #0
+ 113 00b8 0030E0B3 		.loc 1 70 0
+ 114              		stmia	r4, {r6, r7, r8}	@ phole stm
+ 115 00bc C00184E8 		.loc 1 88 0
+ 116              		strltb	r3, [r4, #12]
+ 117 00c0 0C30C4B5 		.loc 1 74 0
+ 118              		blt	.L16
+ 119 00c4 150000BA 		.loc 1 76 0
+ 120              		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 121 00c8 0430DDE5 		strb	r3, [r4, #12]
+ 122 00cc 0C30C4E5 		.loc 1 77 0
+ 123              		ldrb	r3, [sp, #10]	@ zero_extendqisi2
+ 124 00d0 0A30DDE5 		ldrb	r1, [sp, #9]	@ zero_extendqisi2
+ 125 00d4 0910DDE5 		ldrb	r0, [sp, #11]	@ zero_extendqisi2
+ 126 00d8 0B00DDE5 		ldrb	r2, [sp, #8]	@ zero_extendqisi2
+ 127 00dc 0820DDE5 		mov	r3, r3, asl #16
+ 128 00e0 0338A0E1 		orr	r3, r3, r0, asl #24
+ 129 00e4 003C83E1 		orr	r2, r2, r1, asl #8
+ 130 00e8 012482E1 		orr	r2, r2, r3
+ 131 00ec 032082E1 		str	r2, [r4, #16]
+ 132 00f0 102084E5 		.loc 1 81 0
+ 133              		ldrb	r3, [sp, #14]	@ zero_extendqisi2
+ 134 00f4 0E30DDE5 		ldrb	r2, [sp, #12]	@ zero_extendqisi2
+ 135 00f8 0C20DDE5 		ldrb	r1, [sp, #13]	@ zero_extendqisi2
+ 136 00fc 0D10DDE5 		ldrb	r0, [sp, #15]	@ zero_extendqisi2
+ 137 0100 0F00DDE5 		mov	r3, r3, asl #16
+ 138 0104 0338A0E1 		orr	r2, r2, r1, asl #8
+ 139 0108 012482E1 		orr	r3, r3, r0, asl #24
+ 140 010c 003C83E1 		orr	r2, r2, r3
+ 141 0110 032082E1 		str	r2, [r4, #20]
+ 142 0114 142084E5 		b	.L16
+ 143 0118 000000EA 	.LVL11:
+ 144              	.L7:
+ 145              		.loc 1 88 0
+ 146              		mov	r4, #0
+ 147 011c 0040A0E3 	.LVL12:
+ 148              	.L16:
+ 149              		.loc 1 92 0
+ 150              		mov	r0, r4
+ 151 0120 0400A0E1 		add	sp, sp, #16
+ 152 0124 10D08DE2 		ldmfd	sp!, {r4, r5, r6, r7, r8, lr}
+ 153 0128 F041BDE8 		bx	lr
+ 154 012c 1EFF2FE1 	.LFE2:
+ 156              		.section	.debug_frame,"",%progbits
+ 217              		.section	.debug_loc,"",%progbits
+DEFINED SYMBOLS
+                            *ABS*:00000000 partition.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccqWaaaa.s:13     .text:00000000 partition_close
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccqWaaaa.s:22     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccqWaaaa.s:46     .text:00000020 partition_open
+
+UNDEFINED SYMBOLS
+free
+malloc
+memset

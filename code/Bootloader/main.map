@@ -1,0 +1,1089 @@
+Archive member included because of file (symbol)
+
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+                              ../lib/fat16.o (free)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                              c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o) (_malloc_r)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memcpy.o)
+                              ../lib/sd_raw.o (memcpy)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memset.o)
+                              ../lib/sd_raw.o (memset)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+                              c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o) (__malloc_lock)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strchr.o)
+                              ../lib/fat16.o (strchr)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strcmp.o)
+                              ../lib/fat16.o (strcmp)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strlen.o)
+                              ../lib/fat16.o (strlen)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncmp.o)
+                              ../lib/fat16.o (strncmp)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncpy.o)
+                              ../lib/fat16.o (strncpy)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+                              ../lib/fat16.o (strrchr)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+                              c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o) (_free_r)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+                              c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o) (_impure_ptr)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+                              ../lib/rprintf.o (__udivsi3)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+                              ../lib/fat16.o (__divsi3)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+                              ../lib/rprintf.o (__umodsi3)
+c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+                              c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o) (__div0)
+
+Allocating common symbols
+Common symbol       size              file
+
+fs                  0x4               ../lib/rootdir.o
+charX               0x1               system.o
+dir_entry           0x2c              ../lib/rootdir.o
+readbuf             0x200             ../lib/firmware.o
+fd                  0x4               ../lib/rootdir.o
+charY               0x1               system.o
+partition           0x4               ../lib/rootdir.o
+dd                  0x4               ../lib/rootdir.o
+result              0x8               ../lib/firmware.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+flash            0x00000000         0x00020000
+ram_isp_low      0x40000120         0x000000df         a
+ram              0x40000200         0x00007f01
+ram_isp_high     0x4007ffe0         0x00000020         a
+ram_usb_dma      0x7fd00000         0x00002000
+CONFIG           0x0003a000         0x00001fff         rw
+test             0x00000000         0xffffffff
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD crt.o
+LOAD main.o
+LOAD system.o
+LOAD ../lib/syscalls.o
+LOAD ../lib/rprintf.o
+LOAD ../lib/serial.o
+LOAD ../lib/firmware.o
+LOAD ../lib/rootdir.o
+LOAD ../lib/sd_raw.o
+LOAD ../lib/fat16.o
+LOAD ../lib/partition.o
+LOAD LPCUSB/main_msc.o
+LOAD LPCUSB/msc_bot.o
+LOAD LPCUSB/msc_scsi.o
+LOAD LPCUSB/blockdev_sd.o
+LOAD LPCUSB/lpc2000_spi.o
+LOAD LPCUSB/usbinit.o
+LOAD LPCUSB/usbhw_lpc.o
+LOAD LPCUSB/usbcontrol.o
+LOAD LPCUSB/usbstdreq.o
+LOAD c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a
+LOAD c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libm.a
+LOAD c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a
+LOAD c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a
+START GROUP
+LOAD c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a
+LOAD c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libg.a
+LOAD c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a
+END GROUP
+                0x40007edc                _stack_end = 0x40007edc
+                0x00000000                . = 0x0
+
+startup
+ *(.startup)
+
+.bl_version_number
+                0x00000000        0x8 load address 0x000080e0
+ *(.bl_version_number)
+ .bl_version_number
+                0x00000000        0x8 main.o
+                0x00000000                bl_version
+
+.text           0x00000000     0x626c
+ *(.text)
+ .text          0x00000000       0xf4 crt.o
+                0x00000000                _startup
+                0x00000040                Reset_Handler
+ .text          0x000000f4       0xb8 main.o
+                0x000000f4                main
+ .text          0x000001ac      0x178 system.o
+                0x000001e4                system_init
+                0x000001b8                UNDEF_Routine
+                0x00000274                reset
+                0x000001b4                SWI_Routine
+                0x000001b0                FIQ_Routine
+                0x000002a4                boot_up
+                0x000001bc                delay_ms
+                0x00000258                feed
+                0x000001ac                IRQ_Routine
+ .text          0x00000324       0x64 ../lib/syscalls.o
+                0x0000033c                _lseek_r
+                0x00000344                _fstat_r
+                0x00000354                isatty
+                0x0000035c                _sbrk_r
+                0x00000324                _read_r
+                0x00000334                _close_r
+                0x0000032c                _write_r
+ .text          0x00000388      0x2c8 ../lib/rprintf.o
+                0x00000388                rprintf_devopen
+                0x000003d8                rprintf
+ .text          0x00000650      0x114 ../lib/serial.o
+                0x0000072c                getkey_serial0
+                0x00000704                putstring_serial0
+                0x00000748                getc0
+                0x00000650                init_serial0
+                0x000006a4                putchar_serial0
+                0x000006e4                putc_serial0
+ .text          0x00000764      0x16c ../lib/firmware.o
+                0x0000077c                load_fw
+                0x00000764                call_firmware
+ .text          0x000008d0      0x484 ../lib/rootdir.o
+                0x00000be8                root_disk_info
+                0x000008d0                root_file_exists
+                0x000009a8                rootDirectory_files
+                0x00000904                root_delete
+                0x00000954                root_format
+                0x00000c24                root_open_new
+                0x00000a58                rootDirectory_files_stream
+                0x00000adc                print_disk_info
+                0x00000bf8                root_open
+                0x00000c6c                openroot
+ .text          0x00000d54      0xc74 ../lib/sd_raw.o
+                0x00000d54                sd_raw_available
+                0x00001158                sd_raw_read
+                0x000017e8                format_card
+                0x000015c4                sd_raw_init
+                0x00001514                sd_raw_read_interval
+                0x00000e9c                SDoff
+                0x00000ec4                sd_raw_get_info
+                0x000014cc                sd_raw_sync
+                0x00000d88                sd_raw_locked
+                0x000012b8                sd_raw_write
+ .text          0x000019c8     0x1860 ../lib/fat16.o
+                0x0000276c                fat16_resize_file
+                0x00002484                find_file_in_dir
+                0x00002be8                fat16_close
+                0x00002074                fat16_reset_dir
+                0x00002090                fat16_delete_file
+                0x00002160                fat16_get_fs_free
+                0x0000226c                fat16_read_dir
+                0x00002910                fat16_seek_file
+                0x0000213c                fat16_get_fs_size
+                0x00002bd4                fat16_close_file
+                0x00002c7c                fat16_open_file
+                0x00001ed8                fat16_read_file
+                0x00002e64                fat16_open
+                0x00003058                fat16_create_file
+                0x00002cfc                open_file_in_dir
+                0x00002d40                fat16_get_dir_entry_of_path
+                0x000029a8                fat16_write_file
+                0x00002bfc                fat16_open_dir
+                0x00002bc0                fat16_close_dir
+                0x00002264                fat16_file_size
+ .text          0x00003228      0x130 ../lib/partition.o
+                0x00003228                partition_close
+                0x00003248                partition_open
+ .text          0x00003358      0x110 LPCUSB/main_msc.o
+                0x00003358                main_msc
+ .text          0x00003468      0x418 LPCUSB/msc_bot.o
+                0x000035b4                MSCBotBulkIn
+                0x00003860                MSCBotReset
+                0x00003618                MSCBotBulkOut
+ .text          0x00003880      0x358 LPCUSB/msc_scsi.o
+                0x000039c8                SCSIHandleData
+                0x00003894                SCSIHandleCmd
+                0x00003880                SCSIReset
+ .text          0x00003bd8      0x510 LPCUSB/blockdev_sd.o
+                0x00003e74                BlockDevRead
+                0x00003f08                BlockDevInit
+                0x00003cc8                BlockDevGetSize
+                0x00003c64                BlockDevWrite
+ .text          0x000040e8      0x1e8 LPCUSB/lpc2000_spi.o
+                0x000040e8                SPISetSpeed
+                0x00004210                SPIInit
+                0x000041ac                SPIRecvN
+                0x00004104                SPISend
+                0x00004150                SPISendN
+ .text          0x000042d0       0x74 LPCUSB/usbinit.o
+                0x000042d4                USBInit
+ .text          0x00004344      0x558 LPCUSB/usbhw_lpc.o
+                0x000045fc                USBHwEPRead
+                0x000046b0                USBHwISR
+                0x00004574                USBHwEPWrite
+                0x00004414                USBHwEPConfig
+                0x00004504                USBHwSetAddress
+                0x00004514                USBHwConnect
+                0x00004554                USBHwEPStall
+                0x000044bc                USBHwRegisterDevIntHandler
+                0x00004470                USBHwRegisterEPIntHandler
+                0x000046a0                USBHwConfigDevice
+                0x00004524                USBHwNakIntEnable
+                0x000047d8                USBHwInit
+                0x000044e0                USBHwRegisterFrameHandler
+                0x00004530                USBHwEPGetStatus
+ .text          0x0000489c      0x210 LPCUSB/usbcontrol.o
+                0x00004960                USBHandleControlTransfer
+                0x000048dc                USBRegisterRequestHandler
+ .text          0x00004aac      0x31c LPCUSB/usbstdreq.o
+                0x00004abc                USBGetDescriptor
+                0x00004b40                USBRegisterCustomReqHandler
+                0x00004aac                USBRegisterDescriptors
+                0x00004b50                USBHandleStandardRequest
+ .text          0x00004dc8       0x40 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+                0x00004de8                malloc
+                0x00004dc8                free
+ .text          0x00004e08      0x688 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                0x00004e08                _malloc_r
+ .text          0x00005490       0x20 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memcpy.o)
+                0x00005490                memcpy
+ .text          0x000054b0       0x1c c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memset.o)
+                0x000054b0                memset
+ .text          0x000054cc        0x8 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+                0x000054d0                __malloc_unlock
+                0x000054cc                __malloc_lock
+ .text          0x000054d4       0x30 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strchr.o)
+                0x000054d4                strchr
+ .text          0x00005504       0x30 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strcmp.o)
+                0x00005504                strcmp
+ .text          0x00005534       0x20 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strlen.o)
+                0x00005534                strlen
+ .text          0x00005554       0x50 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncmp.o)
+                0x00005554                strncmp
+ .text          0x000055a4       0x4c c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncpy.o)
+                0x000055a4                strncpy
+ .text          0x000055f0       0x4c c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+                0x000055f0                strrchr
+ .text          0x0000563c      0x35c c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+                0x00005738                _free_r
+                0x0000563c                _malloc_trim_r
+ .text          0x00005998        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+ .text          0x00005998      0x114 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+                0x00005998                __udivsi3
+                0x00005998                __aeabi_uidiv
+                0x00005a94                __aeabi_uidivmod
+ .text          0x00005aac      0x144 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+                0x00005aac                __aeabi_idiv
+                0x00005aac                __divsi3
+                0x00005bd8                __aeabi_idivmod
+ .text          0x00005bf0       0xd0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+                0x00005bf0                __umodsi3
+ .text          0x00005cc0        0x4 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+                0x00005cc0                __aeabi_ldiv0
+                0x00005cc0                __div0
+                0x00005cc0                __aeabi_idiv0
+ *(.rodata)
+ .rodata        0x00005cc4       0x36 LPCUSB/msc_scsi.o
+ *fill*         0x00005cfa        0x2 00
+ .rodata        0x00005cfc        0x4 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+                0x00005cfc                _global_impure_ptr
+ *(.rodata*)
+ .rodata.str1.4
+                0x00005d00       0xa0 main.o
+ .rodata.str1.4
+                0x00005da0       0x18 system.o
+ .rodata.str1.4
+                0x00005db8      0x11c ../lib/rootdir.o
+ .rodata.str1.4
+                0x00005ed4       0x7c ../lib/sd_raw.o
+ .rodata.str1.4
+                0x00005f50       0x28 ../lib/fat16.o
+ .rodata.str1.4
+                0x00005f78       0x34 LPCUSB/main_msc.o
+ .rodata.str1.4
+                0x00005fac      0x2a8 LPCUSB/blockdev_sd.o
+                                0x2ac (size before relaxing)
+ .rodata.str1.4
+                0x00006254       0x14 LPCUSB/lpc2000_spi.o
+ .rodata.str1.4
+                0x00006268        0x4 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+ *(.glue_7)
+ .glue_7        0x0000626c        0x0 crt.o
+ .glue_7        0x0000626c        0x0 main.o
+ .glue_7        0x0000626c        0x0 system.o
+ .glue_7        0x0000626c        0x0 ../lib/syscalls.o
+ .glue_7        0x0000626c        0x0 ../lib/rprintf.o
+ .glue_7        0x0000626c        0x0 ../lib/serial.o
+ .glue_7        0x0000626c        0x0 ../lib/firmware.o
+ .glue_7        0x0000626c        0x0 ../lib/rootdir.o
+ .glue_7        0x0000626c        0x0 ../lib/sd_raw.o
+ .glue_7        0x0000626c        0x0 ../lib/fat16.o
+ .glue_7        0x0000626c        0x0 ../lib/partition.o
+ .glue_7        0x0000626c        0x0 LPCUSB/main_msc.o
+ .glue_7        0x0000626c        0x0 LPCUSB/msc_bot.o
+ .glue_7        0x0000626c        0x0 LPCUSB/msc_scsi.o
+ .glue_7        0x0000626c        0x0 LPCUSB/blockdev_sd.o
+ .glue_7        0x0000626c        0x0 LPCUSB/lpc2000_spi.o
+ .glue_7        0x0000626c        0x0 LPCUSB/usbinit.o
+ .glue_7        0x0000626c        0x0 LPCUSB/usbhw_lpc.o
+ .glue_7        0x0000626c        0x0 LPCUSB/usbcontrol.o
+ .glue_7        0x0000626c        0x0 LPCUSB/usbstdreq.o
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memcpy.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memset.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strchr.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strcmp.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strlen.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncmp.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncpy.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+ .glue_7        0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+ *(.glue_7t)
+ .glue_7t       0x0000626c        0x0 crt.o
+ .glue_7t       0x0000626c        0x0 main.o
+ .glue_7t       0x0000626c        0x0 system.o
+ .glue_7t       0x0000626c        0x0 ../lib/syscalls.o
+ .glue_7t       0x0000626c        0x0 ../lib/rprintf.o
+ .glue_7t       0x0000626c        0x0 ../lib/serial.o
+ .glue_7t       0x0000626c        0x0 ../lib/firmware.o
+ .glue_7t       0x0000626c        0x0 ../lib/rootdir.o
+ .glue_7t       0x0000626c        0x0 ../lib/sd_raw.o
+ .glue_7t       0x0000626c        0x0 ../lib/fat16.o
+ .glue_7t       0x0000626c        0x0 ../lib/partition.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/main_msc.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/msc_bot.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/msc_scsi.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/blockdev_sd.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/lpc2000_spi.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/usbinit.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/usbhw_lpc.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/usbcontrol.o
+ .glue_7t       0x0000626c        0x0 LPCUSB/usbstdreq.o
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memcpy.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memset.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strchr.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strcmp.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strlen.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncmp.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncpy.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+ .glue_7t       0x0000626c        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+                0x0000626c                _etext = .
+                0x0000626c                . = ALIGN (0x4)
+
+.data           0x40000200      0x8cc load address 0x0000626c
+                0x40000200                _data = .
+ *(.data)
+ .data          0x40000200        0x0 crt.o
+ .data          0x40000200        0x0 main.o
+ .data          0x40000200        0x0 system.o
+ .data          0x40000200        0x0 ../lib/syscalls.o
+ .data          0x40000200        0x0 ../lib/rprintf.o
+ .data          0x40000200        0x0 ../lib/serial.o
+ .data          0x40000200       0x40 ../lib/firmware.o
+                0x40000218                write_command
+                0x4000022c                erase_command
+                0x40000200                iap_fn
+                0x40000204                prep_command
+ .data          0x40000240        0x0 ../lib/rootdir.o
+ .data          0x40000240        0x0 ../lib/sd_raw.o
+ .data          0x40000240        0x0 ../lib/fat16.o
+ .data          0x40000240        0x0 ../lib/partition.o
+ .data          0x40000240       0x75 LPCUSB/main_msc.o
+ .data          0x400002b5        0x0 LPCUSB/msc_bot.o
+ .data          0x400002b5        0x0 LPCUSB/msc_scsi.o
+ .data          0x400002b5        0x0 LPCUSB/blockdev_sd.o
+ .data          0x400002b5        0x0 LPCUSB/lpc2000_spi.o
+ .data          0x400002b5        0x0 LPCUSB/usbinit.o
+ .data          0x400002b5        0x0 LPCUSB/usbhw_lpc.o
+ .data          0x400002b5        0x0 LPCUSB/usbcontrol.o
+ .data          0x400002b5        0x0 LPCUSB/usbstdreq.o
+ .data          0x400002b5        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+ *fill*         0x400002b5        0x3 00
+ .data          0x400002b8      0x410 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                0x400006c4                __malloc_sbrk_base
+                0x400002b8                __malloc_av_
+                0x400006c0                __malloc_trim_threshold
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memcpy.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memset.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strchr.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strcmp.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strlen.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncmp.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncpy.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+ .data          0x400006c8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+ .data          0x400006c8      0x404 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+                0x400006c8                _impure_ptr
+ .data          0x40000acc        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .data          0x40000acc        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .data          0x40000acc        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+ .data          0x40000acc        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+                0x40000acc                _edata = .
+                0x40000acc                . = ALIGN (0x4)
+
+.bss            0x40000acc      0x768
+                0x40000acc                _bss_start = .
+ *(.bss)
+ .bss           0x40000acc        0x0 crt.o
+ .bss           0x40000acc        0x0 main.o
+ .bss           0x40000acc        0x0 system.o
+ .bss           0x40000acc        0x4 ../lib/syscalls.o
+ .bss           0x40000ad0        0x4 ../lib/rprintf.o
+ .bss           0x40000ad4        0x0 ../lib/serial.o
+ .bss           0x40000ad4        0x0 ../lib/firmware.o
+ .bss           0x40000ad4        0x4 ../lib/rootdir.o
+ .bss           0x40000ad8      0x208 ../lib/sd_raw.o
+ .bss           0x40000ce0        0x0 ../lib/fat16.o
+ .bss           0x40000ce0        0x0 ../lib/partition.o
+ .bss           0x40000ce0        0x4 LPCUSB/main_msc.o
+ .bss           0x40000ce4       0x40 LPCUSB/msc_bot.o
+ .bss           0x40000d24      0x204 LPCUSB/msc_scsi.o
+ .bss           0x40000f28        0x0 LPCUSB/blockdev_sd.o
+ .bss           0x40000f28        0x0 LPCUSB/lpc2000_spi.o
+ .bss           0x40000f28        0x8 LPCUSB/usbinit.o
+ .bss           0x40000f30       0x48 LPCUSB/usbhw_lpc.o
+ .bss           0x40000f78       0x34 LPCUSB/usbcontrol.o
+ .bss           0x40000fac        0xc LPCUSB/usbstdreq.o
+ .bss           0x40000fb8        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+ .bss           0x40000fb8       0x34 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                0x40000fb8                __malloc_top_pad
+                0x40000fbc                __malloc_max_sbrked_mem
+                0x40000fc4                __malloc_current_mallinfo
+                0x40000fc0                __malloc_max_total_mem
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memcpy.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memset.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strchr.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strcmp.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strlen.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncmp.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncpy.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+ .bss           0x40000fec        0x0 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+ COMMON         0x40000fec        0x2 system.o
+                0x40000fec                charX
+                0x40000fed                charY
+ *fill*         0x40000fee        0x2 00
+ COMMON         0x40000ff0      0x208 ../lib/firmware.o
+                0x40000ff0                readbuf
+                0x400011f0                result
+ COMMON         0x400011f8       0x3c ../lib/rootdir.o
+                0x400011f8                fs
+                0x400011fc                dir_entry
+                0x40001228                fd
+                0x4000122c                partition
+                0x40001230                dd
+                0x40001234                . = ALIGN (0x4)
+                0x40001234                _bss_end = .
+                0x40001234                _end = .
+                0x40001234                end = .
+                0x40001234                _heap = .
+                0x40002234                . = (. + 0x1000)
+OUTPUT(main.elf elf32-littlearm)
+
+.debug_line     0x00000000     0x1672
+ .debug_line    0x00000000       0x65 crt.o
+ .debug_line    0x00000065       0x46 main.o
+ .debug_line    0x000000ab       0x81 system.o
+ .debug_line    0x0000012c      0x164 ../lib/syscalls.o
+ .debug_line    0x00000290       0xc8 ../lib/rprintf.o
+ .debug_line    0x00000358       0x63 ../lib/serial.o
+ .debug_line    0x000003bb       0x78 ../lib/firmware.o
+ .debug_line    0x00000433      0x157 ../lib/rootdir.o
+ .debug_line    0x0000058a      0x22b ../lib/sd_raw.o
+ .debug_line    0x000007b5      0x4ba ../lib/fat16.o
+ .debug_line    0x00000c6f       0xcb ../lib/partition.o
+ .debug_line    0x00000d3a       0x7f LPCUSB/main_msc.o
+ .debug_line    0x00000db9      0x100 LPCUSB/msc_bot.o
+ .debug_line    0x00000eb9       0xc3 LPCUSB/msc_scsi.o
+ .debug_line    0x00000f7c      0x105 LPCUSB/blockdev_sd.o
+ .debug_line    0x00001081       0x8d LPCUSB/lpc2000_spi.o
+ .debug_line    0x0000110e       0x58 LPCUSB/usbinit.o
+ .debug_line    0x00001166      0x173 LPCUSB/usbhw_lpc.o
+ .debug_line    0x000012d9       0xba LPCUSB/usbcontrol.o
+ .debug_line    0x00001393       0xf4 LPCUSB/usbstdreq.o
+ .debug_line    0x00001487       0x87 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .debug_line    0x0000150e       0x93 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .debug_line    0x000015a1       0x71 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+ .debug_line    0x00001612       0x60 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+
+.debug_info     0x00000000     0x5472
+ .debug_info    0x00000000       0xa4 crt.o
+ .debug_info    0x000000a4       0xba main.o
+ .debug_info    0x0000015e      0x166 system.o
+ .debug_info    0x000002c4      0xc8e ../lib/syscalls.o
+ .debug_info    0x00000f52      0x201 ../lib/rprintf.o
+ .debug_info    0x00001153      0x133 ../lib/serial.o
+ .debug_info    0x00001286      0x1cd ../lib/firmware.o
+ .debug_info    0x00001453      0x554 ../lib/rootdir.o
+ .debug_info    0x000019a7      0x693 ../lib/sd_raw.o
+ .debug_info    0x0000203a     0x1443 ../lib/fat16.o
+ .debug_info    0x0000347d      0x28b ../lib/partition.o
+ .debug_info    0x00003708      0x1b1 LPCUSB/main_msc.o
+ .debug_info    0x000038b9      0x3be LPCUSB/msc_bot.o
+ .debug_info    0x00003c77      0x2e8 LPCUSB/msc_scsi.o
+ .debug_info    0x00003f5f      0x368 LPCUSB/blockdev_sd.o
+ .debug_info    0x000042c7      0x1d9 LPCUSB/lpc2000_spi.o
+ .debug_info    0x000044a0       0xbc LPCUSB/usbinit.o
+ .debug_info    0x0000455c      0x601 LPCUSB/usbhw_lpc.o
+ .debug_info    0x00004b5d      0x2e2 LPCUSB/usbcontrol.o
+ .debug_info    0x00004e3f      0x463 LPCUSB/usbstdreq.o
+ .debug_info    0x000052a2       0x74 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .debug_info    0x00005316       0x74 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .debug_info    0x0000538a       0x74 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+ .debug_info    0x000053fe       0x74 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+
+.debug_abbrev   0x00000000     0x1afe
+ .debug_abbrev  0x00000000       0x14 crt.o
+ .debug_abbrev  0x00000014       0x6b main.o
+ .debug_abbrev  0x0000007f       0xd4 system.o
+ .debug_abbrev  0x00000153      0x1c5 ../lib/syscalls.o
+ .debug_abbrev  0x00000318      0x144 ../lib/rprintf.o
+ .debug_abbrev  0x0000045c       0xbb ../lib/serial.o
+ .debug_abbrev  0x00000517       0xf6 ../lib/firmware.o
+ .debug_abbrev  0x0000060d      0x16d ../lib/rootdir.o
+ .debug_abbrev  0x0000077a      0x270 ../lib/sd_raw.o
+ .debug_abbrev  0x000009ea      0x2fa ../lib/fat16.o
+ .debug_abbrev  0x00000ce4       0xd4 ../lib/partition.o
+ .debug_abbrev  0x00000db8       0xc7 LPCUSB/main_msc.o
+ .debug_abbrev  0x00000e7f      0x1e3 LPCUSB/msc_bot.o
+ .debug_abbrev  0x00001062      0x10f LPCUSB/msc_scsi.o
+ .debug_abbrev  0x00001171      0x1bd LPCUSB/blockdev_sd.o
+ .debug_abbrev  0x0000132e      0x12f LPCUSB/lpc2000_spi.o
+ .debug_abbrev  0x0000145d       0xa0 LPCUSB/usbinit.o
+ .debug_abbrev  0x000014fd      0x25b LPCUSB/usbhw_lpc.o
+ .debug_abbrev  0x00001758      0x14c LPCUSB/usbcontrol.o
+ .debug_abbrev  0x000018a4      0x20a LPCUSB/usbstdreq.o
+ .debug_abbrev  0x00001aae       0x14 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .debug_abbrev  0x00001ac2       0x14 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .debug_abbrev  0x00001ad6       0x14 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+ .debug_abbrev  0x00001aea       0x14 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+
+.debug_aranges  0x00000000      0x300
+ .debug_aranges
+                0x00000000       0x20 crt.o
+ .debug_aranges
+                0x00000020       0x20 main.o
+ .debug_aranges
+                0x00000040       0x20 system.o
+ .debug_aranges
+                0x00000060       0x20 ../lib/syscalls.o
+ .debug_aranges
+                0x00000080       0x20 ../lib/rprintf.o
+ .debug_aranges
+                0x000000a0       0x20 ../lib/serial.o
+ .debug_aranges
+                0x000000c0       0x20 ../lib/firmware.o
+ .debug_aranges
+                0x000000e0       0x20 ../lib/rootdir.o
+ .debug_aranges
+                0x00000100       0x20 ../lib/sd_raw.o
+ .debug_aranges
+                0x00000120       0x20 ../lib/fat16.o
+ .debug_aranges
+                0x00000140       0x20 ../lib/partition.o
+ .debug_aranges
+                0x00000160       0x20 LPCUSB/main_msc.o
+ .debug_aranges
+                0x00000180       0x20 LPCUSB/msc_bot.o
+ .debug_aranges
+                0x000001a0       0x20 LPCUSB/msc_scsi.o
+ .debug_aranges
+                0x000001c0       0x20 LPCUSB/blockdev_sd.o
+ .debug_aranges
+                0x000001e0       0x20 LPCUSB/lpc2000_spi.o
+ .debug_aranges
+                0x00000200       0x20 LPCUSB/usbinit.o
+ .debug_aranges
+                0x00000220       0x20 LPCUSB/usbhw_lpc.o
+ .debug_aranges
+                0x00000240       0x20 LPCUSB/usbcontrol.o
+ .debug_aranges
+                0x00000260       0x20 LPCUSB/usbstdreq.o
+ .debug_aranges
+                0x00000280       0x20 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .debug_aranges
+                0x000002a0       0x20 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .debug_aranges
+                0x000002c0       0x20 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+ .debug_aranges
+                0x000002e0       0x20 c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+
+.debug_frame    0x00000000      0xe00
+ .debug_frame   0x00000000       0x28 main.o
+ .debug_frame   0x00000028       0xa8 system.o
+ .debug_frame   0x000000d0       0x80 ../lib/syscalls.o
+ .debug_frame   0x00000150       0x68 ../lib/rprintf.o
+ .debug_frame   0x000001b8       0x80 ../lib/serial.o
+ .debug_frame   0x00000238       0x48 ../lib/firmware.o
+ .debug_frame   0x00000280      0x108 ../lib/rootdir.o
+ .debug_frame   0x00000388      0x154 ../lib/sd_raw.o
+ .debug_frame   0x000004dc      0x33c ../lib/fat16.o
+ .debug_frame   0x00000818       0x4c ../lib/partition.o
+ .debug_frame   0x00000864       0x40 LPCUSB/main_msc.o
+ .debug_frame   0x000008a4       0xac LPCUSB/msc_bot.o
+ .debug_frame   0x00000950       0x64 LPCUSB/msc_scsi.o
+ .debug_frame   0x000009b4       0xc8 LPCUSB/blockdev_sd.o
+ .debug_frame   0x00000a7c       0x68 LPCUSB/lpc2000_spi.o
+ .debug_frame   0x00000ae4       0x38 LPCUSB/usbinit.o
+ .debug_frame   0x00000b1c      0x168 LPCUSB/usbhw_lpc.o
+ .debug_frame   0x00000c84       0x8c LPCUSB/usbcontrol.o
+ .debug_frame   0x00000d10       0x6c LPCUSB/usbstdreq.o
+ .debug_frame   0x00000d7c       0x2c c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+ .debug_frame   0x00000da8       0x2c c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+ .debug_frame   0x00000dd4       0x2c c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+
+.debug_loc      0x00000000     0x2fe9
+ .debug_loc     0x00000000       0x1f main.o
+ .debug_loc     0x0000001f       0x3d system.o
+ .debug_loc     0x0000005c       0x98 ../lib/syscalls.o
+ .debug_loc     0x000000f4      0x2a4 ../lib/rprintf.o
+ .debug_loc     0x00000398       0xc9 ../lib/serial.o
+ .debug_loc     0x00000461       0x5c ../lib/firmware.o
+ .debug_loc     0x000004bd      0x23f ../lib/rootdir.o
+ .debug_loc     0x000006fc      0x5c8 ../lib/sd_raw.o
+ .debug_loc     0x00000cc4     0x1211 ../lib/fat16.o
+ .debug_loc     0x00001ed5      0x114 ../lib/partition.o
+ .debug_loc     0x00001fe9       0xae LPCUSB/main_msc.o
+ .debug_loc     0x00002097      0x263 LPCUSB/msc_bot.o
+ .debug_loc     0x000022fa      0x1b8 LPCUSB/msc_scsi.o
+ .debug_loc     0x000024b2      0x2dc LPCUSB/blockdev_sd.o
+ .debug_loc     0x0000278e       0x45 LPCUSB/lpc2000_spi.o
+ .debug_loc     0x000027d3       0x1f LPCUSB/usbinit.o
+ .debug_loc     0x000027f2      0x36d LPCUSB/usbhw_lpc.o
+ .debug_loc     0x00002b5f      0x1cf LPCUSB/usbcontrol.o
+ .debug_loc     0x00002d2e      0x2bb LPCUSB/usbstdreq.o
+
+.debug_pubnames
+                0x00000000      0x98c
+ .debug_pubnames
+                0x00000000       0x2a main.o
+ .debug_pubnames
+                0x0000002a       0xa4 system.o
+ .debug_pubnames
+                0x000000ce       0x69 ../lib/syscalls.o
+ .debug_pubnames
+                0x00000137       0x32 ../lib/rprintf.o
+ .debug_pubnames
+                0x00000169       0x7b ../lib/serial.o
+ .debug_pubnames
+                0x000001e4       0x87 ../lib/firmware.o
+ .debug_pubnames
+                0x0000026b      0x103 ../lib/rootdir.o
+ .debug_pubnames
+                0x0000036e       0xc1 ../lib/sd_raw.o
+ .debug_pubnames
+                0x0000042f      0x1b1 ../lib/fat16.o
+ .debug_pubnames
+                0x000005e0       0x39 ../lib/partition.o
+ .debug_pubnames
+                0x00000619       0x1f LPCUSB/main_msc.o
+ .debug_pubnames
+                0x00000638       0x45 LPCUSB/msc_bot.o
+ .debug_pubnames
+                0x0000067d       0x45 LPCUSB/msc_scsi.o
+ .debug_pubnames
+                0x000006c2       0x5a LPCUSB/blockdev_sd.o
+ .debug_pubnames
+                0x0000071c       0x54 LPCUSB/lpc2000_spi.o
+ .debug_pubnames
+                0x00000770       0x1e LPCUSB/usbinit.o
+ .debug_pubnames
+                0x0000078e      0x132 LPCUSB/usbhw_lpc.o
+ .debug_pubnames
+                0x000008c0       0x4d LPCUSB/usbcontrol.o
+ .debug_pubnames
+                0x0000090d       0x7f LPCUSB/usbstdreq.o
+
+.debug_str      0x00000000     0x19e6
+ .debug_str     0x00000000       0xf2 main.o
+                                0x12b (size before relaxing)
+ .debug_str     0x000000f2       0x6f system.o
+                                0x12d (size before relaxing)
+ .debug_str     0x00000161      0x497 ../lib/syscalls.o
+                                0x604 (size before relaxing)
+ .debug_str     0x000005f8       0x99 ../lib/rprintf.o
+                                0x1b5 (size before relaxing)
+ .debug_str     0x00000691       0x76 ../lib/serial.o
+                                0x118 (size before relaxing)
+ .debug_str     0x00000707       0x87 ../lib/firmware.o
+                                0x1a7 (size before relaxing)
+ .debug_str     0x0000078e      0x23d ../lib/rootdir.o
+                                0x3c9 (size before relaxing)
+ .debug_str     0x000009cb      0x18e ../lib/sd_raw.o
+                                0x37a (size before relaxing)
+ .debug_str     0x00000b59      0x5ba ../lib/fat16.o
+                                0x886 (size before relaxing)
+ .debug_str     0x00001113       0x47 ../lib/partition.o
+                                0x22a (size before relaxing)
+ .debug_str     0x0000115a       0x91 LPCUSB/main_msc.o
+                                0x1b3 (size before relaxing)
+ .debug_str     0x000011eb      0x16d LPCUSB/msc_bot.o
+                                0x2aa (size before relaxing)
+ .debug_str     0x00001358       0xe4 LPCUSB/msc_scsi.o
+                                0x20d (size before relaxing)
+ .debug_str     0x0000143c       0xbe LPCUSB/blockdev_sd.o
+                                0x202 (size before relaxing)
+ .debug_str     0x000014fa       0x5e LPCUSB/lpc2000_spi.o
+                                0x185 (size before relaxing)
+ .debug_str     0x00001558       0x40 LPCUSB/usbinit.o
+                                0x110 (size before relaxing)
+ .debug_str     0x00001598      0x24c LPCUSB/usbhw_lpc.o
+                                0x338 (size before relaxing)
+ .debug_str     0x000017e4       0x9b LPCUSB/usbcontrol.o
+                                0x202 (size before relaxing)
+ .debug_str     0x0000187f      0x167 LPCUSB/usbstdreq.o
+                                0x297 (size before relaxing)
+
+.comment        0x00000000      0x360
+ .comment       0x00000000       0x1b main.o
+ .comment       0x0000001b       0x1b system.o
+ .comment       0x00000036       0x1b ../lib/syscalls.o
+ .comment       0x00000051       0x1b ../lib/rprintf.o
+ .comment       0x0000006c       0x1b ../lib/serial.o
+ .comment       0x00000087       0x1b ../lib/firmware.o
+ .comment       0x000000a2       0x1b ../lib/rootdir.o
+ .comment       0x000000bd       0x1b ../lib/sd_raw.o
+ .comment       0x000000d8       0x1b ../lib/fat16.o
+ .comment       0x000000f3       0x1b ../lib/partition.o
+ .comment       0x0000010e       0x1b LPCUSB/main_msc.o
+ .comment       0x00000129       0x1b LPCUSB/msc_bot.o
+ .comment       0x00000144       0x1b LPCUSB/msc_scsi.o
+ .comment       0x0000015f       0x1b LPCUSB/blockdev_sd.o
+ .comment       0x0000017a       0x1b LPCUSB/lpc2000_spi.o
+ .comment       0x00000195       0x1b LPCUSB/usbinit.o
+ .comment       0x000001b0       0x1b LPCUSB/usbhw_lpc.o
+ .comment       0x000001cb       0x1b LPCUSB/usbcontrol.o
+ .comment       0x000001e6       0x1b LPCUSB/usbstdreq.o
+ .comment       0x00000201       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+ .comment       0x0000021c       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+ .comment       0x00000237       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memcpy.o)
+ .comment       0x00000252       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memset.o)
+ .comment       0x0000026d       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+ .comment       0x00000288       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strchr.o)
+ .comment       0x000002a3       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strcmp.o)
+ .comment       0x000002be       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strlen.o)
+ .comment       0x000002d9       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncmp.o)
+ .comment       0x000002f4       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncpy.o)
+ .comment       0x0000030f       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+ .comment       0x0000032a       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+ .comment       0x00000345       0x1b c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+
+.debug_ranges   0x00000000      0x358
+ .debug_ranges  0x00000000       0x18 system.o
+ .debug_ranges  0x00000018       0x18 ../lib/rprintf.o
+ .debug_ranges  0x00000030       0x48 ../lib/sd_raw.o
+ .debug_ranges  0x00000078      0x1a8 ../lib/fat16.o
+ .debug_ranges  0x00000220       0x30 LPCUSB/msc_bot.o
+ .debug_ranges  0x00000250       0x18 LPCUSB/blockdev_sd.o
+ .debug_ranges  0x00000268       0x18 LPCUSB/lpc2000_spi.o
+ .debug_ranges  0x00000280       0x78 LPCUSB/usbhw_lpc.o
+ .debug_ranges  0x000002f8       0x60 LPCUSB/usbstdreq.o
+
+Cross Reference Table
+
+Symbol                                            File
+BlockDevGetSize                                   LPCUSB/blockdev_sd.o
+                                                  LPCUSB/msc_scsi.o
+BlockDevInit                                      LPCUSB/blockdev_sd.o
+                                                  LPCUSB/main_msc.o
+BlockDevRead                                      LPCUSB/blockdev_sd.o
+                                                  LPCUSB/msc_scsi.o
+BlockDevWrite                                     LPCUSB/blockdev_sd.o
+                                                  LPCUSB/msc_scsi.o
+FIQ_Routine                                       system.o
+                                                  crt.o
+IRQ_Routine                                       system.o
+MSCBotBulkIn                                      LPCUSB/msc_bot.o
+                                                  LPCUSB/main_msc.o
+MSCBotBulkOut                                     LPCUSB/msc_bot.o
+                                                  LPCUSB/main_msc.o
+MSCBotReset                                       LPCUSB/msc_bot.o
+                                                  LPCUSB/main_msc.o
+Reset_Handler                                     crt.o
+SCSIHandleCmd                                     LPCUSB/msc_scsi.o
+                                                  LPCUSB/msc_bot.o
+SCSIHandleData                                    LPCUSB/msc_scsi.o
+                                                  LPCUSB/msc_bot.o
+SCSIReset                                         LPCUSB/msc_scsi.o
+                                                  LPCUSB/msc_bot.o
+SDoff                                             ../lib/sd_raw.o
+SPIInit                                           LPCUSB/lpc2000_spi.o
+                                                  LPCUSB/blockdev_sd.o
+SPIRecvN                                          LPCUSB/lpc2000_spi.o
+                                                  LPCUSB/blockdev_sd.o
+SPISend                                           LPCUSB/lpc2000_spi.o
+                                                  LPCUSB/blockdev_sd.o
+SPISendN                                          LPCUSB/lpc2000_spi.o
+                                                  LPCUSB/blockdev_sd.o
+SPISetSpeed                                       LPCUSB/lpc2000_spi.o
+                                                  LPCUSB/blockdev_sd.o
+SWI_Routine                                       system.o
+                                                  crt.o
+UNDEF_Routine                                     system.o
+                                                  crt.o
+USBGetDescriptor                                  LPCUSB/usbstdreq.o
+USBHandleControlTransfer                          LPCUSB/usbcontrol.o
+                                                  LPCUSB/usbinit.o
+USBHandleStandardRequest                          LPCUSB/usbstdreq.o
+                                                  LPCUSB/usbinit.o
+USBHwConfigDevice                                 LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbstdreq.o
+USBHwConnect                                      LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/main_msc.o
+USBHwEPConfig                                     LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbstdreq.o
+                                                  LPCUSB/usbinit.o
+USBHwEPGetStatus                                  LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbstdreq.o
+USBHwEPRead                                       LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbcontrol.o
+                                                  LPCUSB/msc_bot.o
+USBHwEPStall                                      LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbstdreq.o
+                                                  LPCUSB/usbcontrol.o
+                                                  LPCUSB/msc_bot.o
+USBHwEPWrite                                      LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbcontrol.o
+                                                  LPCUSB/msc_bot.o
+USBHwISR                                          LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/main_msc.o
+USBHwInit                                         LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbinit.o
+USBHwNakIntEnable                                 LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/main_msc.o
+USBHwRegisterDevIntHandler                        LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbinit.o
+USBHwRegisterEPIntHandler                         LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbinit.o
+                                                  LPCUSB/main_msc.o
+USBHwRegisterFrameHandler                         LPCUSB/usbhw_lpc.o
+USBHwSetAddress                                   LPCUSB/usbhw_lpc.o
+                                                  LPCUSB/usbstdreq.o
+USBInit                                           LPCUSB/usbinit.o
+                                                  LPCUSB/main_msc.o
+USBRegisterCustomReqHandler                       LPCUSB/usbstdreq.o
+USBRegisterDescriptors                            LPCUSB/usbstdreq.o
+                                                  LPCUSB/main_msc.o
+USBRegisterRequestHandler                         LPCUSB/usbcontrol.o
+                                                  LPCUSB/usbinit.o
+                                                  LPCUSB/main_msc.o
+__aeabi_idiv                                      c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+__aeabi_idiv0                                     c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+__aeabi_idivmod                                   c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+__aeabi_ldiv0                                     c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+__aeabi_uidiv                                     c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+__aeabi_uidivmod                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+__div0                                            c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_dvmd_tls.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+__divsi3                                          c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_divsi3.o)
+                                                  ../lib/fat16.o
+__malloc_av_                                      c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+__malloc_current_mallinfo                         c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+__malloc_lock                                     c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+__malloc_max_sbrked_mem                           c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+__malloc_max_total_mem                            c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+__malloc_sbrk_base                                c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+__malloc_top_pad                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+__malloc_trim_threshold                           c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+__malloc_unlock                                   c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mlock.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+__udivsi3                                         c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_udivsi3.o)
+                                                  ../lib/fat16.o
+                                                  ../lib/serial.o
+                                                  ../lib/rprintf.o
+__umodsi3                                         c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/interwork\libgcc.a(_umodsi3.o)
+                                                  ../lib/fat16.o
+                                                  ../lib/rprintf.o
+_bss_end                                          crt.o
+_bss_start                                        crt.o
+_close_r                                          ../lib/syscalls.o
+_data                                             crt.o
+_edata                                            crt.o
+_etext                                            crt.o
+_free_r                                           c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+_fstat_r                                          ../lib/syscalls.o
+_global_impure_ptr                                c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+_impure_ptr                                       c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(impure.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+_lseek_r                                          ../lib/syscalls.o
+_malloc_r                                         c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+_malloc_trim_r                                    c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+_read_r                                           ../lib/syscalls.o
+_sbrk_r                                           ../lib/syscalls.o
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(freer.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(mallocr.o)
+_stack_end                                        crt.o
+_startup                                          crt.o
+_write_r                                          ../lib/syscalls.o
+bl_version                                        main.o
+boot_up                                           system.o
+                                                  main.o
+call_firmware                                     ../lib/firmware.o
+                                                  main.o
+charX                                             system.o
+charY                                             system.o
+dd                                                ../lib/rootdir.o
+delay_ms                                          system.o
+                                                  ../lib/rprintf.o
+                                                  main.o
+dir_entry                                         ../lib/rootdir.o
+end                                               ../lib/syscalls.o
+erase_command                                     ../lib/firmware.o
+fat16_close                                       ../lib/fat16.o
+fat16_close_dir                                   ../lib/fat16.o
+fat16_close_file                                  ../lib/fat16.o
+                                                  ../lib/firmware.o
+fat16_create_file                                 ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_delete_file                                 ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_file_size                                   ../lib/fat16.o
+fat16_get_dir_entry_of_path                       ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_get_fs_free                                 ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_get_fs_size                                 ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_open                                        ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_open_dir                                    ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_open_file                                   ../lib/fat16.o
+fat16_read_dir                                    ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_read_file                                   ../lib/fat16.o
+                                                  ../lib/firmware.o
+fat16_reset_dir                                   ../lib/fat16.o
+                                                  ../lib/rootdir.o
+fat16_resize_file                                 ../lib/fat16.o
+fat16_seek_file                                   ../lib/fat16.o
+fat16_write_file                                  ../lib/fat16.o
+fd                                                ../lib/rootdir.o
+feed                                              system.o
+find_file_in_dir                                  ../lib/fat16.o
+                                                  ../lib/rootdir.o
+format_card                                       ../lib/sd_raw.o
+free                                              c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+                                                  ../lib/partition.o
+                                                  ../lib/fat16.o
+fs                                                ../lib/rootdir.o
+getc0                                             ../lib/serial.o
+getkey_serial0                                    ../lib/serial.o
+iap_fn                                            ../lib/firmware.o
+init_serial0                                      ../lib/serial.o
+isatty                                            ../lib/syscalls.o
+load_fw                                           ../lib/firmware.o
+                                                  main.o
+main                                              main.o
+                                                  crt.o
+main_msc                                          LPCUSB/main_msc.o
+                                                  main.o
+malloc                                            c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(malloc.o)
+                                                  ../lib/partition.o
+                                                  ../lib/fat16.o
+memcpy                                            c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memcpy.o)
+                                                  LPCUSB/msc_scsi.o
+                                                  ../lib/fat16.o
+                                                  ../lib/sd_raw.o
+memset                                            c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(memset.o)
+                                                  ../lib/partition.o
+                                                  ../lib/fat16.o
+                                                  ../lib/sd_raw.o
+open_file_in_dir                                  ../lib/fat16.o
+                                                  ../lib/rootdir.o
+openroot                                          ../lib/rootdir.o
+                                                  main.o
+partition                                         ../lib/rootdir.o
+partition_close                                   ../lib/partition.o
+partition_open                                    ../lib/partition.o
+                                                  ../lib/rootdir.o
+prep_command                                      ../lib/firmware.o
+print_disk_info                                   ../lib/rootdir.o
+putc_serial0                                      ../lib/serial.o
+                                                  system.o
+putchar_serial0                                   ../lib/serial.o
+putstring_serial0                                 ../lib/serial.o
+readbuf                                           ../lib/firmware.o
+reset                                             system.o
+result                                            ../lib/firmware.o
+rootDirectory_files                               ../lib/rootdir.o
+rootDirectory_files_stream                        ../lib/rootdir.o
+root_delete                                       ../lib/rootdir.o
+                                                  ../lib/firmware.o
+root_disk_info                                    ../lib/rootdir.o
+root_file_exists                                  ../lib/rootdir.o
+                                                  main.o
+root_format                                       ../lib/rootdir.o
+root_open                                         ../lib/rootdir.o
+                                                  ../lib/firmware.o
+root_open_new                                     ../lib/rootdir.o
+rprintf                                           ../lib/rprintf.o
+                                                  LPCUSB/lpc2000_spi.o
+                                                  LPCUSB/blockdev_sd.o
+                                                  LPCUSB/main_msc.o
+                                                  ../lib/fat16.o
+                                                  ../lib/sd_raw.o
+                                                  ../lib/rootdir.o
+                                                  system.o
+                                                  main.o
+rprintf_devopen                                   ../lib/rprintf.o
+                                                  system.o
+sd_raw_available                                  ../lib/sd_raw.o
+sd_raw_get_info                                   ../lib/sd_raw.o
+                                                  ../lib/rootdir.o
+sd_raw_init                                       ../lib/sd_raw.o
+                                                  main.o
+sd_raw_locked                                     ../lib/sd_raw.o
+sd_raw_read                                       ../lib/sd_raw.o
+                                                  ../lib/rootdir.o
+sd_raw_read_interval                              ../lib/sd_raw.o
+                                                  ../lib/rootdir.o
+sd_raw_sync                                       ../lib/sd_raw.o
+                                                  ../lib/firmware.o
+sd_raw_write                                      ../lib/sd_raw.o
+                                                  ../lib/rootdir.o
+strchr                                            c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strchr.o)
+                                                  c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+                                                  ../lib/fat16.o
+strcmp                                            c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strcmp.o)
+                                                  ../lib/fat16.o
+strlen                                            c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strlen.o)
+                                                  ../lib/fat16.o
+strncmp                                           c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncmp.o)
+                                                  ../lib/fat16.o
+strncpy                                           c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strncpy.o)
+                                                  ../lib/fat16.o
+strrchr                                           c:/winarm/bin/../lib/gcc/arm-elf/4.1.1/../../../../arm-elf/lib/interwork\libc.a(strrchr.o)
+                                                  ../lib/fat16.o
+system_init                                       system.o
+write_command                                     ../lib/firmware.o

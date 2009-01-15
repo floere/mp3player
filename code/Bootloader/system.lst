@@ -1,0 +1,441 @@
+   1              		.file	"system.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	IRQ_Routine
+  13              	IRQ_Routine:
+  14              	.LFB2:
+  15              		.file 1 "system.c"
+   1:system.c      **** /******************************************************************************/
+   2:system.c      **** /*                							                                  */
+   3:system.c      **** /*		  			Copyright Spark Fun Electronics                           */
+   4:system.c      **** /******************************************************************************/
+   5:system.c      **** #include "system.h"
+   6:system.c      **** #include "LPC214x.h"
+   7:system.c      **** 
+   8:system.c      **** //Debug UART0
+   9:system.c      **** #include "rprintf.h"
+  10:system.c      **** #include "serial.h"
+  11:system.c      **** 
+  12:system.c      **** #include "sd_raw.h"
+  13:system.c      **** 
+  14:system.c      **** unsigned char charY;
+  15:system.c      **** unsigned char charX;
+  16:system.c      **** 
+  17:system.c      **** /* Routine Block for startup code */
+  18:system.c      **** /* Define catchall routines for vector table */
+  19:system.c      **** void IRQ_Routine (void)   __attribute__ ((interrupt("IRQ")));
+  20:system.c      **** void IRQ_Routine (void)
+  21:system.c      **** {
+  16              	 Interrupt Service Routine.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              		@ link register save eliminated.
+  20              		@ lr needed for prologue
+  21              		.loc 1 22 0
+  22:system.c      **** }
+  22              	pc, lr, #4
+  23 0000 04F05EE2 	.LFE2:
+  25              		.align	2
+  26              		.global	FIQ_Routine
+  28              	FIQ_Routine:
+  29              	.LFB3:
+  30              		.loc 1 26 0
+  23:system.c      **** 
+  24:system.c      **** void FIQ_Routine (void)   __attribute__ ((interrupt("FIQ")));
+  25:system.c      **** void FIQ_Routine (void)
+  26:system.c      **** {
+  31              	nterrupt Service Routine.
+  32              		@ args = 0, pretend = 0, frame = 0
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+  34              		@ link register save eliminated.
+  35              		@ lr needed for prologue
+  36              		.loc 1 27 0
+  27:system.c      **** }
+  37              	pc, lr, #4
+  38 0004 04F05EE2 	.LFE3:
+  40              		.align	2
+  41              		.global	SWI_Routine
+  43              	SWI_Routine:
+  44              	.LFB4:
+  45              		.loc 1 31 0
+  28:system.c      **** 
+  29:system.c      **** void SWI_Routine (void)   __attribute__ ((interrupt("SWI")));
+  30:system.c      **** void SWI_Routine (void)
+  31:system.c      **** {
+  46              	ception Handler.
+  47              		@ args = 0, pretend = 0, frame = 0
+  48              		@ frame_needed = 0, uses_anonymous_args = 0
+  49              		@ link register save eliminated.
+  50              		@ lr needed for prologue
+  51              		.loc 1 32 0
+  32:system.c      **** }
+  52              	pc, lr
+  53 0008 0EF0B0E1 	.LFE4:
+  55              		.align	2
+  56              		.global	UNDEF_Routine
+  58              	UNDEF_Routine:
+  59              	.LFB5:
+  60              		.loc 1 36 0
+  33:system.c      **** 
+  34:system.c      **** void UNDEF_Routine (void) __attribute__ ((interrupt("UNDEF")));
+  35:system.c      **** void UNDEF_Routine (void)
+  36:system.c      **** {
+  61              	ception Handler.
+  62              		@ args = 0, pretend = 0, frame = 0
+  63              		@ frame_needed = 0, uses_anonymous_args = 0
+  64              		@ link register save eliminated.
+  65              		@ lr needed for prologue
+  66              		.loc 1 37 0
+  37:system.c      **** };
+  67              	pc, lr
+  68 000c 0EF0B0E1 	.LFE5:
+  70              		.align	2
+  71              		.global	delay_ms
+  73              	delay_ms:
+  74              	.LFB6:
+  75              		.loc 1 41 0
+  38:system.c      **** 
+  39:system.c      **** //Short delay
+  40:system.c      **** void delay_ms(int count)
+  41:system.c      **** {
+  76              	on supports interworking.
+  77              		@ args = 0, pretend = 0, frame = 0
+  78              		@ frame_needed = 0, uses_anonymous_args = 0
+  79              		@ link register save eliminated.
+  80              	.LVL0:
+  81              		.loc 1 43 0
+  42:system.c      ****     int i;
+  43:system.c      ****     count *= 10000;
+  82              	3, .L14
+  83 0010 1C309FE5 		mul	r0, r3, r0
+  84 0014 930000E0 	.LVL1:
+  85              		mov	r3, #0
+  86 0018 0030A0E3 	.LVL2:
+  87              		.loc 1 41 0
+  88              		@ lr needed for prologue
+  89              		b	.L10
+  90 001c 010000EA 	.L11:
+  91              		.loc 1 46 0
+  44:system.c      ****     for (i = 0; i < count; i++)
+  45:system.c      ****     {
+  46:system.c      ****         asm volatile ("nop");
+  92              	 1 44 0
+  93 0020 0000A0E1 		add	r3, r3, #1
+  94              	.L10:
+  95 0024 013083E2 		cmp	r3, r0
+  96              		blt	.L11
+  97 0028 000053E1 		.loc 1 48 0
+  98 002c FBFFFFBA 		bx	lr
+  47:system.c      ****     }
+  48:system.c      **** }
+  99              	.align	2
+ 100 0030 1EFF2FE1 	.L14:
+ 101              		.word	10000
+ 102              	.LFE6:
+ 104 0034 10270000 		.align	2
+ 105              		.global	system_init
+ 107              	system_init:
+ 108              	.LFB8:
+ 109              		.loc 1 79 0
+ 110              		@ Function supports interworking.
+ 111              		@ args = 0, pretend = 0, frame = 0
+  49:system.c      **** 
+  50:system.c      **** void boot_up(void)
+  51:system.c      **** {
+  52:system.c      ****     //Initialize the MCU clock PLL
+  53:system.c      ****     system_init();
+  54:system.c      **** 
+  55:system.c      **** 	IODIR0 |= (1 << 31);
+  56:system.c      **** 	IOCLR0 |= (1 << 31); //Turn on USB LED
+  57:system.c      **** 
+  58:system.c      ****     //Init UART0 for debug
+  59:system.c      ****     PINSEL0 |= 0x00000005; //enable uart0
+  60:system.c      ****     U0LCR = 0x83; // 8 bits, no Parity, 1 Stop bit, DLAB = 1 
+  61:system.c      ****     U0DLM = 0x00; 
+  62:system.c      ****     U0DLL = 0x20; // 9600 Baud Rate @ 58982400 VPB Clock  
+  63:system.c      ****     U0LCR = 0x03; // DLAB = 0                          
+  64:system.c      **** 
+  65:system.c      ****     //Init rprintf
+  66:system.c      ****     rprintf_devopen(putc_serial0); 
+  67:system.c      ****     rprintf("\n\n\nUSB Bootloader v1.1\n");
+  68:system.c      **** 
+  69:system.c      **** 	//IOSET0 |= (1 << 31); //Turn off USB LED
+  70:system.c      **** }
+  71:system.c      **** 
+  72:system.c      **** /**********************************************************
+  73:system.c      ****   Initialize
+  74:system.c      ****  **********************************************************/
+  75:system.c      **** 
+  76:system.c      **** #define PLOCK 0x400
+  77:system.c      **** 
+  78:system.c      **** void system_init(void)
+  79:system.c      **** {
+ 112              	ed = 0, uses_anonymous_args = 0
+ 113              		@ link register save eliminated.
+ 114              		.loc 1 81 0
+ 115              		ldr	r2, .L22
+ 116              		mov	r3, #36
+  80:system.c      ****     // Setting Multiplier and Divider values
+  81:system.c      ****     PLLCFG=0x24;
+ 117              	r3, [r2, #132]
+ 118 0038 68209FE5 	.LBB8:
+ 119 003c 2430A0E3 	.LBB9:
+ 120 0040 843082E5 		.loc 1 106 0
+ 121              		mov	r1, #170
+ 122              		.loc 1 107 0
+  82:system.c      ****     feed();
+  83:system.c      **** 
+  84:system.c      ****     // Enabling the PLL */
+  85:system.c      ****     PLLCON=0x1;
+  86:system.c      ****     feed();
+  87:system.c      **** 
+  88:system.c      ****     // Wait for the PLL to lock to set frequency
+  89:system.c      ****     while(!(PLLSTAT & PLOCK)) ;
+  90:system.c      **** 
+  91:system.c      ****     // Connect the PLL as the clock source
+  92:system.c      ****     PLLCON=0x3;
+  93:system.c      ****     feed();
+  94:system.c      **** 
+  95:system.c      ****     // Enabling MAM and setting number of clocks used for Flash memory fetch (4 cclks in this case)
+  96:system.c      ****     //MAMTIM=0x3; //VCOM?
+  97:system.c      ****     MAMCR=0x2;
+  98:system.c      ****     MAMTIM=0x4; //Original
+  99:system.c      **** 
+ 100:system.c      ****     // Setting peripheral Clock (pclk) to System Clock (cclk)
+ 101:system.c      ****     VPBDIV=0x1;
+ 102:system.c      **** }
+ 103:system.c      **** 
+ 104:system.c      **** void feed(void)
+ 105:system.c      **** {
+ 106:system.c      ****     PLLFEED=0xAA;
+ 123              	0, #85
+ 124 0044 AA10A0E3 	.LBE9:
+ 107:system.c      ****     PLLFEED=0x55;
+ 125              	BE8:
+ 126 0048 5500A0E3 		.loc 1 85 0
+ 127              		mov	r3, #1
+ 128              	.LBB10:
+ 129              	.LBB11:
+ 130 004c 0130A0E3 		.loc 1 106 0
+ 131              		str	r1, [r2, #140]
+ 132              		.loc 1 107 0
+ 133              		str	r0, [r2, #140]
+ 134 0050 8C1082E5 	.LBE11:
+ 135              	.LBE10:
+ 136 0054 8C0082E5 		.loc 1 85 0
+ 137              		str	r3, [r2, #128]
+ 138              	.LBB12:
+ 139              	.LBB13:
+ 140 0058 803082E5 		.loc 1 106 0
+ 141              		str	r1, [r2, #140]
+ 142              		.loc 1 107 0
+ 143              		str	r0, [r2, #140]
+ 144 005c 8C1082E5 	.LBE13:
+ 145              	.LBE12:
+ 146 0060 8C0082E5 		.loc 1 79 0
+ 147              		@ lr needed for prologue
+ 148              	.L17:
+ 149              		.loc 1 89 0
+ 150              		ldr	r2, .L22
+ 151              		ldr	r3, [r2, #136]
+ 152              		tst	r3, #1024
+ 153 0064 3C209FE5 		beq	.L17
+ 154 0068 883092E5 		.loc 1 92 0
+ 155 006c 010B13E3 		mov	r3, #3
+ 156 0070 FBFFFF0A 		str	r3, [r2, #128]
+ 157              	.LBB14:
+ 158 0074 0330A0E3 	.LBB15:
+ 159 0078 803082E5 		.loc 1 106 0
+ 160              		add	r3, r3, #167
+ 161              		str	r3, [r2, #140]
+ 162              		.loc 1 107 0
+ 163 007c A73083E2 		mov	r3, #85
+ 164 0080 8C3082E5 		str	r3, [r2, #140]
+ 165              	.LBE15:
+ 166 0084 5530A0E3 	.LBE14:
+ 167 0088 8C3082E5 		.loc 1 97 0
+ 168              		mov	r3, #2
+ 169              		str	r3, [r2, #0]
+ 170              		.loc 1 98 0
+ 171 008c 0230A0E3 		add	r3, r3, r3
+ 172 0090 003082E5 		str	r3, [r2, #4]
+ 173              		.loc 1 101 0
+ 174 0094 033083E0 		mov	r3, #1
+ 175 0098 043082E5 		str	r3, [r2, #256]
+ 176              		.loc 1 102 0
+ 177 009c 0130A0E3 		bx	lr
+ 178 00a0 003182E5 	.L23:
+ 179              		.align	2
+ 180 00a4 1EFF2FE1 	.L22:
+ 181              		.word	-534790144
+ 182              	.LFE8:
+ 184 00a8 00C01FE0 		.align	2
+ 185              		.global	feed
+ 187              	feed:
+ 188              	.LFB9:
+ 189              		.loc 1 105 0
+ 190              		@ Function supports interworking.
+ 191              		@ args = 0, pretend = 0, frame = 0
+ 192              		@ frame_needed = 0, uses_anonymous_args = 0
+ 193              		@ link register save eliminated.
+ 194              		.loc 1 106 0
+ 195              		ldr	r3, .L26
+ 196              		mov	r2, #170
+ 197              		str	r2, [r3, #140]
+ 198 00ac 10309FE5 		.loc 1 107 0
+ 199 00b0 AA20A0E3 		mov	r2, #85
+ 200 00b4 8C2083E5 		.loc 1 105 0
+ 201              		@ lr needed for prologue
+ 202 00b8 5520A0E3 		.loc 1 107 0
+ 203              		str	r2, [r3, #140]
+ 204              		.loc 1 108 0
+ 205              		bx	lr
+ 206 00bc 8C2083E5 	.L27:
+ 108:system.c      **** }
+ 207              	set
+ 209              	reset:
+ 210              	.LFB10:
+ 211              		.loc 1 111 0
+ 212 00c4 00C01FE0 		@ Function supports interworking.
+ 213              		@ args = 0, pretend = 0, frame = 0
+ 214              		@ frame_needed = 0, uses_anonymous_args = 0
+ 215              		@ link register save eliminated.
+ 216              		.loc 1 113 0
+ 217              		mov	r2, #-536870912
+ 218              		ldr	r3, [r2, #0]
+ 219              		orr	r3, r3, #3
+ 109:system.c      **** 
+ 110:system.c      **** void reset(void)
+ 111:system.c      **** {
+ 220              	 #0]
+ 221              		.loc 1 114 0
+ 222              		mov	r1, #170
+ 223              		.loc 1 115 0
+ 224              		mov	r3, #85
+ 112:system.c      ****     // Intentionally fault Watchdog to trigger a reset condition
+ 113:system.c      ****     WDMOD |= 3;
+ 225              	 1 114 0
+ 226 00c8 0E22A0E3 		str	r1, [r2, #8]
+ 227 00cc 003092E5 		.loc 1 115 0
+ 228 00d0 033083E3 		str	r3, [r2, #8]
+ 229 00d4 003082E5 		.loc 1 117 0
+ 114:system.c      ****     WDFEED = 0xAA;
+ 230              	r3, #0
+ 231 00d8 AA10A0E3 		.loc 1 116 0
+ 115:system.c      ****     WDFEED = 0x55;
+ 232              	tr	r1, [r2, #8]
+ 233 00dc 5530A0E3 		.loc 1 111 0
+ 234              		@ lr needed for prologue
+ 235 00e0 081082E5 		.loc 1 117 0
+ 236              		str	r3, [r2, #8]
+ 237 00e4 083082E5 		.loc 1 118 0
+ 116:system.c      ****     WDFEED = 0xAA;
+ 117:system.c      ****     WDFEED = 0x00;
+ 238              	
+ 239 00e8 0030A0E3 	.LFE10:
+ 241 00ec 081082E5 		.section	.rodata.str1.4,"aMS",%progbits,1
+ 242              		.align	2
+ 243              	.LC0:
+ 244              		.ascii	"\012\012\012USB Bootloader v1.1\012\000"
+ 245 00f0 083082E5 		.text
+ 118:system.c      **** }
+ 246              		2
+ 247 00f4 1EFF2FE1 		.global	boot_up
+ 249              	boot_up:
+ 250              	.LFB7:
+ 251              		.loc 1 51 0
+ 252              		@ Function supports interworking.
+ 253 0000 0A0A0A55 		@ args = 0, pretend = 0, frame = 0
+ 253      53422042 
+ 253      6F6F746C 
+ 253      6F616465 
+ 253      72207631 
+ 254              		@ frame_needed = 0, uses_anonymous_args = 0
+ 255              		str	lr, [sp, #-4]!
+ 256              	.LCFI0:
+ 257              		.loc 1 53 0
+ 258              		bl	system_init
+ 259              		.loc 1 55 0
+ 260              		ldr	r2, .L32
+ 261              		ldr	r3, [r2, #8]
+ 262              		orr	r3, r3, #-2147483648
+ 263              		str	r3, [r2, #8]
+ 264 00f8 04E02DE5 		.loc 1 56 0
+ 265              		ldr	r3, [r2, #12]
+ 266              		orr	r3, r3, #-2147483648
+ 267 00fc FEFFFFEB 		str	r3, [r2, #12]
+ 268              		.loc 1 59 0
+ 269 0100 60209FE5 		ldr	r1, .L32+4
+ 270 0104 083092E5 		ldr	r3, [r1, #0]
+ 271 0108 023183E3 		orr	r3, r3, #5
+ 272 010c 083082E5 		str	r3, [r1, #0]
+ 273              		.loc 1 60 0
+ 274 0110 0C3092E5 		sub	r2, r2, #114688
+ 275 0114 023183E3 		mov	r3, #131
+ 276 0118 0C3082E5 		str	r3, [r2, #12]
+ 277              		.loc 1 61 0
+ 278 011c 48109FE5 		mov	r3, #0
+ 279 0120 003091E5 		str	r3, [r2, #4]
+ 280 0124 053083E3 		.loc 1 62 0
+ 281 0128 003081E5 		add	r3, r3, #32
+ 282              		str	r3, [r2, #0]
+ 283 012c 072942E2 		.loc 1 63 0
+ 284 0130 8330A0E3 		mov	r3, #3
+ 285 0134 0C3082E5 		.loc 1 66 0
+ 286              		ldr	r0, .L32+8
+ 287 0138 0030A0E3 		.loc 1 63 0
+ 288 013c 043082E5 		str	r3, [r2, #12]
+ 289              		.loc 1 66 0
+ 290 0140 203083E2 		bl	rprintf_devopen
+ 291 0144 003082E5 		.loc 1 67 0
+ 292              		ldr	r0, .L32+12
+ 293 0148 0330A0E3 		bl	rprintf
+ 294              		.loc 1 70 0
+ 295 014c 1C009FE5 		ldr	lr, [sp], #4
+ 296              		bx	lr
+ 297 0150 0C3082E5 	.L33:
+ 298              		.align	2
+ 299 0154 FEFFFFEB 	.L32:
+ 300              		.word	-536707072
+ 301 0158 14009FE5 		.word	-536690688
+ 302 015c FEFFFFEB 		.word	putc_serial0
+ 303              		.word	.LC0
+ 304 0160 04E09DE4 	.LFE7:
+ 306              		.comm	charY,1,1
+ 307              		.comm	charX,1,1
+ 308              		.section	.debug_frame,"",%progbits
+ 309 0168 008002E0 	.Lframe0:
+ 310 016c 00C002E0 		.4byte	.LECIE0-.LSCIE0
+ 311 0170 00000000 	.LSCIE0:
+ 312 0174 00000000 		.4byte	0xffffffff
+ 313              		.byte	0x1
+ 314              		.ascii	"\000"
+ 315              		.uleb128 0x1
+ 316              		.sleb128 -4
+ 411              		.4byte	.LFE6-.Ltext0
+DEFINED SYMBOLS
+                            *ABS*:00000000 system.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:13     .text:00000000 IRQ_Routine
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:23     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:29     .text:00000004 FIQ_Routine
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:44     .text:00000008 SWI_Routine
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:59     .text:0000000c UNDEF_Routine
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:74     .text:00000010 delay_ms
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:104    .text:00000034 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:110    .text:00000038 system_init
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:118    .text:00000038 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:184    .text:000000a8 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:190    .text:000000ac feed
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:198    .text:000000ac $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:212    .text:000000c4 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:218    .text:000000c8 reset
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:226    .text:000000c8 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:258    .text:000000f8 boot_up
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cco1aaaa.s:309    .text:00000168 $d
+                            *COM*:00000001 charY
+                            *COM*:00000001 charX
+
+UNDEFINED SYMBOLS
+rprintf_devopen
+rprintf
+putc_serial0

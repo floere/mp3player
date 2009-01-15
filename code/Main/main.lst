@@ -1,0 +1,3491 @@
+   1              		.file	"main.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	delay_ms
+  13              	delay_ms:
+  14              	.LFB3:
+  15              		.file 1 "main.c"
+   1:main.c        **** //*******************************************************
+   2:main.c        **** //					MP3 Development Platform
+   3:main.c        **** //*******************************************************
+   4:main.c        **** //#include <stdio.h>
+   5:main.c        **** #include "LPC214x.h"
+   6:main.c        **** #include "setup.h"
+   7:main.c        **** #include "MP3Dev.h"
+   8:main.c        **** #include "serial.h"
+   9:main.c        **** #include "rprintf.h"
+  10:main.c        **** 
+  11:main.c        **** //*******************************************************
+  12:main.c        **** //				Memory Management Libraries
+  13:main.c        **** //*******************************************************
+  14:main.c        **** #include "rootdir.h"
+  15:main.c        **** #include "sd_raw.h"
+  16:main.c        **** #include "fat16.h"
+  17:main.c        **** 
+  18:main.c        **** //*******************************************************
+  19:main.c        **** //				USB Libraries
+  20:main.c        **** //*******************************************************
+  21:main.c        **** #include "main_msc.h"
+  22:main.c        **** 
+  23:main.c        **** //*******************************************************
+  24:main.c        **** //					External Component Libs
+  25:main.c        **** //*******************************************************
+  26:main.c        **** #include "LCD_driver.h"
+  27:main.c        **** #include "MMA7260.h"
+  28:main.c        **** #include "vs1002.h"
+  29:main.c        **** #include "ns73.h"
+  30:main.c        **** 
+  31:main.c        **** //*******************************************************
+  32:main.c        **** //					Interrupt Functions
+  33:main.c        **** //*******************************************************
+  34:main.c        **** 
+  35:main.c        **** static void timer0ISR(void);
+  36:main.c        **** static void timer1ISR(void);
+  37:main.c        **** 
+  38:main.c        **** 
+  39:main.c        **** //*******************************************************
+  40:main.c        **** //					External Variables
+  41:main.c        **** //*******************************************************
+  42:main.c        **** extern char white;	//Color "White" used in LCD Functions(From LCD_driver.h)
+  43:main.c        **** extern char black;	//Color "black" used in LCD Functions(From LCD_driver.h)
+  44:main.c        **** extern char red;	//Color	"red" used in LCD Functions(From LCD_driver.h)
+  45:main.c        **** 
+  46:main.c        **** //*******************************************************
+  47:main.c        **** //				Global Variables for Main
+  48:main.c        **** //*******************************************************
+  49:main.c        **** static char button_pressed;				//Holds the button value of the Nav. Switch.  Updated in the Timer 1
+  50:main.c        **** static char update_screen;				//Flag which indicates if screen has been rotated.
+  51:main.c        **** static int prev_position;				//Accelerometer Value placeholder
+  52:main.c        **** static int cur_position;				//Accelerometer Value placeholder
+  53:main.c        **** static char file_is_open=0;				//Global Flag indicating if a file is currently open
+  54:main.c        **** static char song_is_over=0;				//Global Flag indicating if the current song has finished playing
+  55:main.c        **** 
+  56:main.c        **** static SongStruct current_song;			//Holds information related to the currently selected song
+  57:main.c        **** static DisplayStruct file_manager;		//Main menu display which contains list of MP3's on SD card
+  58:main.c        **** static DisplayStruct settings_menu;		//Settings Menu...
+  59:main.c        **** static DisplayStruct *current_display;	//
+  60:main.c        **** static int NUMBEROFFILES=0;
+  61:main.c        **** 
+  62:main.c        **** int volume_setting=16, radio_channel=973;
+  63:main.c        **** char radio_enable=OFF;
+  64:main.c        **** 
+  65:main.c        **** //*******************************************************
+  66:main.c        **** //					Display Strings
+  67:main.c        **** //*******************************************************
+  68:main.c        **** const char welcome[22]="Song List:\n\r";
+  69:main.c        **** const char NotFound[15]="File Not Found!";
+  70:main.c        **** const char USB[14]="USB Connected!";
+  71:main.c        **** const char newline[2] = "\n";
+  72:main.c        **** const char volume[7] = "Volume";
+  73:main.c        **** const char contrast[9] = "Contrast";
+  74:main.c        **** const char radio_power[11]= "Radio Power";
+  75:main.c        **** const char radio_channel_menu[13]= "Radio Channel";
+  76:main.c        **** const char settings[10]="Settings:";
+  77:main.c        **** 
+  78:main.c        **** int main (void)
+  79:main.c        **** {
+  80:main.c        **** //*******************************************************
+  81:main.c        **** //					Local Variables
+  82:main.c        **** //*******************************************************
+  83:main.c        **** unsigned long int numberOfChars=0;
+  84:main.c        **** 
+  85:main.c        **** //*******************************************************
+  86:main.c        **** //					Main Code
+  87:main.c        **** //*******************************************************
+  88:main.c        **** 	//Initialize ARM I/O
+  89:main.c        **** 	bootUp();
+  90:main.c        **** 	
+  91:main.c        **** 	//Initialize the MP3 player with double clock speed and lower volume
+  92:main.c        **** 	vs1002Config();			//Configure MP3 I/O
+  93:main.c        **** 	vs1002Reset();			//Reset MP3 Player
+  94:main.c        **** 	vs1002Init();			//Double the clock speed and set to "New" mode
+  95:main.c        **** 	for(char i=0; i<2; i++)vs1002SetVolume(DECREASE);		//Lower the Volume!!
+  96:main.c        **** 	vs1002Finish();			//Restore the SPI I/O lines
+  97:main.c        **** 	
+  98:main.c        **** 	//Show the splash-screen (Sparkfun Logo)
+  99:main.c        **** 	LCDInit();				//Initialize the LCD
+ 100:main.c        **** 	LCDClear(white);		//Clear the screen with white
+ 101:main.c        **** 	LCDPrintLogo();			//Print the Sparkfun Logo
+ 102:main.c        **** 	
+ 103:main.c        **** 	//Initialize the FM Transmitter to 97.3
+ 104:main.c        **** 	IOCLR1 |= FM_CS;			//Select SPI for FM Transmitter
+ 105:main.c        **** 	delay_ms(900);				//
+ 106:main.c        **** 	ns73Config();				//Configigure the FM Trans. I/O
+ 107:main.c        **** 	ns73Init();					//Setup the Default Register Values
+ 108:main.c        **** 	ns73SetChannel(973);		//Transmit to 97.3 FM	
+ 109:main.c        **** 	IOSET1 |= FM_CS;			//Remove FM Transmitter from SPI bus
+ 110:main.c        **** 	delay_ms(100);				//
+ 111:main.c        **** 
+ 112:main.c        **** 	//Find Out how many files are on the SD card
+ 113:main.c        **** 	PINSEL0 |= (SCLK_PINSEL | MISO_PINSEL | MOSI_PINSEL);	//Make sure SPI is selected for reading the 
+ 114:main.c        **** 	do{
+ 115:main.c        **** 		numberOfChars++;
+ 116:main.c        **** 	}while(rootDirectory_files_stream(0)!='\0');			//Get the total number of characters in the filenam
+ 117:main.c        **** 	char tempNames[numberOfChars];	//This is one array that contains all of the filenames in the SD ca
+ 118:main.c        **** 	NUMBEROFFILES=rootDirectory_files(tempNames, numberOfChars+1);
+ 119:main.c        **** 	FileStruct Files[NUMBEROFFILES];						//Dynamically create an array for all of the filenames
+ 120:main.c        **** 	
+ 121:main.c        **** 	//Get all of the filenames into a Global Array
+ 122:main.c        **** 	int chartracker=0;	
+ 123:main.c        **** 	for(int j=0; j<NUMBEROFFILES; j++){
+ 124:main.c        **** 		for(int i=0; i<=MAXFILENAMELEN+1; i++){
+ 125:main.c        **** 			if(chartracker <= numberOfChars){
+ 126:main.c        **** 				if(tempNames[chartracker]==','){
+ 127:main.c        **** 					Files[j].file_name[i] = '\0';
+ 128:main.c        **** 					i=MAXFILENAMELEN+1;
+ 129:main.c        **** 				}
+ 130:main.c        **** 				else Files[j].file_name[i] = tempNames[chartracker];
+ 131:main.c        **** 				chartracker++;
+ 132:main.c        **** 			}
+ 133:main.c        **** 			else Files[j].file_name[i] ='\0';
+ 134:main.c        **** 		}	
+ 135:main.c        **** 	}
+ 136:main.c        **** 	
+ 137:main.c        **** 	
+ 138:main.c        **** 	//Load the file manager with the songs/files on the SD card and set this as the current display
+ 139:main.c        **** 	file_manager.total_pages = (NUMBEROFFILES/NUMROWS)-1;
+ 140:main.c        **** 	if(NUMBEROFFILES%NUMROWS != 0)file_manager.total_pages+=1;
+ 141:main.c        **** 	
+ 142:main.c        **** 	file_manager.orientation =ORIENTUP;
+ 143:main.c        **** 	file_manager.text_color=white;
+ 144:main.c        **** 	file_manager.back_color=black;
+ 145:main.c        **** 	
+ 146:main.c        **** 	file_manager.current_page=0;
+ 147:main.c        **** 	file_manager.current_row=1;
+ 148:main.c        **** 	file_manager.current_index=0;	
+ 149:main.c        **** 	getNewFiles(&file_manager, &Files[0]);
+ 150:main.c        **** 	for(int i=0; i<MAXDISPLEN; i++)file_manager.title[i]=welcome[i];
+ 151:main.c        **** 	
+ 152:main.c        **** 	//Generate the settings menu and fill in default settings values
+ 153:main.c        **** 	fillSettings(&settings_menu);
+ 154:main.c        **** 	
+ 155:main.c        **** 	//Setup the menu
+ 156:main.c        **** 	current_display = &file_manager;
+ 157:main.c        **** 	PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
+ 158:main.c        **** 	LCDClear(current_display->back_color);
+ 159:main.c        **** 	printMenu(current_display);
+ 160:main.c        **** 	
+ 161:main.c        **** 	while(1){
+ 162:main.c        **** 		if(IOPIN0 & (1<<23))
+ 163:main.c        **** 		{
+ 164:main.c        **** 			LCDClear(white);
+ 165:main.c        **** 			LCDPrintString(USB, 0, black, 7,4,current_display->orientation);
+ 166:main.c        **** 			VICIntEnClr = 0x30;		//Stop all interrupts to allow USB communication
+ 167:main.c        **** 			main_msc();
+ 168:main.c        **** 			reset();
+ 169:main.c        **** 		}
+ 170:main.c        **** 	
+ 171:main.c        **** 		//Wait for a button to be pressed or for the screen to be rotated.
+ 172:main.c        **** 		//while(!button_pressed && !update_screen){
+ 173:main.c        **** 		if(!button_pressed && !update_screen){
+ 174:main.c        **** 			//If the current song is done playing, start playing the next song if it's available.
+ 175:main.c        **** 			if(song_is_over){
+ 176:main.c        **** 				VICIntEnClr = 0x20;			//Stop the "Send Song" interrupts
+ 177:main.c        **** 				closeSong(&current_song);	//Close the current song
+ 178:main.c        **** 				file_is_open=0;				//change master flag
+ 179:main.c        **** 				ledBlueOff();
+ 180:main.c        **** 				//Get the next song on the page by changing rows
+ 181:main.c        **** 				if(file_manager.current_row < NUMROWS){
+ 182:main.c        **** 					file_manager.current_row++;
+ 183:main.c        **** 					file_manager.current_index++;
+ 184:main.c        **** 				}
+ 185:main.c        **** 				//Go to the next page of songs if necessary
+ 186:main.c        **** 				if((file_manager.current_row == NUMROWS) && (file_manager.current_page < file_manager.total_pag
+ 187:main.c        **** 					file_manager.current_row=1;
+ 188:main.c        **** 					file_manager.current_index=0;
+ 189:main.c        **** 					file_manager.current_page++;
+ 190:main.c        **** 					getNewFiles(&file_manager, &Files[0]);		//Get the next page of songs
+ 191:main.c        **** 				}
+ 192:main.c        **** 				//If there is another song in the list, get it and play it!
+ 193:main.c        **** 				if(file_manager.list[file_manager.current_row+1].file_name[0] != '\0'){	
+ 194:main.c        **** 					LCDClear(file_manager.back_color);
+ 195:main.c        **** 					printMenu(&file_manager);									//Print the menu with the next song!
+ 196:main.c        **** 					file_is_open=loadSongInfo(&current_song, &file_manager);	//Get the current song info.					
+ 197:main.c        **** 					vs1002Config();												//Enable the MP3 Comm. Lines
+ 198:main.c        **** 					vs1002SCIWrite(SCI_MODE, SM_SDINEW);						//Make sure the MP3 player is in the right mode.
+ 199:main.c        **** 					vs1002Finish();												//Disable the MP3 Comm. Lines
+ 200:main.c        **** 					ledBlueOn();
+ 201:main.c        **** 					VICIntEnable |= 0x20;		//Enable Timer 0 Interrupts(This is the "Song Sending" interrupt).
+ 202:main.c        **** 				}	
+ 203:main.c        **** 			}
+ 204:main.c        **** 		}
+ 205:main.c        **** 
+ 206:main.c        **** 		if(button_pressed == UP_BUT)handleUpButton(current_display, &Files[0]);
+ 207:main.c        **** 		else if(button_pressed == DWN_BUT)handleDownButton(current_display, &Files[0]);
+ 208:main.c        **** 		else if(button_pressed == MID_BUT)handleMiddleButton();
+ 209:main.c        **** 		
+ 210:main.c        **** 		else if(update_screen){
+ 211:main.c        **** 			VICIntEnClr = 0x10;	//Stop interrupts and allow accelerometer to stabilize
+ 212:main.c        **** 			delay_ms(300);
+ 213:main.c        **** 			if(MMA_get_y()>700 && prev_position>700){	//Get new accelerometer value; make sure position is c
+ 214:main.c        **** 				if(file_is_open)quickClear(current_display);
+ 215:main.c        **** 				else LCDClear(current_display->back_color);
+ 216:main.c        **** 				current_display = &settings_menu;
+ 217:main.c        **** 				current_display->orientation=ORIENTLEFT;
+ 218:main.c        **** 				ledBlueOff();
+ 219:main.c        **** 				if(file_is_open)ledGrnOn();
+ 220:main.c        **** 				else ledRedOn();
+ 221:main.c        **** 			}
+ 222:main.c        **** 			else if(MMA_get_y()<700 && prev_position<700){
+ 223:main.c        **** 				if(file_is_open)quickClear(current_display);
+ 224:main.c        **** 				else LCDClear(current_display->back_color);
+ 225:main.c        **** 				current_display = &file_manager;
+ 226:main.c        **** 				current_display->orientation=ORIENTUP;
+ 227:main.c        **** 				ledGrnOff();
+ 228:main.c        **** 				ledRedOff();
+ 229:main.c        **** 				if(file_is_open)ledBlueOn();
+ 230:main.c        **** 			}
+ 231:main.c        **** 			printMenu(current_display);					//If the screen has changed, show the new menu
+ 232:main.c        **** 			VICIntEnable |= 0x10;						//Re-enable interrupts
+ 233:main.c        **** 		}
+ 234:main.c        **** 		button_pressed=NO_BUT;
+ 235:main.c        **** 		VICIntEnable |= 0x10;
+ 236:main.c        **** 	}
+ 237:main.c        ****     return 0;
+ 238:main.c        **** }
+ 239:main.c        **** 
+ 240:main.c        **** 
+ 241:main.c        **** //Usage: delay_ms(1000);
+ 242:main.c        **** //Inputs: int count: Number of milliseconds to delay
+ 243:main.c        **** //The function will cause the firmware to delay for "count" milleseconds.
+ 244:main.c        **** void delay_ms(int count)
+ 245:main.c        **** {
+  16              	@ Function supports interworking.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              		@ link register save eliminated.
+  20              	.LVL0:
+  21              		.loc 1 247 0
+ 246:main.c        ****     int i;
+ 247:main.c        ****     count *= 10000;
+  22              	3, .L6
+  23 0000 1C309FE5 		mul	r0, r3, r0
+  24 0004 930000E0 	.LVL1:
+  25              		mov	r3, #0
+  26 0008 0030A0E3 	.LVL2:
+  27              		.loc 1 245 0
+  28              		@ lr needed for prologue
+  29              		b	.L2
+  30 000c 010000EA 	.L3:
+  31              		.loc 1 249 0
+ 248:main.c        ****     for (i = 0; i < count; i++)
+ 249:main.c        ****         asm volatile ("nop");
+  32              	 1 248 0
+  33 0010 0000A0E1 		add	r3, r3, #1
+  34              	.L2:
+  35 0014 013083E2 		cmp	r3, r0
+  36              		blt	.L3
+  37 0018 000053E1 		.loc 1 250 0
+  38 001c FBFFFFBA 		bx	lr
+ 250:main.c        **** }
+  39              	align	2
+  40 0020 1EFF2FE1 	.L6:
+  41              		.word	10000
+  42              	.LFE3:
+  44 0024 10270000 		.align	2
+  45              		.global	getButton
+  47              	getButton:
+  48              	.LFB7:
+  49              		.loc 1 370 0
+  50              		@ Function supports interworking.
+  51              		@ args = 0, pretend = 0, frame = 0
+ 251:main.c        **** 
+ 252:main.c        **** //Usage: bootUp();
+ 253:main.c        **** //Inputs: None
+ 254:main.c        **** //This function initializes the serial port, the SD card, the I/O pins and the interrupts
+ 255:main.c        **** void bootUp(void)
+ 256:main.c        **** {
+ 257:main.c        ****     rprintf_devopen(putc_serial0); //Init rprintf
+ 258:main.c        ****     delay_ms(10); //Delay for power to stablize
+ 259:main.c        **** 
+ 260:main.c        ****     //Bring up SD and FAT
+ 261:main.c        ****     if(!sd_raw_init())
+ 262:main.c        ****     {
+ 263:main.c        ****         rprintf("SD Init Error\n");
+ 264:main.c        ****     }
+ 265:main.c        ****     if(openroot())
+ 266:main.c        ****     {
+ 267:main.c        ****         rprintf("SD OpenRoot Error\n");
+ 268:main.c        ****     }
+ 269:main.c        ****      
+ 270:main.c        **** 	//Initialize I/O Ports and Peripherals
+ 271:main.c        **** 	//Setup the MP3 I/O Lines
+ 272:main.c        **** 	IODIR0 |= MP3_XCS;
+ 273:main.c        **** 	IODIR0 &= ~MP3_DREQ;
+ 274:main.c        **** 	PINSEL1 |= 0x00000C00;	//Set the MP3_DREQ Pin to be a capture pin
+ 275:main.c        **** 	IODIR1 |= MP3_XDCS | MP3_GPIO0 | MP3_XRES;	
+ 276:main.c        **** 	
+ 277:main.c        **** 	//Setupt the FM Trans. Lines
+ 278:main.c        **** 	IODIR1 |= FM_LA; 												//FM Trans Outputs (Leave SPI pins unconfigured for now)
+ 279:main.c        **** 	IODIR1 |= FM_CS;
+ 280:main.c        **** 	
+ 281:main.c        **** 	//Setup the SD Card I/O Lines
+ 282:main.c        **** 	IODIR0 |= SD_CS;												//SD Card Outputs
+ 283:main.c        **** 	
+ 284:main.c        **** 	//Setup the Accelerometer I/O Lines
+ 285:main.c        **** 	IODIR0 |= (GS1 | GS2);											//Accelerometer Outputs
+ 286:main.c        **** 	PINSEL0 |= (MMA_X_PINSEL | MMA_Y_PINSEL | MMA_Z_PINSEL);		//Make sure that ADC pins have ADC Funct
+ 287:main.c        **** 	IOCLR0 = (GS1 | GS2);											//Init. Accel. to 1.5G Mode
+ 288:main.c        **** 	
+ 289:main.c        **** 	//Setup the LCD I/O Lines
+ 290:main.c        **** 	IODIR0 |= (LCD_RES | LCD_CS);									//LCD Outputs
+ 291:main.c        **** 	
+ 292:main.c        **** 	//Setup the LED Lines										
+ 293:main.c        **** 	IODIR0 |= (LED_BLU | LED_RED | LED_GRN);						//Led's
+ 294:main.c        **** 	ledBlueOff();
+ 295:main.c        **** 	ledRedOff();
+ 296:main.c        **** 	ledGrnOff();
+ 297:main.c        **** 	
+ 298:main.c        **** 	//Setup the Buttons
+ 299:main.c        **** 	IODIR1 &= (~SW_UP & ~SW_DWN & ~SW_MID);		//Button Inputs
+ 300:main.c        **** 
+ 301:main.c        **** 	IODIR0 &= ~(1<<23);							//Set the Vbus line as an input
+ 302:main.c        **** 
+ 303:main.c        ****     //Setupt the Interrupts
+ 304:main.c        **** 	VPBDIV=1;										// Set PCLK equal to the System Clock	
+ 305:main.c        **** 	VICIntSelect = ~0x30; 							// Timer 0 AND TIMER 1 interrupt is an IRQ interrupt
+ 306:main.c        ****     VICIntEnable = 0x10; 							// Enable Timer 0 Interrupts (Don't start sending song data with Ti
+ 307:main.c        ****     VICVectCntl0= 0x25; 							// Use slot 0 for timer 1 interrupt
+ 308:main.c        ****     VICVectAddr0 = (unsigned int)timer1ISR; 		// Set the address of ISR for slot 1		
+ 309:main.c        ****     VICVectCntl1 = 0x24; 							// Use slot 1 for timer 0 interrupt
+ 310:main.c        ****     VICVectAddr1 = (unsigned int)timer0ISR; 		// Set the address of ISR for slot 1
+ 311:main.c        **** 	
+ 312:main.c        **** 	//Configure Timer0
+ 313:main.c        **** 	T0PR = 300;										//Divide Clock by 300 for 40kHz PS
+ 314:main.c        **** 	T0TCR |=0X01;									//Enable the clock
+ 315:main.c        **** 	T0CTCR=0;										//Timer Mode
+ 316:main.c        **** 	T0MCR=0x0003;									//Interrupt and Reset Timer on Match
+ 317:main.c        **** 	T0MR0=1000;										//Interrupt on 40Hz
+ 318:main.c        **** 	
+ 319:main.c        **** 	//Configure Timer1
+ 320:main.c        **** 	T1PR = 200;										//Divide Clock by 300 for 40kHz PS
+ 321:main.c        **** 	T1TCR |=0X01;									//Enable the clock
+ 322:main.c        **** 	T1CTCR=0;										//Timer Mode
+ 323:main.c        **** 	T1CCR=0x0A00;									//Capture and interrupt on the rising edge of DREQ
+ 324:main.c        **** 	
+ 325:main.c        **** 	//Setup the SPI Port
+ 326:main.c        ****     S0SPCCR = 64;              											// SCK = 1 MHz, counter > 8 and even
+ 327:main.c        ****     S0SPCR  = 0x20;                										// Master, no interrupt enable, 8 bits	
+ 328:main.c        **** }
+ 329:main.c        **** 
+ 330:main.c        **** //Usage: None (Automatically Called by FW)
+ 331:main.c        **** //Inputs: None
+ 332:main.c        **** //This function is a global interrupt called by a match on the Timer 0 match.  This interrupt
+ 333:main.c        **** //	is responsible for sending music to the MP3 player when it is needed. 
+ 334:main.c        **** //WARNING: Altering the Timer 0 Prescale register or Timer 0 Match value will put proper MP3 playin
+ 335:main.c        **** //			Adding superfluous code to this interrupt section may also contribute to improper MP3 playback
+ 336:main.c        **** static void timer1ISR(void)
+ 337:main.c        **** {
+ 338:main.c        **** 	vs1002Config();												//Enable MP3 Comm. Lines
+ 339:main.c        **** 	while(IOPIN0 & MP3_DREQ){
+ 340:main.c        **** 		vs1002SendMusic(current_song.data, MAXBUFFERSIZE);		//Send the buffered song data
+ 341:main.c        **** 		if(fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0)song_is_over=1;	//
+ 342:main.c        **** 		else song_is_over=0;									//if there's no more data available, set the flag, else leave it alo
+ 343:main.c        **** 	}	
+ 344:main.c        **** 	vs1002Finish();												//Disable MP3 Comm. Lines
+ 345:main.c        **** 	T1IR = 0xFF; 												//Clear the timer 0 interrupt
+ 346:main.c        **** 	VICVectAddr = 0; 											//Update VIC priorities	
+ 347:main.c        **** }
+ 348:main.c        **** 
+ 349:main.c        **** //Usage: None (Automatically Called by FW)
+ 350:main.c        **** //Inputs: None
+ 351:main.c        **** //This function is a global interrupt called by a match on the Timer 1 match.  The interrupt
+ 352:main.c        **** // is responsible for determining if a button has been pressed or if the screen has been rotated
+ 353:main.c        **** // and setting the appropriate global flag if either has occured.
+ 354:main.c        **** static void timer0ISR(void)
+ 355:main.c        **** {
+ 356:main.c        **** 	button_pressed=getButton();			//Find out if a button has been pressed, and which one
+ 357:main.c        **** 	cur_position=MMA_get_y();			//Get the current position of the screen
+ 358:main.c        **** 	if((prev_position<700 && cur_position>700)||(prev_position>700 && cur_position<700))update_screen=
+ 359:main.c        **** 	else update_screen=0;				//Determine if the accelerometer has been rotated
+ 360:main.c        **** 	prev_position=cur_position;			//Save the position value for later reference
+ 361:main.c        **** 	T0IR = 0xFF;						//Clear the timer interrupt
+ 362:main.c        **** 	VICVectAddr =0;						//Update the VIC priorities
+ 363:main.c        **** }
+ 364:main.c        **** 
+ 365:main.c        **** //Usage: button_value=getButton();
+ 366:main.c        **** //Inputs:  None
+ 367:main.c        **** //Outputs: None
+ 368:main.c        **** //Function returns the value of the button that is currently being pressed.
+ 369:main.c        **** // UP_BUT, DWN_BUT, and MID_BUT values can be viewed in MP3Dev.h
+ 370:main.c        **** char getButton(void){
+  52              	ed = 0, uses_anonymous_args = 0
+  53              		@ link register save eliminated.
+  54              		.loc 1 371 0
+  55              		ldr	r2, .L17
+  56              		ldr	r3, [r2, #16]
+ 371:main.c        **** 	if(!(IOPIN1 & SW_UP)) return UP_BUT;
+  57              	r3, #8388608
+  58 0028 30209FE5 		.loc 1 370 0
+  59 002c 103092E5 		@ lr needed for prologue
+  60 0030 020513E3 		.loc 1 371 0
+  61              		mov	r0, #2
+  62              		bxeq	lr
+  63              		.loc 1 372 0
+  64 0034 0200A0E3 		ldr	r3, [r2, #16]
+  65 0038 1EFF2F01 		tst	r3, #2097152
+ 372:main.c        **** 	else if(!(IOPIN1 & SW_DWN)) return DWN_BUT;
+  66              	#1
+  67 003c 103092E5 		bxeq	lr
+  68 0040 020613E3 		.loc 1 373 0
+  69 0044 0100A0E3 		ldr	r3, [r2, #16]
+  70 0048 1EFF2F01 		tst	r3, #4194304
+ 373:main.c        **** 	else if(!(IOPIN1 & SW_MID)) return MID_BUT;
+  71              	e	r0, #0
+  72 004c 103092E5 		moveq	r0, #3
+  73 0050 010513E3 		.loc 1 375 0
+  74 0054 0000A013 		bx	lr
+  75 0058 0300A003 	.L18:
+ 374:main.c        **** 	return NO_BUT;
+ 375:main.c        **** }
+  76              	gn	2
+  77 005c 1EFF2FE1 	.L17:
+  78              		.word	-536707072
+  79              	.LFE7:
+  81 0060 008002E0 		.align	2
+  82              		.global	getNewFiles
+  84              	getNewFiles:
+  85              	.LFB8:
+  86              		.loc 1 378 0
+  87              		@ Function supports interworking.
+  88              		@ args = 0, pretend = 0, frame = 0
+ 376:main.c        **** 
+ 377:main.c        **** 
+ 378:main.c        **** void getNewFiles(DisplayStruct *files, FileStruct *file_list){
+  89              	ed = 0, uses_anonymous_args = 0
+  90              	.LVL3:
+  91              		stmfd	sp!, {r4, lr}
+  92              	.LCFI0:
+  93              		.loc 1 379 0
+  94 0064 10402DE9 		ldrb	r2, [r0, #6]	@ zero_extendqisi2
+  95              		ldrb	r3, [r0, #5]	@ zero_extendqisi2
+ 379:main.c        **** 	if(files->current_page < files->total_pages){
+  96              	, r3
+  97 0068 0620D0E5 		.loc 1 378 0
+  98 006c 0530D0E5 		mov	r4, r1
+  99 0070 030052E1 	.LBB2:
+ 100              		.loc 1 394 0
+ 101 0074 0140A0E1 		movcc	lr, #0
+ 102              	.LVL4:
+ 380:main.c        **** 		for(int i =0; i<NUMROWS; i++){
+ 381:main.c        **** 			for(int j=0; j<MAXFILENAMELEN; j++){
+ 382:main.c        **** 				files->list[i].file_name[j] = file_list[files->current_page*NUMROWS+i].file_name[j];
+ 383:main.c        **** 			}
+ 384:main.c        **** 		}
+ 385:main.c        **** 	}
+ 386:main.c        **** 	else{
+ 387:main.c        **** 		for(int i=0; i<(NUMBEROFFILES-files->total_pages*NUMROWS); i++){
+ 388:main.c        **** 			for(int j=0; j<MAXFILENAMELEN; j++){
+ 389:main.c        **** 				files->list[i].file_name[j] = file_list[files->current_page*NUMROWS+i].file_name[j];
+ 390:main.c        **** 			}
+ 391:main.c        **** 		}
+ 392:main.c        **** 		for(int i=(NUMBEROFFILES-files->total_pages*NUMROWS); i<NUMROWS; i++)files->list[i].file_name[0]=
+ 393:main.c        **** 	}
+ 394:main.c        **** }
+ 103              		.loc 1 379 0
+ 104 0078 00E0A033 		bcc	.L25
+ 105              	.LVL5:
+ 106              	.LBB3:
+ 107              		.loc 1 387 0
+ 108 007c 3000003A 		ldr	r3, .L39
+ 109              		ldr	r1, [r3, #0]
+ 110              		mov	lr, #0
+ 111              	.LVL6:
+ 112 0080 CC309FE5 		b	.L22
+ 113 0084 001093E5 	.LVL7:
+ 114 0088 00E0A0E3 	.L23:
+ 115              	.LBE3:
+ 116 008c 1B0000EA 	.LBB4:
+ 117              	.LBB5:
+ 118              		.loc 1 382 0
+ 119              		ldrb	r2, [r0, #6]	@ zero_extendqisi2
+ 120              		mov	r3, #15
+ 121              		mla	r3, r2, r3, lr
+ 122              		add	r3, ip, r3, asl #5
+ 123 0090 0620D0E5 		ldrb	r2, [r3, r4]	@ zero_extendqisi2
+ 124 0094 0F30A0E3 		add	r3, r0, ip
+ 125 0098 92E323E0 		.loc 1 381 0
+ 126 009c 83328CE0 		add	ip, ip, #1
+ 127 00a0 0420D3E7 		.loc 1 382 0
+ 128 00a4 0C3080E0 		add	r3, r3, lr, asl #5
+ 129              		.loc 1 381 0
+ 130 00a8 01C08CE2 		cmp	ip, #30
+ 131              		.loc 1 382 0
+ 132 00ac 8E3283E0 		strb	r2, [r3, #12]
+ 133              		.loc 1 381 0
+ 134 00b0 1E005CE3 		bne	.L23
+ 135              	.LBE5:
+ 136 00b4 0C20C3E5 		.loc 1 380 0
+ 137              		add	lr, lr, #1
+ 138 00b8 F4FFFF1A 		cmp	lr, #15
+ 139              		beq	.L33
+ 140              		b	.L25
+ 141 00bc 01E08EE2 	.LVL8:
+ 142 00c0 0F005EE3 	.L27:
+ 143 00c4 2000000A 		mov	ip, #0
+ 144 00c8 1D0000EA 	.L28:
+ 145              	.LBE4:
+ 146              	.LBB6:
+ 147 00cc 00C0A0E3 	.LBB7:
+ 148              		.loc 1 389 0
+ 149              		ldrb	r2, [r0, #6]	@ zero_extendqisi2
+ 150              	.LVL9:
+ 151              		mov	r3, #15
+ 152              		mla	r3, r2, r3, lr
+ 153 00d0 0620D0E5 		add	r3, ip, r3, asl #5
+ 154              		ldrb	r2, [r3, r4]	@ zero_extendqisi2
+ 155 00d4 0F30A0E3 		add	r3, r0, ip
+ 156 00d8 92E323E0 		.loc 1 388 0
+ 157 00dc 83328CE0 		add	ip, ip, #1
+ 158 00e0 0420D3E7 		.loc 1 389 0
+ 159 00e4 0C3080E0 		add	r3, r3, lr, asl #5
+ 160              		.loc 1 388 0
+ 161 00e8 01C08CE2 		cmp	ip, #30
+ 162              		.loc 1 389 0
+ 163 00ec 8E3283E0 		strb	r2, [r3, #12]
+ 164              		.loc 1 388 0
+ 165 00f0 1E005CE3 		bne	.L28
+ 166              	.LBE7:
+ 167 00f4 0C20C3E5 		.loc 1 387 0
+ 168              		add	lr, lr, #1
+ 169 00f8 F4FFFF1A 	.L22:
+ 170              		ldrb	r3, [r0, #5]	@ zero_extendqisi2
+ 171              		mov	r2, #15
+ 172 00fc 01E08EE2 		mul	r3, r2, r3
+ 173              		rsb	r2, r3, r1
+ 174 0100 0530D0E5 	.LVL10:
+ 175 0104 0F20A0E3 		cmp	lr, r2
+ 176 0108 920303E0 		blt	.L27
+ 177 010c 012063E0 		mov	r3, r2, asl #5
+ 178              		add	r3, r3, #12
+ 179 0110 02005EE1 		add	r0, r0, r3
+ 180 0114 ECFFFFBA 	.LVL11:
+ 181 0118 8232A0E1 		b	.L31
+ 182 011c 0C3083E2 	.L32:
+ 183 0120 030080E0 	.LBE6:
+ 184              	.LBB8:
+ 185 0124 010000EA 		.loc 1 392 0
+ 186              		mov	r3, #0
+ 187              		strb	r3, [r0, #-32]
+ 188              	.L31:
+ 189              		cmp	r2, #14
+ 190 0128 0030A0E3 		add	r0, r0, #32
+ 191 012c 203040E5 		add	r2, r2, #1
+ 192              		ble	.L32
+ 193 0130 0E0052E3 		b	.L33
+ 194 0134 200080E2 	.LVL12:
+ 195 0138 012082E2 	.L25:
+ 196 013c F9FFFFDA 		.loc 1 394 0
+ 197 0140 010000EA 		mov	ip, #0
+ 198              		b	.L23
+ 199              	.LVL13:
+ 200              	.L33:
+ 201 0144 00C0A0E3 	.LBE8:
+ 202 0148 D0FFFFEA 		ldmfd	sp!, {r4, lr}
+ 203              		bx	lr
+ 204              	.L40:
+ 205              		.align	2
+ 206 014c 1040BDE8 	.L39:
+ 207 0150 1EFF2FE1 		.word	NUMBEROFFILES
+ 208              	.LFE8:
+ 210              		.align	2
+ 211 0154 04000000 		.global	fillSettings
+ 213              	fillSettings:
+ 214              	.LFB13:
+ 215              		.loc 1 481 0
+ 216              		@ Function supports interworking.
+ 217              		@ args = 0, pretend = 0, frame = 0
+ 218              		@ frame_needed = 0, uses_anonymous_args = 0
+ 395:main.c        **** 
+ 396:main.c        **** //Usage: file_is_open = loadSongInfo(&current_song, &file_manager);
+ 397:main.c        **** //Inputs: SongStruct *song: Pointer to the struct in which the song information will be loaded
+ 398:main.c        **** //		  DisplayStruct *selected_song: Pointer to the song whose information will be loaded
+ 399:main.c        **** //The function takes the currently selected file name from the selected_song structure and loads
+ 400:main.c        **** // the vital file information into the song structure.  The function also opens the song and prepar
+ 401:main.c        **** // it to be played.  If the function succesfully opens the song, a 1 is returned, else a 0 is retur
+ 402:main.c        **** char loadSongInfo(SongStruct *song, DisplayStruct *selected_song){
+ 403:main.c        **** 	//Get the selected songs file name
+ 404:main.c        **** 	for(int i=0; i<MAXFILENAMELEN; i++){
+ 405:main.c        **** 		song->file_name[i] = selected_song->list[selected_song->current_index].file_name[i];
+ 406:main.c        **** 	}
+ 407:main.c        **** 	//Get the selected songs display name
+ 408:main.c        **** 	for(int i=0; i<MAXDISPLEN; i++){
+ 409:main.c        **** 		if((song->file_name[i] == '.') || (i==MAXDISPLEN-1)){
+ 410:main.c        **** 			song->name[i]='\0';
+ 411:main.c        **** 			i=MAXDISPLEN;
+ 412:main.c        **** 		}	
+ 413:main.c        **** 		else song->name[i]=song->file_name[i];
+ 414:main.c        **** 	}
+ 415:main.c        **** 	
+ 416:main.c        **** 	PINSEL0 |= (SCLK_PINSEL | MISO_PINSEL | MOSI_PINSEL);	//Make sure SPI is selected for reading the 
+ 417:main.c        **** 	//Check to see if the selected song is valid
+ 418:main.c        **** 	if(!root_file_exists(song->file_name)){
+ 419:main.c        **** 		PINSEL0 &= 0xFFFFC00F;
+ 420:main.c        **** 		return 0;
+ 421:main.c        **** 	}	
+ 422:main.c        **** 	//Open the selected song
+ 423:main.c        **** 	else{
+ 424:main.c        **** 		song->handle=root_open(song->file_name);
+ 425:main.c        **** 		song->size=fat16_file_size(song->handle);
+ 426:main.c        **** 		fat16_read_file(song->handle, song->data, MAXBUFFERSIZE);
+ 427:main.c        **** 	}
+ 428:main.c        **** 	
+ 429:main.c        **** 	
+ 430:main.c        **** 	PINSEL0 &= 0xFFFFC00F;
+ 431:main.c        **** 	return 1;
+ 432:main.c        **** }
+ 433:main.c        **** 
+ 434:main.c        **** //Usage: CloseSong(&current_song);
+ 435:main.c        **** //Inputs: SongStruct *song: Pointer to a song structure to be closed
+ 436:main.c        **** //Function closes a song that is currently open.
+ 437:main.c        **** void closeSong(SongStruct *song){
+ 438:main.c        **** 	PINSEL0 |= (SCLK_PINSEL | MISO_PINSEL | MOSI_PINSEL);
+ 439:main.c        **** 	fat16_close_file(song->handle);
+ 440:main.c        **** 	PINSEL0 &= 0xFFFFC00F;
+ 441:main.c        **** }
+ 442:main.c        **** 
+ 443:main.c        **** //Usage: highlightRow(&current_display, PREVIOUS);
+ 444:main.c        **** //Inputs: DisplayStruct *current_display: Pointer to the display structure whose current row value 
+ 445:main.c        **** //		  char direction: direction value can be PREVIOUS or NEXT.  Value indicates which row should be
+ 446:main.c        **** //Depending on "direction" this value highlights a row, and manages the current_row and current_ind
+ 447:main.c        **** void highlightRow(DisplayStruct *display, char direction){
+ 448:main.c        **** 	PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
+ 449:main.c        **** 	LCDSetRowColor(display->current_row, 0, display->back_color, display->orientation);
+ 450:main.c        **** 	LCDPrintString(display->list[display->current_index].file_name, 0,display->text_color, display->cu
+ 451:main.c        **** 	if(direction == PREVIOUS){
+ 452:main.c        **** 		display->current_row--;
+ 453:main.c        **** 		display->current_index--;
+ 454:main.c        **** 	}
+ 455:main.c        **** 	else{
+ 456:main.c        **** 		display->current_row++;
+ 457:main.c        **** 		display->current_index++;		
+ 458:main.c        **** 	}
+ 459:main.c        **** 	LCDSetRowColor(display->current_row, 0, display->text_color, display->orientation);
+ 460:main.c        **** 	LCDPrintString(display->list[display->current_index].file_name, 0,display->back_color, display->cu
+ 461:main.c        **** }
+ 462:main.c        **** 
+ 463:main.c        **** //Usage: printMenu(&settings_menu);
+ 464:main.c        **** //Inputs: DisplayStruct *display: Pointer to the display struct to be displayed on the LCD.
+ 465:main.c        **** //This function writes the title, along with all of the file names in the display struct to the scr
+ 466:main.c        **** void printMenu(DisplayStruct *display){
+ 467:main.c        **** 	PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
+ 468:main.c        **** 	if(display->current_page==0)LCDPrintString(display->title,0, display->text_color, 0,0,display->ori
+ 469:main.c        **** 	for(int j=0; j<NUMROWS; j++){
+ 470:main.c        **** 		LCDPrintString(display->list[j].file_name,0, display->text_color, j+1,0,display->orientation);
+ 471:main.c        **** 	}
+ 472:main.c        **** 	LCDSetRowColor(display->current_row, 0, display->text_color, display->orientation);
+ 473:main.c        **** 	LCDPrintString(display->list[display->current_index].file_name, 0,display->back_color, display->cu
+ 474:main.c        **** }
+ 475:main.c        **** 
+ 476:main.c        **** //Usage: fillSettings(&settings_menu, &settings_values);
+ 477:main.c        **** //Inputs: DisplayStruct *menu: Struct whose file names should be loaded with the settings menu
+ 478:main.c        **** //		  SettingsStruct *values: settings struct whose initial values should be set
+ 479:main.c        **** //This function fills the input display struct with a list of settings, along with a "settings" tit
+ 480:main.c        **** //also loads the default display values along with the default settings values. 
+ 481:main.c        **** void fillSettings(DisplayStruct *menu){
+ 219              	r	r6, .L51+12
+ 220              		mov	r4, r0
+ 221              		mov	lr, r0
+ 222              	.L42:
+ 223              	.LBB9:
+ 224 0158 F0412DE9 		.loc 1 483 0
+ 225              		ldrb	r2, [r5], #1	@ zero_extendqisi2
+ 226              		.loc 1 482 0
+ 227 015c 9C509FE5 		ldr	r3, .L51+16
+ 228 0160 9C809FE5 		.loc 1 484 0
+ 229 0164 9C709FE5 		ldrb	r1, [r8], #1	@ zero_extendqisi2
+ 230 0168 9C609FE5 		.loc 1 485 0
+ 231 016c 0040A0E1 		ldrb	r0, [r7], #1	@ zero_extendqisi2
+ 232 0170 00E0A0E1 	.LVL15:
+ 233              		.loc 1 486 0
+ 234              		ldrb	ip, [r6], #1	@ zero_extendqisi2
+ 482:main.c        **** 	for(int i=0; i<MAXDISPLEN; i++){
+ 483:main.c        **** 		menu->list[0].file_name[i] = volume[i];
+ 235              	mp	r5, r3
+ 236 0174 0120D5E4 		.loc 1 483 0
+ 237              		strb	r2, [lr, #12]
+ 238 0178 90309FE5 		.loc 1 484 0
+ 484:main.c        **** 		menu->list[1].file_name[i] = radio_power[i];
+ 239              	b	r1, [lr, #44]
+ 240 017c 0110D8E4 		.loc 1 485 0
+ 485:main.c        **** 		menu->list[2].file_name[i] = radio_channel_menu[i];
+ 241              	trb	r0, [lr, #76]
+ 242 0180 0100D7E4 		.loc 1 486 0
+ 243              		strb	ip, [lr, #492]
+ 486:main.c        **** 		menu->title[i] = settings[i];
+ 244              	d	lr, lr, #1
+ 245 0184 01C0D6E4 		.loc 1 482 0
+ 246              		bne	.L42
+ 247 0188 030055E1 		mov	r3, r4
+ 248              		mov	r2, #3
+ 249 018c 0C20CEE5 	.LVL16:
+ 250              	.L44:
+ 251 0190 2C10CEE5 	.LBE9:
+ 252              	.LBB10:
+ 253 0194 4C00CEE5 		.loc 1 488 0
+ 254              		add	r2, r2, #1
+ 255 0198 ECC1CEE5 		.loc 1 489 0
+ 256 019c 01E08EE2 		mov	r1, #0
+ 257              		.loc 1 488 0
+ 258 01a0 F3FFFF1A 		cmp	r2, #15
+ 259 01a4 0430A0E1 		.loc 1 489 0
+ 260 01a8 0320A0E3 		strb	r1, [r3, #108]
+ 261              		.loc 1 488 0
+ 262              		add	r3, r3, #32
+ 263              		bne	.L44
+ 264              	.LBE10:
+ 487:main.c        **** 	}
+ 488:main.c        **** 	for(int i=3; i<NUMROWS; i++){
+ 265              	, .L51+20
+ 266 01ac 012082E2 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 489:main.c        **** 		menu->list[i].file_name[0]='\0';
+ 267              	trb	r3, [r4, #3]
+ 268 01b0 0010A0E3 		.loc 1 492 0
+ 269              		ldr	r3, .L51+24
+ 270 01b4 0F0052E3 		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 271              	.LVL17:
+ 272 01b8 6C10C3E5 		.loc 1 493 0
+ 273              		mov	r3, #1
+ 274 01bc 203083E2 		.loc 1 498 0
+ 275 01c0 F9FFFF1A 		strb	r1, [r4, #5]
+ 276              		.loc 1 492 0
+ 490:main.c        **** 	}
+ 491:main.c        **** 	menu->text_color=white;
+ 277              	[r4, #4]
+ 278 01c4 48309FE5 		.loc 1 496 0
+ 279 01c8 0030D3E5 		strb	r3, [r4, #2]
+ 280 01cc 0330C4E5 		.loc 1 493 0
+ 492:main.c        **** 	menu->back_color=black;
+ 281              	b	r3, [r4, #0]
+ 282 01d0 40309FE5 		.loc 1 494 0
+ 283 01d4 0020D3E5 		strb	r1, [r4, #1]
+ 284              		.loc 1 495 0
+ 493:main.c        **** 	menu->current_row=1;
+ 285              		r1, [r4, #8]
+ 286 01d8 0130A0E3 		.loc 1 497 0
+ 494:main.c        **** 	menu->current_column=0;
+ 495:main.c        **** 	menu->current_index=0;
+ 496:main.c        **** 	menu->orientation = ORIENTLEFT;
+ 497:main.c        **** 	menu->current_page=0;
+ 498:main.c        **** 	menu->total_pages = 0;
+ 287              	trb	r1, [r4, #6]
+ 288 01dc 0510C4E5 		.loc 1 499 0
+ 289              		ldmfd	sp!, {r4, r5, r6, r7, r8, lr}
+ 290 01e0 0420C4E5 		bx	lr
+ 291              	.L52:
+ 292 01e4 0230C4E5 		.align	2
+ 293              	.L51:
+ 294 01e8 0030C4E5 		.word	volume
+ 295              		.word	radio_power
+ 296 01ec 0110C4E5 		.word	radio_channel_menu
+ 297              		.word	settings
+ 298 01f0 081084E5 		.word	volume+22
+ 299              		.word	white
+ 300 01f4 0610C4E5 		.word	black
+ 499:main.c        **** }
+ 301              		fillSettings, .-fillSettings
+ 302 01f8 F041BDE8 		.align	2
+ 303 01fc 1EFF2FE1 		.global	reset
+ 305              	reset:
+ 306              	.LFB18:
+ 307 0200 00000000 		.loc 1 737 0
+ 308 0204 00000000 		@ Function supports interworking.
+ 309 0208 00000000 		@ args = 0, pretend = 0, frame = 0
+ 310 020c 00000000 		@ frame_needed = 0, uses_anonymous_args = 0
+ 311 0210 16000000 		@ link register save eliminated.
+ 312 0214 00000000 		.loc 1 739 0
+ 313 0218 00000000 		mov	r2, #-536870912
+ 314              		ldr	r3, [r2, #0]
+ 315              		orr	r3, r3, #3
+ 316              		str	r3, [r2, #0]
+ 317              		.loc 1 740 0
+ 318              		mov	r1, #170
+ 319              		.loc 1 741 0
+ 320              		mov	r3, #85
+ 500:main.c        **** 
+ 501:main.c        **** //Usage: handleUpButton(current_display, &Files[0]);
+ 502:main.c        **** //Inputs: 	DisplayStruct *display: Display currently being shown to the user.
+ 503:main.c        **** //			FileStruct *Files: List of files on the SD card
+ 504:main.c        **** //Outputs: None
+ 505:main.c        **** //Description: This function will highlight the previous row on the screen.  If the file menu is be
+ 506:main.c        **** // and the first file is currently selected, the function will get the previous group of files and 
+ 507:main.c        **** void handleUpButton(DisplayStruct *display, FileStruct *Files){
+ 508:main.c        **** 	if(display->current_row >1){	//See if the currently highlighted row is at the top of the page
+ 509:main.c        **** 		highlightRow(display, PREVIOUS); //If it isn't, then highlight the previous row
+ 510:main.c        **** 	}
+ 511:main.c        **** 	//If the current row is at the top of the page, and there are previous songs, then get them.
+ 512:main.c        **** 	else if((display->current_row == 1) && (display->current_page > 0)){	//If a prev. page exists, loa
+ 513:main.c        **** 		//Load previous 15 songs and reset row, index and offset values
+ 514:main.c        **** 		display->current_page-=1;					//Set the "new" current page to be loaded
+ 515:main.c        **** 		//if(file_is_open)quickClear(display);
+ 516:main.c        **** 		//else LCDClear(display->back_color);
+ 517:main.c        **** 		quickClear(display);
+ 518:main.c        **** 		display->current_row=15;					//Start current row at bottom of next screen
+ 519:main.c        **** 		display->current_index=14;					//
+ 520:main.c        **** 		getNewFiles(&file_manager, &Files[0]);		//Load the previous page
+ 521:main.c        **** 		printMenu(display);							//	display previous page
+ 522:main.c        **** 	}
+ 523:main.c        **** }
+ 524:main.c        **** 
+ 525:main.c        **** //Usage: handleDownButton(current_display, &Files[0]);
+ 526:main.c        **** //Inputs: 	DisplayStruct *display: Display currently being shown to the user.
+ 527:main.c        **** //			FileStruct *Files: List of files on the SD card
+ 528:main.c        **** //Outputs: None
+ 529:main.c        **** //Description: This function will highlight the next row on the screen.  If the file menu is being 
+ 530:main.c        **** // and the last file is currently selected, the function will get the next group of files and displ
+ 531:main.c        **** void handleDownButton(DisplayStruct *display, FileStruct *Files){
+ 532:main.c        **** 	if(display->current_row <15){	//See if the currently highlighted row is at the bottom of the page
+ 533:main.c        **** 		highlightRow(display, NEXT);	//If it's not, then highlight the next row
+ 534:main.c        **** 	}
+ 535:main.c        **** 	//If the current highlighted row is at the bottom, and there're more songs, then get them
+ 536:main.c        **** 	else if((display->current_row == 15) && (display->current_page < display->total_pages)){
+ 537:main.c        **** 		//Load next 15 songs and reset row, index and offset values
+ 538:main.c        **** 		display->current_page+=1;		
+ 539:main.c        **** 		//if(file_is_open)quickClear(display);
+ 540:main.c        **** 		//else LCDClear(display->back_color);
+ 541:main.c        **** 		quickClear(display);
+ 542:main.c        **** 		display->current_row=1;
+ 543:main.c        **** 		display->current_index=0;
+ 544:main.c        **** 		getNewFiles(&file_manager, &Files[0]);
+ 545:main.c        **** 		printMenu(display);				
+ 546:main.c        **** 	}
+ 547:main.c        **** }
+ 548:main.c        **** 
+ 549:main.c        **** //Usage: handleMiddleButton();
+ 550:main.c        **** //Inputs: None
+ 551:main.c        **** //Outputs: None
+ 552:main.c        **** //Description: This function is called when the middle button is pressed.
+ 553:main.c        **** //  The function performs an action based on the current state of the MP3 player.
+ 554:main.c        **** //	(1.-If the file menu is displayed, and a song is not being played, the function starts the curre
+ 555:main.c        **** //	(2.-If the file menu is displayed and a song IS being played, the fucntion stops the currently p
+ 556:main.c        **** //	(3.-If the settings menu is displayed, the function opens the selected setting and allows the us
+ 557:main.c        **** void handleMiddleButton(void){
+ 558:main.c        **** 	VICIntEnClr = 0x10;
+ 559:main.c        **** 	delay_ms(250);
+ 560:main.c        **** 	
+ 561:main.c        **** 	//If the File Menu is being displayed, middle button acts like play/stop
+ 562:main.c        **** 	if(current_display == &file_manager){
+ 563:main.c        **** 		if(!file_is_open){				//If a file isn't already playing then this acts like a play button
+ 564:main.c        **** 			file_is_open=loadSongInfo(&current_song, &file_manager);	//Get the current song info.
+ 565:main.c        **** 			if(!file_is_open){			//Make sure this is a valid file
+ 566:main.c        **** 				LCDClear(white);
+ 567:main.c        **** 				LCDPrintString(NotFound, 0, black, 1,0,current_display->orientation);
+ 568:main.c        **** 				delay_ms(1000);
+ 569:main.c        **** 				LCDClear(black);
+ 570:main.c        **** 				printMenu(&file_manager);
+ 571:main.c        **** 			}	
+ 572:main.c        **** 			else{
+ 573:main.c        **** 				vs1002Config();							//Enable the MP3 Comm. Lines
+ 574:main.c        **** 				vs1002SCIWrite(SCI_MODE, SM_SDINEW);	//Make sure the MP3 player is in the right mode.
+ 575:main.c        **** 				vs1002Finish();							//Disable the MP3 Comm. Lines
+ 576:main.c        **** 				ledBlueOn();
+ 577:main.c        **** 				//Send first song data
+ 578:main.c        **** 				vs1002Config();										//Enable MP3 Comm. Lines
+ 579:main.c        **** 				while((IOPIN0 & MP3_DREQ) != 0){
+ 580:main.c        **** 					vs1002SendMusic(current_song.data, MAXBUFFERSIZE);	//Send the buffered song data
+ 581:main.c        **** 					if(fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0)song_is_over=1;
+ 582:main.c        **** 					else song_is_over=0;									//if there's no more data available, set the flag, else leave it 
+ 583:main.c        **** 				}
+ 584:main.c        **** 				vs1002Finish();
+ 585:main.c        **** 				PINSEL1 |= 0x00000C00;						
+ 586:main.c        **** 				VICIntEnable |= 0x20;		//Enable Timer 1 Interrupts(This is the "Song Sending" interrupt).
+ 587:main.c        **** 				IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES);		//Assign LCD pins as Outputs
+ 588:main.c        **** 			}
+ 589:main.c        **** 		}	
+ 590:main.c        **** 		else{							//If a file is already open then this acts like a stop button
+ 591:main.c        **** 			VICIntEnClr = 0x20;											//Disable Time 0 Interrupts(Stop the "Song Sending" interrupt)
+ 592:main.c        **** 			ledBlueOff();
+ 593:main.c        **** 			vs1002Config();												//Enable the MP3 Comm Lines
+ 594:main.c        **** 			vs1002SCIWrite(SCI_MODE, SM_OUTOFWAV);						//Tell the MP3 Player to jump out of WAV decoding
+ 595:main.c        **** 			for(int i=0; i<150; i++)vs1002SCIWrite(SCI_MODE, 0x00);	//Send 150 zeroes to the player to clear
+ 596:main.c        **** 			vs1002Finish();												//Disable the MP3 Comm. Lines
+ 597:main.c        **** 			IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES);			//Assign LCD pins as Outputs
+ 598:main.c        **** 			closeSong(&current_song);									//Close the current song
+ 599:main.c        **** 			file_is_open=0;												//Clear the global flag
+ 600:main.c        **** 			VICIntEnable = 0x10;
+ 601:main.c        **** 		}
+ 602:main.c        **** 	}
+ 603:main.c        **** 	
+ 604:main.c        **** 	//Else we are on the Settings menu, and we need to handle the settins options
+ 605:main.c        **** 	else{
+ 606:main.c        **** 		if(file_is_open)quickClear(current_display);
+ 607:main.c        **** 		else LCDClear(settings_menu.back_color);
+ 608:main.c        **** 		LCDPrintString(current_display->list[current_display->current_index].file_name,0,current_display-
+ 609:main.c        **** 		VICIntEnable|=0x10;
+ 610:main.c        **** 		if(current_display->current_row==VOLUMEMENU){
+ 611:main.c        **** 			VICIntEnable |= 0x10;
+ 612:main.c        **** 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 613:main.c        **** 			LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
+ 614:main.c        **** 			while(button_pressed < MID_BUT){
+ 615:main.c        **** 				VICIntEnClr = 0x10;				//Stop Interrupts to
+ 616:main.c        **** 				delay_ms(150);					//	debounce the switch					
+ 617:main.c        **** 				if(button_pressed==UP_BUT){
+ 618:main.c        **** 					if(volume_setting < 32){
+ 619:main.c        **** 						volume_setting+=1;
+ 620:main.c        **** 						vs1002Config();				//Enable the MP3 Comm. Lines
+ 621:main.c        **** 						vs1002SetVolume(INCREASE);	//Lower the volume
+ 622:main.c        **** 						vs1002Finish();				//Disable MP3 Comm. Lines
+ 623:main.c        **** 					}	
+ 624:main.c        **** 					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 625:main.c        **** 					LCDPrintString("%d", volume_setting, current_display->text_color, 2, 0, current_display->orien
+ 626:main.c        **** 				}
+ 627:main.c        **** 				else if(button_pressed==DWN_BUT){
+ 628:main.c        **** 					if(volume_setting >= 0){
+ 629:main.c        **** 						volume_setting--;
+ 630:main.c        **** 						vs1002Config();			//Enable the MP3 Comm. Lines
+ 631:main.c        **** 						vs1002SetVolume(DECREASE);	//Lower the volume
+ 632:main.c        **** 						vs1002Finish();			//Disable MP3 Comm. Lines
+ 633:main.c        **** 					}
+ 634:main.c        **** 					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 635:main.c        **** 					LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
+ 636:main.c        **** 				}
+ 637:main.c        **** 				VICIntEnable |= 0x10;
+ 638:main.c        **** 			}
+ 639:main.c        **** 		}	
+ 640:main.c        **** 		else if(current_display->current_row==RADIOCMENU){
+ 641:main.c        **** 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 642:main.c        **** 			LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
+ 643:main.c        **** 			button_pressed=NO_BUT;
+ 644:main.c        **** 			VICIntEnable |= 0x10;
+ 645:main.c        **** 			while(button_pressed < MID_BUT){
+ 646:main.c        **** 				VICIntEnClr = 0x10;	//Stop Interrupts to
+ 647:main.c        **** 				delay_ms(100);		//	debounce the switch					
+ 648:main.c        **** 				if(button_pressed==UP_BUT){
+ 649:main.c        **** 					//Increase Radio Channel
+ 650:main.c        **** 					if(radio_channel < 1075)radio_channel+=2;
+ 651:main.c        **** 					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 652:main.c        **** 					LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
+ 653:main.c        **** 				}
+ 654:main.c        **** 				else if(button_pressed==DWN_BUT){
+ 655:main.c        **** 					//Decrease Radio Channel
+ 656:main.c        **** 					if(radio_channel > 885)radio_channel-=2;
+ 657:main.c        **** 					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 658:main.c        **** 					LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
+ 659:main.c        **** 				}
+ 660:main.c        **** 				ns73SetChannel(radio_channel);
+ 661:main.c        **** 				VICIntEnable |= 0x10;
+ 662:main.c        **** 			}
+ 663:main.c        **** 			IOCLR1 |= FM_CS;				//Select the FM transmitter
+ 664:main.c        **** 			delay_ms(100);
+ 665:main.c        **** 			ns73Config();					//Configigure the FM Trans. I/O
+ 666:main.c        **** 			ns73SetChannel(radio_channel);	//Set the channel	
+ 667:main.c        **** 			IOSET1 |= FM_CS;				//Unselect the FM transmitter
+ 668:main.c        **** 		}
+ 669:main.c        **** 		else if(current_display->current_row==RADIOPMENU){
+ 670:main.c        **** 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 671:main.c        **** 			if(radio_enable)LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orient
+ 672:main.c        **** 			else LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
+ 673:main.c        **** 			button_pressed=NO_BUT;
+ 674:main.c        **** 			VICIntEnable |= 0x10;
+ 675:main.c        **** 			while(button_pressed < MID_BUT){
+ 676:main.c        **** 				VICIntEnClr = 0x10;	//Stop Interrupts to
+ 677:main.c        **** 				delay_ms(100);		//	debounce the switch					
+ 678:main.c        **** 				if(button_pressed==UP_BUT){
+ 679:main.c        **** 					//Enable Radio
+ 680:main.c        **** 					radio_enable=ON;
+ 681:main.c        **** 					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 682:main.c        **** 					LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
+ 683:main.c        **** 					
+ 684:main.c        **** 					IOCLR1 |= FM_CS;			//Select the FM transmitter
+ 685:main.c        **** 					delay_ms(100);
+ 686:main.c        **** 					ns73Config();				//Configigure the FM Trans. I/O
+ 687:main.c        **** 					ns73Send(R0, PE | AG);		//Power up the radio	
+ 688:main.c        **** 					IOSET1 |= FM_CS;			//Unselect the FM transmitter
+ 689:main.c        **** 
+ 690:main.c        **** 				}
+ 691:main.c        **** 				else if(button_pressed==DWN_BUT){
+ 692:main.c        **** 					//Disable Radio
+ 693:main.c        **** 					radio_enable=OFF;
+ 694:main.c        **** 					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 695:main.c        **** 					LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
+ 696:main.c        **** 
+ 697:main.c        **** 					IOCLR1 |= FM_CS;			//Select the FM transmitter
+ 698:main.c        **** 					delay_ms(100);
+ 699:main.c        **** 					ns73Config();				//Configigure the FM Trans. I/O
+ 700:main.c        **** 					ns73Send(R0, MUTE);		//Power up the radio	
+ 701:main.c        **** 					IOSET1 |= FM_CS;			//Unselect the FM transmitter	
+ 702:main.c        **** 
+ 703:main.c        **** 				}
+ 704:main.c        **** 				VICIntEnable |= 0x10;
+ 705:main.c        **** 			}
+ 706:main.c        **** 		}
+ 707:main.c        **** 		if(file_is_open)quickClear(current_display);
+ 708:main.c        **** 		else LCDClear(current_display->back_color);
+ 709:main.c        **** 		printMenu(current_display);
+ 710:main.c        **** 	}
+ 711:main.c        **** 	VICIntEnable |= 0x10;
+ 712:main.c        **** }
+ 713:main.c        **** 
+ 714:main.c        **** 
+ 715:main.c        **** //Usage: quickClear(currentDisplay);
+ 716:main.c        **** //Inputs: DisplayStruct *display - pointer to the display that contains the current display
+ 717:main.c        **** //Outputs: None
+ 718:main.c        **** //Description: Rather than painting every pixel a specific color (like LCDClear does) this routine
+ 719:main.c        **** //			   will simply color all of the text the same color as the background, giving the illusion
+ 720:main.c        **** //			   of a clear screen.  Only works with the background color.  Much faster than LCDClear, and i
+ 721:main.c        **** //			   good to use while an MP3 is playing.
+ 722:main.c        **** void quickClear(DisplayStruct *display){
+ 723:main.c        **** 	PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
+ 724:main.c        **** 	//If we're on the first page of the menu, we also need to clear the title.
+ 725:main.c        **** 	if(display->current_page==0){
+ 726:main.c        **** 		LCDPrintString(display->title,0, display->back_color, 0,0,display->orientation);
+ 727:main.c        **** 		
+ 728:main.c        **** 	}
+ 729:main.c        **** 	LCDSetRowColor(display->current_row, 0, display->back_color, display->orientation);
+ 730:main.c        **** 	for(int j=0; j<NUMROWS; j++){
+ 731:main.c        **** 		LCDPrintString(display->list[j].file_name,0, display->back_color, j+1,0,display->orientation);
+ 732:main.c        **** 		LCDPrintString(newline,0, black, j+1,0,0);
+ 733:main.c        **** 	}
+ 734:main.c        **** }
+ 735:main.c        **** 
+ 736:main.c        **** void reset(void)
+ 737:main.c        **** {
+ 321              	1, [r2, #8]
+ 322              		.loc 1 741 0
+ 323              		str	r3, [r2, #8]
+ 324              		.loc 1 743 0
+ 325              		mov	r3, #0
+ 738:main.c        ****     // Intentionally fault Watchdog to trigger a reset condition
+ 739:main.c        ****     WDMOD |= 3;
+ 326              	 1 742 0
+ 327 021c 0E22A0E3 		str	r1, [r2, #8]
+ 328 0220 003092E5 		.loc 1 737 0
+ 329 0224 033083E3 		@ lr needed for prologue
+ 330 0228 003082E5 		.loc 1 743 0
+ 740:main.c        ****     WDFEED = 0xAA;
+ 331              	r3, [r2, #8]
+ 332 022c AA10A0E3 		.loc 1 744 0
+ 741:main.c        ****     WDFEED = 0x55;
+ 333              	x	lr
+ 334 0230 5530A0E3 	.LFE18:
+ 336 0234 081082E5 		.align	2
+ 337              		.global	quickClear
+ 742:main.c        ****     WDFEED = 0xAA;
+ 743:main.c        ****     WDFEED = 0x00;
+ 339              	lear:
+ 340 023c 0030A0E3 	.LFB17:
+ 341              		.loc 1 722 0
+ 342 0240 081082E5 		@ Function supports interworking.
+ 343              		@ args = 0, pretend = 0, frame = 0
+ 344              		@ frame_needed = 0, uses_anonymous_args = 0
+ 345              	.LVL18:
+ 346 0244 083082E5 		.loc 1 723 0
+ 744:main.c        **** }
+ 347              	 .L63
+ 348 0248 1EFF2FE1 		ldr	r3, [r2, #0]
+ 349              		.loc 1 722 0
+ 350              		stmfd	sp!, {r4, r5, r6, lr}
+ 351              	.LCFI2:
+ 352              		.loc 1 723 0
+ 353              		bic	r3, r3, #16320
+ 354              		bic	r3, r3, #48
+ 355              		str	r3, [r2, #0]
+ 356              		.loc 1 725 0
+ 357              		ldrb	lr, [r0, #6]	@ zero_extendqisi2
+ 358              		cmp	lr, #0
+ 359              		.loc 1 722 0
+ 360              		sub	sp, sp, #8
+ 361              	.LCFI3:
+ 362 024c BC209FE5 		.loc 1 722 0
+ 363 0250 003092E5 		mov	r6, r0
+ 364              		.loc 1 725 0
+ 365 0254 70402DE9 		bne	.L56
+ 366              	.LVL19:
+ 367              		.loc 1 726 0
+ 368 0258 FF3DC3E3 		ldrb	ip, [r0, #2]	@ zero_extendqisi2
+ 369 025c 3030C3E3 		ldrb	r2, [r0, #4]	@ zero_extendqisi2
+ 370 0260 003082E5 		mov	r1, lr
+ 371              		add	r0, r0, #492
+ 372 0264 06E0D0E5 		mov	r3, lr
+ 373 0268 00005EE3 		str	ip, [sp, #4]
+ 374              		str	lr, [sp, #0]
+ 375 026c 08D04DE2 		bl	LCDPrintString
+ 376              	.LVL20:
+ 377              	.L56:
+ 378 0270 0060A0E1 		.loc 1 729 0
+ 379              		ldrb	r0, [r6, #0]	@ zero_extendqisi2
+ 380 0274 0700001A 		mov	r1, #0
+ 381              		ldrb	r2, [r6, #4]	@ zero_extendqisi2
+ 382              		ldrb	r3, [r6, #2]	@ zero_extendqisi2
+ 383 0278 02C0D0E5 		bl	LCDSetRowColor
+ 384 027c 0420D0E5 		mov	r5, #0
+ 385 0280 0E10A0E1 	.LVL21:
+ 386 0284 7B0F80E2 	.L58:
+ 387 0288 0E30A0E1 	.LBB11:
+ 388 028c 04C08DE5 		.loc 1 731 0
+ 389 0290 00E08DE5 		mov	r0, r5, asl #5
+ 390 0294 FEFFFFEB 		mov	r4, #0
+ 391              		ldrb	ip, [r6, #2]	@ zero_extendqisi2
+ 392              	.LBE11:
+ 393              		.loc 1 729 0
+ 394 0298 0000D6E5 		add	r5, r5, #1
+ 395 029c 0010A0E3 	.LVL22:
+ 396 02a0 0420D6E5 	.LBB12:
+ 397 02a4 0230D6E5 		.loc 1 731 0
+ 398 02a8 FEFFFFEB 		add	r0, r0, #12
+ 399 02ac 0050A0E3 		ldrb	r2, [r6, #4]	@ zero_extendqisi2
+ 400              		add	r0, r6, r0
+ 401              		mov	r1, r4
+ 402              		mov	r3, r5
+ 403              		stmia	sp, {r4, ip}	@ phole stm
+ 404 02b0 8502A0E1 		bl	LCDPrintString
+ 405 02b4 0040A0E3 		.loc 1 732 0
+ 406 02b8 02C0D6E5 		ldr	r3, .L63+4
+ 407              		mov	r1, r4
+ 408              		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 409 02bc 015085E2 		ldr	r0, .L63+8
+ 410              		mov	r3, r5
+ 411              		str	r4, [sp, #0]
+ 412              		str	r4, [sp, #4]
+ 413 02c0 0C0080E2 		bl	LCDPrintString
+ 414 02c4 0420D6E5 	.LVL23:
+ 415 02c8 000086E0 		.loc 1 730 0
+ 416 02cc 0410A0E1 		cmp	r5, #15
+ 417 02d0 0530A0E1 		bne	.L58
+ 418 02d4 10108DE8 	.LBE12:
+ 419 02d8 FEFFFFEB 		.loc 1 734 0
+ 420              		add	sp, sp, #8
+ 421 02dc 30309FE5 		ldmfd	sp!, {r4, r5, r6, lr}
+ 422 02e0 0410A0E1 		bx	lr
+ 423 02e4 0020D3E5 	.L64:
+ 424 02e8 28009FE5 		.align	2
+ 425 02ec 0530A0E1 	.L63:
+ 426 02f0 00408DE5 		.word	-536690688
+ 427 02f4 04408DE5 		.word	black
+ 428 02f8 FEFFFFEB 		.word	newline
+ 429              	.LFE17:
+ 431 02fc 0F0055E3 		.align	2
+ 432 0300 EAFFFF1A 		.global	printMenu
+ 434              	printMenu:
+ 435 0304 08D08DE2 	.LFB12:
+ 436 0308 7040BDE8 		.loc 1 466 0
+ 437 030c 1EFF2FE1 		@ Function supports interworking.
+ 438              		@ args = 0, pretend = 0, frame = 0
+ 439              		@ frame_needed = 0, uses_anonymous_args = 0
+ 440              	.LVL24:
+ 441 0310 00C002E0 		.loc 1 467 0
+ 442 0314 00000000 		ldr	r2, .L73
+ 443 0318 00000000 		ldr	r3, [r2, #0]
+ 444              		.loc 1 466 0
+ 445              		stmfd	sp!, {r4, r5, r6, lr}
+ 446              	.LCFI4:
+ 447              		.loc 1 467 0
+ 448              		bic	r3, r3, #16320
+ 449              		bic	r3, r3, #48
+ 450              		str	r3, [r2, #0]
+ 451              		.loc 1 468 0
+ 452              		ldrb	lr, [r0, #6]	@ zero_extendqisi2
+ 453              		cmp	lr, #0
+ 454              		.loc 1 466 0
+ 455              		sub	sp, sp, #8
+ 456              	.LCFI5:
+ 457 031c C4209FE5 		.loc 1 466 0
+ 458 0320 003092E5 		mov	r5, r0
+ 459              		.loc 1 468 0
+ 460 0324 70402DE9 		bne	.L66
+ 461              	.LVL25:
+ 462              		ldrb	ip, [r0, #2]	@ zero_extendqisi2
+ 463 0328 FF3DC3E3 		ldrb	r2, [r0, #3]	@ zero_extendqisi2
+ 464 032c 3030C3E3 		mov	r1, lr
+ 465 0330 003082E5 		add	r0, r0, #492
+ 466              		mov	r3, lr
+ 467 0334 06E0D0E5 		str	ip, [sp, #4]
+ 468 0338 00005EE3 		str	lr, [sp, #0]
+ 469              		bl	LCDPrintString
+ 470 033c 08D04DE2 	.LVL26:
+ 471              	.L66:
+ 472              		mov	r4, #0
+ 473 0340 0050A0E1 	.LVL27:
+ 474              	.L68:
+ 475 0344 0700001A 	.LBB13:
+ 476              		.loc 1 470 0
+ 477 0348 02C0D0E5 		mov	r0, r4, asl #5
+ 478 034c 0320D0E5 		ldrb	ip, [r5, #2]	@ zero_extendqisi2
+ 479 0350 0E10A0E1 		add	r4, r4, #1
+ 480 0354 7B0F80E2 	.LVL28:
+ 481 0358 0E30A0E1 		mov	r6, #0
+ 482 035c 04C08DE5 		add	r0, r0, #12
+ 483 0360 00E08DE5 		ldrb	r2, [r5, #3]	@ zero_extendqisi2
+ 484 0364 FEFFFFEB 		add	r0, r5, r0
+ 485              		mov	r1, r6
+ 486              		mov	r3, r4
+ 487 0368 0040A0E3 		stmia	sp, {r6, ip}	@ phole stm
+ 488              		bl	LCDPrintString
+ 489              	.LVL29:
+ 490              		.loc 1 469 0
+ 491              		cmp	r4, #15
+ 492 036c 8402A0E1 		bne	.L68
+ 493 0370 02C0D5E5 	.LBE13:
+ 494 0374 014084E2 		.loc 1 472 0
+ 495              		ldrb	r0, [r5, #0]	@ zero_extendqisi2
+ 496 0378 0060A0E3 		mov	r1, r6
+ 497 037c 0C0080E2 		ldrb	r2, [r5, #3]	@ zero_extendqisi2
+ 498 0380 0320D5E5 		ldrb	r3, [r5, #2]	@ zero_extendqisi2
+ 499 0384 000085E0 		bl	LCDSetRowColor
+ 500 0388 0610A0E1 		.loc 1 473 0
+ 501 038c 0430A0E1 		ldr	r0, [r5, #8]
+ 502 0390 40108DE8 		mov	r0, r0, asl #5
+ 503 0394 FEFFFFEB 		ldrb	ip, [r5, #2]	@ zero_extendqisi2
+ 504              		add	r0, r0, #12
+ 505              		ldrb	r2, [r5, #4]	@ zero_extendqisi2
+ 506 0398 0F0054E3 		ldrb	r3, [r5, #0]	@ zero_extendqisi2
+ 507 039c F2FFFF1A 		add	r0, r5, r0
+ 508              		mov	r1, r6
+ 509              		stmia	sp, {r6, ip}	@ phole stm
+ 510 03a0 0000D5E5 		bl	LCDPrintString
+ 511 03a4 0610A0E1 		.loc 1 474 0
+ 512 03a8 0320D5E5 		add	sp, sp, #8
+ 513 03ac 0230D5E5 		ldmfd	sp!, {r4, r5, r6, lr}
+ 514 03b0 FEFFFFEB 		bx	lr
+ 515              	.L74:
+ 516 03b4 080095E5 		.align	2
+ 517 03b8 8002A0E1 	.L73:
+ 518 03bc 02C0D5E5 		.word	-536690688
+ 519 03c0 0C0080E2 	.LFE12:
+ 521 03c8 0030D5E5 		.align	2
+ 522 03cc 000085E0 		.global	highlightRow
+ 524 03d4 40108DE8 	highlightRow:
+ 525 03d8 FEFFFFEB 	.LFB11:
+ 526              		.loc 1 447 0
+ 527 03dc 08D08DE2 		@ Function supports interworking.
+ 528 03e0 7040BDE8 		@ args = 0, pretend = 0, frame = 0
+ 529 03e4 1EFF2FE1 		@ frame_needed = 0, uses_anonymous_args = 0
+ 530              	.LVL30:
+ 531              		.loc 1 448 0
+ 532              		ldr	r2, .L80
+ 533 03e8 00C002E0 		ldr	r3, [r2, #0]
+ 534              		.loc 1 447 0
+ 535              		stmfd	sp!, {r4, r5, lr}
+ 536              	.LCFI6:
+ 537              		.loc 1 448 0
+ 538              		bic	r3, r3, #16320
+ 539              		bic	r3, r3, #48
+ 540              		str	r3, [r2, #0]
+ 541              		.loc 1 447 0
+ 542              		mov	r5, r0
+ 543              		sub	sp, sp, #8
+ 544              	.LCFI7:
+ 545              		.loc 1 449 0
+ 546              		ldrb	r2, [r5, #4]	@ zero_extendqisi2
+ 547 03ec D8209FE5 		ldrb	r3, [r5, #2]	@ zero_extendqisi2
+ 548 03f0 003092E5 		.loc 1 447 0
+ 549              		mov	r4, r1
+ 550 03f4 30402DE9 		.loc 1 449 0
+ 551              		ldrb	r0, [r0, #0]	@ zero_extendqisi2
+ 552              	.LVL31:
+ 553 03f8 FF3DC3E3 		mov	r1, #0
+ 554 03fc 3030C3E3 	.LVL32:
+ 555 0400 003082E5 		bl	LCDSetRowColor
+ 556              		.loc 1 450 0
+ 557 0404 0050A0E1 		ldr	r0, [r5, #8]
+ 558 0408 08D04DE2 		mov	r0, r0, asl #5
+ 559              		ldrb	lr, [r5, #2]	@ zero_extendqisi2
+ 560              		mov	ip, #0
+ 561 040c 0420D5E5 		add	r0, r0, #12
+ 562 0410 0230D5E5 		ldrb	r2, [r5, #3]	@ zero_extendqisi2
+ 563              		ldrb	r3, [r5, #0]	@ zero_extendqisi2
+ 564 0414 0140A0E1 		mov	r1, ip
+ 565              		add	r0, r5, r0
+ 566 0418 0000D0E5 		stmia	sp, {ip, lr}	@ phole stm
+ 567              		bl	LCDPrintString
+ 568 041c 0010A0E3 		ldrb	r3, [r5, #0]	@ zero_extendqisi2
+ 569              		.loc 1 447 0
+ 570 0420 FEFFFFEB 		and	r4, r4, #255
+ 571              		.loc 1 451 0
+ 572 0424 080095E5 		cmp	r4, #1
+ 573 0428 8002A0E1 		.loc 1 452 0
+ 574 042c 02E0D5E5 		sub	r0, r3, #1
+ 575 0430 00C0A0E3 		.loc 1 456 0
+ 576 0434 0C0080E2 		add	r1, r3, #1
+ 577 0438 0320D5E5 		ldr	r3, [r5, #8]
+ 578 043c 0030D5E5 		strneb	r1, [r5, #0]
+ 579 0440 0C10A0E1 		.loc 1 452 0
+ 580 0444 000085E0 		streqb	r0, [r5, #0]
+ 581 0448 00508DE8 		.loc 1 453 0
+ 582 044c FEFFFFEB 		sub	r2, r3, #1
+ 583 0450 0030D5E5 		.loc 1 457 0
+ 584              		add	r3, r3, #1
+ 585 0454 FF4004E2 		.loc 1 453 0
+ 586              		streq	r2, [r5, #8]
+ 587 0458 010054E3 		.loc 1 457 0
+ 588              		strne	r3, [r5, #8]
+ 589 045c 010043E2 		.loc 1 459 0
+ 590              		ldrb	r0, [r5, #0]	@ zero_extendqisi2
+ 591 0460 011083E2 		ldrb	r2, [r5, #3]	@ zero_extendqisi2
+ 592 0464 083095E5 		ldrb	r3, [r5, #2]	@ zero_extendqisi2
+ 593 0468 0010C515 		mov	r1, #0
+ 594              		bl	LCDSetRowColor
+ 595 046c 0000C505 		.loc 1 460 0
+ 596              		ldr	r0, [r5, #8]
+ 597 0470 012043E2 		mov	r0, r0, asl #5
+ 598              		mov	ip, #0
+ 599 0474 013083E2 		ldrb	lr, [r5, #2]	@ zero_extendqisi2
+ 600              		add	r0, r0, #12
+ 601 0478 08208505 		ldrb	r2, [r5, #4]	@ zero_extendqisi2
+ 602              		ldrb	r3, [r5, #0]	@ zero_extendqisi2
+ 603 047c 08308515 		add	r0, r5, r0
+ 604              		mov	r1, ip
+ 605 0480 0000D5E5 		stmia	sp, {ip, lr}	@ phole stm
+ 606 0484 0320D5E5 		bl	LCDPrintString
+ 607 0488 0230D5E5 		.loc 1 461 0
+ 608 048c 0010A0E3 		add	sp, sp, #8
+ 609 0490 FEFFFFEB 		ldmfd	sp!, {r4, r5, lr}
+ 610              		bx	lr
+ 611 0494 080095E5 	.L81:
+ 612 0498 8002A0E1 		.align	2
+ 613 049c 00C0A0E3 	.L80:
+ 614 04a0 02E0D5E5 		.word	-536690688
+ 615 04a4 0C0080E2 	.LFE11:
+ 617 04ac 0030D5E5 		.align	2
+ 618 04b0 000085E0 		.global	handleDownButton
+ 620 04b8 00508DE8 	handleDownButton:
+ 621 04bc FEFFFFEB 	.LFB15:
+ 622              		.loc 1 531 0
+ 623 04c0 08D08DE2 		@ Function supports interworking.
+ 624 04c4 3040BDE8 		@ args = 0, pretend = 0, frame = 0
+ 625 04c8 1EFF2FE1 		@ frame_needed = 0, uses_anonymous_args = 0
+ 626              	.LVL33:
+ 627              		stmfd	sp!, {r4, r5, lr}
+ 628              	.LCFI8:
+ 629 04cc 00C002E0 		.loc 1 532 0
+ 630              		ldrb	r3, [r0, #0]	@ zero_extendqisi2
+ 631              		cmp	r3, #14
+ 632              		.loc 1 531 0
+ 633              		mov	r5, r1
+ 634              		mov	r4, r0
+ 635              		.loc 1 533 0
+ 636              		mov	r1, #0
+ 637              	.LVL34:
+ 638              		.loc 1 532 0
+ 639              		bhi	.L83
+ 640              	.LVL35:
+ 641              		.loc 1 547 0
+ 642 04d0 30402DE9 		ldmfd	sp!, {r4, r5, lr}
+ 643              		.loc 1 533 0
+ 644              		b	highlightRow
+ 645 04d4 0030D0E5 	.LVL36:
+ 646 04d8 0E0053E3 	.L83:
+ 647              		.loc 1 536 0
+ 648 04dc 0150A0E1 		cmp	r3, #15
+ 649 04e0 0040A0E1 		bne	.L88
+ 650              		ldrb	r3, [r0, #6]	@ zero_extendqisi2
+ 651 04e4 0010A0E3 		ldrb	r2, [r0, #5]	@ zero_extendqisi2
+ 652              		cmp	r2, r3
+ 653              		.loc 1 538 0
+ 654 04e8 0100008A 		add	r1, r3, #1
+ 655              		.loc 1 536 0
+ 656              		bls	.L88
+ 657 04ec 3040BDE8 	.LVL37:
+ 658              		.loc 1 538 0
+ 659 04f0 FEFFFFEA 		strb	r1, [r0, #6]
+ 660              		.loc 1 541 0
+ 661              		bl	quickClear
+ 662              	.LVL38:
+ 663 04f4 0F0053E3 		.loc 1 542 0
+ 664 04f8 1000001A 		mov	r3, #1
+ 665 04fc 0630D0E5 		strb	r3, [r4, #0]
+ 666 0500 0520D0E5 		.loc 1 543 0
+ 667 0504 030052E1 		mov	r3, #0
+ 668              		str	r3, [r4, #8]
+ 669 0508 011083E2 		.loc 1 544 0
+ 670              		mov	r1, r5
+ 671 050c 0B00009A 		ldr	r0, .L89
+ 672              		bl	getNewFiles
+ 673              		.loc 1 545 0
+ 674 0510 0610C0E5 		mov	r0, r4
+ 675              		.loc 1 547 0
+ 676 0514 FEFFFFEB 		ldmfd	sp!, {r4, r5, lr}
+ 677              		.loc 1 545 0
+ 678              		b	printMenu
+ 679 0518 0130A0E3 	.LVL39:
+ 680 051c 0030C4E5 	.L88:
+ 681              		.loc 1 547 0
+ 682 0520 0030A0E3 		ldmfd	sp!, {r4, r5, lr}
+ 683 0524 083084E5 		bx	lr
+ 684              	.L90:
+ 685 0528 0510A0E1 		.align	2
+ 686 052c 14009FE5 	.L89:
+ 687 0530 FEFFFFEB 		.word	file_manager
+ 688              	.LFE15:
+ 690              		.align	2
+ 691 0538 3040BDE8 		.global	handleUpButton
+ 693 053c FEFFFFEA 	handleUpButton:
+ 694              	.LFB14:
+ 695              		.loc 1 507 0
+ 696              		@ Function supports interworking.
+ 697 0540 3040BDE8 		@ args = 0, pretend = 0, frame = 0
+ 698 0544 1EFF2FE1 		@ frame_needed = 0, uses_anonymous_args = 0
+ 699              	.LVL40:
+ 700              		stmfd	sp!, {r4, r5, lr}
+ 701              	.LCFI9:
+ 702 0548 74000000 		.loc 1 508 0
+ 703              		ldrb	r3, [r0, #0]	@ zero_extendqisi2
+ 704              		cmp	r3, #1
+ 705              		.loc 1 507 0
+ 706              		mov	r5, r1
+ 707              		mov	r4, r0
+ 708              		.loc 1 509 0
+ 709              		mov	r1, #1
+ 710              	.LVL41:
+ 711              		.loc 1 508 0
+ 712              		bls	.L92
+ 713              	.LVL42:
+ 714              		.loc 1 523 0
+ 715 054c 30402DE9 		ldmfd	sp!, {r4, r5, lr}
+ 716              		.loc 1 509 0
+ 717              		b	highlightRow
+ 718 0550 0030D0E5 	.LVL43:
+ 719 0554 010053E3 	.L92:
+ 720              		.loc 1 512 0
+ 721 0558 0150A0E1 		bne	.L97
+ 722 055c 0040A0E1 		ldrb	r3, [r0, #6]	@ zero_extendqisi2
+ 723              		cmp	r3, #0
+ 724 0560 0110A0E3 		.loc 1 514 0
+ 725              		sub	r2, r3, #1
+ 726              		.loc 1 512 0
+ 727 0564 0100009A 		beq	.L97
+ 728              	.LVL44:
+ 729              		.loc 1 514 0
+ 730 0568 3040BDE8 		strb	r2, [r0, #6]
+ 731              		.loc 1 517 0
+ 732 056c FEFFFFEA 		bl	quickClear
+ 733              	.LVL45:
+ 734              		.loc 1 518 0
+ 735              		mov	r3, #15
+ 736 0570 0F00001A 		strb	r3, [r4, #0]
+ 737 0574 0630D0E5 		.loc 1 519 0
+ 738 0578 000053E3 		mov	r3, #14
+ 739              		str	r3, [r4, #8]
+ 740 057c 012043E2 		.loc 1 520 0
+ 741              		mov	r1, r5
+ 742 0580 0B00000A 		ldr	r0, .L98
+ 743              		bl	getNewFiles
+ 744              		.loc 1 521 0
+ 745 0584 0620C0E5 		mov	r0, r4
+ 746              		.loc 1 523 0
+ 747 0588 FEFFFFEB 		ldmfd	sp!, {r4, r5, lr}
+ 748              		.loc 1 521 0
+ 749              		b	printMenu
+ 750 058c 0F30A0E3 	.LVL46:
+ 751 0590 0030C4E5 	.L97:
+ 752              		.loc 1 523 0
+ 753 0594 0E30A0E3 		ldmfd	sp!, {r4, r5, lr}
+ 754 0598 083084E5 		bx	lr
+ 755              	.L99:
+ 756 059c 0510A0E1 		.align	2
+ 757 05a0 14009FE5 	.L98:
+ 758 05a4 FEFFFFEB 		.word	file_manager
+ 759              	.LFE14:
+ 761              		.align	2
+ 763              	timer1ISR:
+ 764 05b0 FEFFFFEA 	.LFB5:
+ 765              		.loc 1 337 0
+ 766              		@ Function supports interworking.
+ 767              		@ args = 0, pretend = 0, frame = 0
+ 768 05b4 3040BDE8 		@ frame_needed = 0, uses_anonymous_args = 0
+ 769 05b8 1EFF2FE1 		stmfd	sp!, {r4, lr}
+ 770              	.LCFI10:
+ 771              		.loc 1 338 0
+ 772              		bl	vs1002Config
+ 773 05bc 74000000 		b	.L111
+ 774              	.L102:
+ 775              		.loc 1 340 0
+ 776              		bl	vs1002SendMusic
+ 777              		.loc 1 341 0
+ 778              		ldr	r3, .L113
+ 779              		mov	r2, #32
+ 780              		add	r1, r3, #61
+ 781              		ldr	r0, [r3, #52]
+ 782              		bl	fat16_read_file
+ 783              		mov	r0, r0, asl #16
+ 784 05c0 10402DE9 		cmp	r0, #0
+ 785              		ldr	r2, .L113+4
+ 786              		movle	r3, #1
+ 787 05c4 FEFFFFEB 		.loc 1 342 0
+ 788 05c8 0B0000EA 		movgt	r3, #0
+ 789              		strb	r3, [r2, #0]
+ 790              	.L111:
+ 791 05cc FEFFFFEB 		.loc 1 339 0
+ 792              		ldr	r3, .L113+8
+ 793 05d0 5C309FE5 		ldr	r3, [r3, #0]
+ 794 05d4 2020A0E3 		ands	r4, r3, #2097152
+ 795 05d8 3D1083E2 		.loc 1 340 0
+ 796 05dc 340093E5 		ldr	r0, .L113+12
+ 797 05e0 FEFFFFEB 		mov	r1, #32
+ 798 05e4 0008A0E1 		.loc 1 339 0
+ 799 05e8 000050E3 		bne	.L102
+ 800 05ec 44209FE5 		.loc 1 344 0
+ 801 05f0 0130A0D3 		bl	vs1002Finish
+ 802              		.loc 1 345 0
+ 803 05f4 0030A0C3 		ldr	r2, .L113+16
+ 804 05f8 0030C2E5 		mov	r3, #255
+ 805              		str	r3, [r2, #0]
+ 806              		.loc 1 346 0
+ 807 05fc 38309FE5 		mvn	r3, #0
+ 808 0600 003093E5 		str	r4, [r3, #-4047]
+ 809 0604 024613E2 		.loc 1 347 0
+ 810              		ldmfd	sp!, {r4, lr}
+ 811 0608 30009FE5 		bx	lr
+ 812 060c 2010A0E3 	.L114:
+ 813              		.align	2
+ 814 0610 EDFFFF1A 	.L113:
+ 815              		.word	current_song
+ 816 0614 FEFFFFEB 		.word	song_is_over
+ 817              		.word	-536707072
+ 818 0618 24209FE5 		.word	current_song+61
+ 819 061c FF30A0E3 		.word	-536838144
+ 820 0620 003082E5 	.LFE5:
+ 822 0624 0030E0E3 		.align	2
+ 823 0628 CF4F03E5 		.global	closeSong
+ 825 062c 1040BDE8 	closeSong:
+ 826 0630 1EFF2FE1 	.LFB10:
+ 827              		.loc 1 437 0
+ 828              		@ Function supports interworking.
+ 829              		@ args = 0, pretend = 0, frame = 0
+ 830 0634 14000000 		@ frame_needed = 0, uses_anonymous_args = 0
+ 831 0638 02000000 	.LVL47:
+ 832 063c 008002E0 		stmfd	sp!, {r4, lr}
+ 833 0640 51000000 	.LCFI11:
+ 834 0644 008000E0 		.loc 1 438 0
+ 835              		ldr	r4, .L117
+ 836              		ldr	r3, [r4, #0]
+ 837              		orr	r3, r3, #5376
+ 838              		str	r3, [r4, #0]
+ 839              		.loc 1 439 0
+ 840              		ldr	r0, [r0, #52]
+ 841              	.LVL48:
+ 842              		bl	fat16_close_file
+ 843              		.loc 1 440 0
+ 844              		ldr	r3, [r4, #0]
+ 845              		bic	r3, r3, #16320
+ 846              		bic	r3, r3, #48
+ 847 0648 10402DE9 		str	r3, [r4, #0]
+ 848              		.loc 1 441 0
+ 849              		ldmfd	sp!, {r4, lr}
+ 850 064c 28409FE5 		bx	lr
+ 851 0650 003094E5 	.L118:
+ 852 0654 153C83E3 		.align	2
+ 853 0658 003084E5 	.L117:
+ 854              		.word	-536690688
+ 855 065c 340090E5 	.LFE10:
+ 857 0660 FEFFFFEB 		.align	2
+ 858              		.global	loadSongInfo
+ 860 0668 FF3DC3E3 	loadSongInfo:
+ 861 066c 3030C3E3 	.LFB9:
+ 862 0670 003084E5 		.loc 1 402 0
+ 863              		@ Function supports interworking.
+ 864 0674 1040BDE8 		@ args = 0, pretend = 0, frame = 0
+ 865 0678 1EFF2FE1 		@ frame_needed = 0, uses_anonymous_args = 0
+ 866              	.LVL49:
+ 867              		stmfd	sp!, {r4, r5, r6, lr}
+ 868              	.LCFI12:
+ 869 067c 00C002E0 		.loc 1 402 0
+ 870              		mov	r2, r0
+ 871              		mov	r4, r0
+ 872              		mov	r0, #0
+ 873              	.LVL50:
+ 874              	.L120:
+ 875              	.LBB14:
+ 876              		.loc 1 405 0
+ 877              		ldr	r3, [r1, #8]
+ 878              		add	r3, r1, r3, asl #5
+ 879              		add	r3, r3, r0
+ 880              		ldrb	r3, [r3, #12]	@ zero_extendqisi2
+ 881              		.loc 1 404 0
+ 882 0680 70402DE9 		add	r0, r0, #1
+ 883              		cmp	r0, #30
+ 884              		.loc 1 405 0
+ 885 0684 0020A0E1 		strb	r3, [r2, #22]
+ 886 0688 0040A0E1 		.loc 1 404 0
+ 887 068c 0000A0E3 		add	r2, r2, #1
+ 888              		bne	.L120
+ 889              		mov	r3, r4
+ 890              		mov	r1, #0
+ 891              	.LVL51:
+ 892 0690 083091E5 	.L122:
+ 893 0694 833281E0 	.LBE14:
+ 894 0698 003083E0 	.LBB15:
+ 895 069c 0C30D3E5 		.loc 1 409 0
+ 896              		ldrb	r2, [r3, #22]	@ zero_extendqisi2
+ 897 06a0 010080E2 		cmp	r1, #21
+ 898 06a4 1E0050E3 		cmpne	r2, #46
+ 899              		.loc 1 408 0
+ 900 06a8 1630C2E5 		add	r3, r3, #1
+ 901              		.loc 1 409 0
+ 902 06ac 012082E2 		beq	.L130
+ 903 06b0 F6FFFF1A 		.loc 1 413 0
+ 904 06b4 0430A0E1 		strb	r2, [r1, r4]
+ 905 06b8 0010A0E3 		.loc 1 408 0
+ 906              		add	r1, r1, #1
+ 907              		cmp	r1, #22
+ 908              		bne	.L122
+ 909              	.L125:
+ 910              	.LBE15:
+ 911 06bc 1620D3E5 		.loc 1 416 0
+ 912 06c0 150051E3 		ldr	r6, .L134
+ 913 06c4 2E005213 		ldr	r3, [r6, #0]
+ 914              		.loc 1 418 0
+ 915 06c8 013083E2 		add	r5, r4, #22
+ 916              		.loc 1 416 0
+ 917 06cc 1100000A 		orr	r3, r3, #5376
+ 918              		.loc 1 418 0
+ 919 06d0 0420C1E7 		mov	r0, r5
+ 920              	.LVL52:
+ 921 06d4 011081E2 		.loc 1 416 0
+ 922 06d8 160051E3 		str	r3, [r6, #0]
+ 923 06dc F6FFFF1A 		.loc 1 418 0
+ 924              		bl	root_file_exists
+ 925              	.LVL53:
+ 926              		cmp	r0, #0
+ 927 06e0 7C609FE5 		bne	.L126
+ 928 06e4 003096E5 		.loc 1 419 0
+ 929              		ldr	r3, [r6, #0]
+ 930 06e8 165084E2 		bic	r3, r3, #16320
+ 931              		bic	r3, r3, #48
+ 932 06ec 153C83E3 		str	r3, [r6, #0]
+ 933              		b	.L128
+ 934 06f0 0500A0E1 	.LVL54:
+ 935              	.L130:
+ 936              	.LBB16:
+ 937 06f4 003086E5 		.loc 1 410 0
+ 938              		mov	r3, #0
+ 939 06f8 FEFFFFEB 		strb	r3, [r4, r1]
+ 940              		b	.L125
+ 941 06fc 000050E3 	.LVL55:
+ 942 0700 0700001A 	.L126:
+ 943              	.LBE16:
+ 944 0704 003096E5 		.loc 1 424 0
+ 945 0708 FF3DC3E3 		mov	r0, r5
+ 946 070c 3030C3E3 		bl	root_open
+ 947 0710 003086E5 		str	r0, [r4, #52]
+ 948 0714 100000EA 		.loc 1 425 0
+ 949              		bl	fat16_file_size
+ 950              		.loc 1 426 0
+ 951              		add	r1, r4, #61
+ 952              		.loc 1 425 0
+ 953 0718 0030A0E3 		str	r0, [r4, #56]
+ 954 071c 0130C4E7 		.loc 1 426 0
+ 955 0720 EEFFFFEA 		mov	r2, #32
+ 956              		ldr	r0, [r4, #52]
+ 957              		bl	fat16_read_file
+ 958              		.loc 1 430 0
+ 959              		ldr	r3, [r6, #0]
+ 960 0724 0500A0E1 		bic	r3, r3, #16320
+ 961 0728 FEFFFFEB 		bic	r3, r3, #48
+ 962 072c 340084E5 		str	r3, [r6, #0]
+ 963              		mov	r0, #1
+ 964 0730 FEFFFFEB 	.L128:
+ 965              		.loc 1 432 0
+ 966 0734 3D1084E2 		ldmfd	sp!, {r4, r5, r6, lr}
+ 967              		bx	lr
+ 968 0738 380084E5 	.L135:
+ 969              		.align	2
+ 970 073c 2020A0E3 	.L134:
+ 971 0740 340094E5 		.word	-536690688
+ 972 0744 FEFFFFEB 	.LFE9:
+ 974 0748 003096E5 		.section	.rodata.str1.4,"aMS",%progbits,1
+ 975 074c FF3DC3E3 		.align	2
+ 976 0750 3030C3E3 	.LC0:
+ 977 0754 003086E5 		.ascii	"%d\000"
+ 978 0758 0100A0E3 		.align	2
+ 979              	.LC1:
+ 980              		.ascii	"On\000"
+ 981 075c 7040BDE8 		.align	2
+ 982 0760 1EFF2FE1 	.LC2:
+ 983              		.ascii	"Off\000"
+ 984              		.text
+ 985              		.align	2
+ 986 0764 00C002E0 		.global	handleMiddleButton
+ 988              	handleMiddleButton:
+ 989              	.LFB16:
+ 990              		.loc 1 557 0
+ 991              		@ Function supports interworking.
+ 992 0000 256400   		@ args = 0, pretend = 0, frame = 0
+ 993 0003 00       		@ frame_needed = 0, uses_anonymous_args = 0
+ 994              		stmfd	sp!, {r4, r5, r6, r7, r8, lr}
+ 995 0004 4F6E00   	.LCFI13:
+ 996 0007 00       		.loc 1 558 0
+ 997              		mov	r3, #16
+ 998 0008 4F666600 		.loc 1 562 0
+ 999              		ldr	r8, .L207
+ 1000              		.loc 1 558 0
+ 1001              		mvn	r5, #0
+ 1002              		str	r3, [r5, #-4075]
+ 1003              		.loc 1 557 0
+ 1004              		sub	sp, sp, #8
+ 1005              	.LCFI14:
+ 1006              		.loc 1 559 0
+ 1007              		mov	r0, #250
+ 1008              		bl	delay_ms
+ 1009 0768 F0412DE9 		.loc 1 562 0
+ 1010              		ldr	r6, [r8, #0]
+ 1011              		ldr	r3, .L207+4
+ 1012 076c 1030A0E3 		cmp	r6, r3
+ 1013              		ldr	r4, .L207+8
+ 1014 0770 70879FE5 		bne	.L137
+ 1015              		.loc 1 563 0
+ 1016 0774 0050E0E3 		ldrb	r7, [r4, #0]	@ zero_extendqisi2
+ 1017 0778 EB3F05E5 		cmp	r7, #0
+ 1018              		bne	.L139
+ 1019 077c 08D04DE2 		.loc 1 564 0
+ 1020              		ldr	r0, .L207+12
+ 1021              		mov	r1, r6
+ 1022 0780 FA00A0E3 		bl	loadSongInfo
+ 1023 0784 FEFFFFEB 		.loc 1 565 0
+ 1024              		cmp	r0, #0
+ 1025 0788 006098E5 		.loc 1 564 0
+ 1026 078c 58379FE5 		mov	r5, r0
+ 1027 0790 030056E1 		strb	r0, [r4, #0]
+ 1028 0794 54479FE5 		.loc 1 565 0
+ 1029 0798 6500001A 		bne	.L141
+ 1030              		.loc 1 566 0
+ 1031 079c 0070D4E5 		ldr	r3, .L207+16
+ 1032 07a0 000057E3 		ldrb	r0, [r3, #0]	@ zero_extendqisi2
+ 1033 07a4 4300001A 		bl	LCDClear
+ 1034              		.loc 1 567 0
+ 1035 07a8 44079FE5 		str	r5, [sp, #0]
+ 1036 07ac 0610A0E1 		ldr	r3, [r8, #0]
+ 1037 07b0 FEFFFFEB 		ldr	r4, .L207+20
+ 1038              		ldrb	ip, [r3, #2]	@ zero_extendqisi2
+ 1039 07b4 000050E3 		ldrb	r2, [r4, #0]	@ zero_extendqisi2
+ 1040              		mov	r1, r5
+ 1041 07b8 0050A0E1 		mov	r3, #1
+ 1042 07bc 0000C4E5 		ldr	r0, .L207+24
+ 1043              		str	ip, [sp, #4]
+ 1044 07c0 1200001A 		bl	LCDPrintString
+ 1045              		.loc 1 568 0
+ 1046 07c4 2C379FE5 		mov	r0, #1000
+ 1047 07c8 0000D3E5 		bl	delay_ms
+ 1048 07cc FEFFFFEB 		.loc 1 569 0
+ 1049              		ldrb	r0, [r4, #0]	@ zero_extendqisi2
+ 1050 07d0 00508DE5 		bl	LCDClear
+ 1051 07d4 003098E5 		.loc 1 570 0
+ 1052 07d8 1C479FE5 		mov	r0, r6
+ 1053 07dc 02C0D3E5 		b	.L206
+ 1054 07e0 0020D4E5 	.L141:
+ 1055 07e4 0510A0E1 		.loc 1 573 0
+ 1056 07e8 0130A0E3 		bl	vs1002Config
+ 1057 07ec 0C079FE5 		.loc 1 574 0
+ 1058 07f0 04C08DE5 		mov	r0, r7
+ 1059 07f4 FEFFFFEB 		mov	r1, #2048
+ 1060              		bl	vs1002SCIWrite
+ 1061 07f8 FA0FA0E3 		.loc 1 575 0
+ 1062 07fc FEFFFFEB 		bl	vs1002Finish
+ 1063              		.loc 1 576 0
+ 1064 0800 0000D4E5 		ldr	r3, .L207+28
+ 1065 0804 FEFFFFEB 		mov	r2, #536870912
+ 1066              		str	r2, [r3, #12]
+ 1067 0808 0600A0E1 		.loc 1 578 0
+ 1068 080c AD0100EA 		bl	vs1002Config
+ 1069              		b	.L201
+ 1070              	.L145:
+ 1071 0810 FEFFFFEB 		.loc 1 580 0
+ 1072              		bl	vs1002SendMusic
+ 1073 0814 0700A0E1 		.loc 1 581 0
+ 1074 0818 021BA0E3 		ldr	r3, .L207+12
+ 1075 081c FEFFFFEB 		mov	r2, #32
+ 1076              		add	r1, r3, #61
+ 1077 0820 FEFFFFEB 		ldr	r0, [r3, #52]
+ 1078              		bl	fat16_read_file
+ 1079 0824 D8369FE5 		mov	r0, r0, asl #16
+ 1080 0828 0222A0E3 		cmp	r0, #0
+ 1081 082c 0C2083E5 		ldr	r2, .L207+32
+ 1082              		movle	r3, #1
+ 1083 0830 FEFFFFEB 		.loc 1 582 0
+ 1084 0834 0B0000EA 		movgt	r3, #0
+ 1085              		strb	r3, [r2, #0]
+ 1086              	.L201:
+ 1087 0838 FEFFFFEB 		.loc 1 579 0
+ 1088              		ldr	r4, .L207+28
+ 1089 083c B0369FE5 		ldr	r3, [r4, #0]
+ 1090 0840 2020A0E3 		tst	r3, #2097152
+ 1091 0844 3D1083E2 		.loc 1 580 0
+ 1092 0848 340093E5 		ldr	r0, .L207+36
+ 1093 084c FEFFFFEB 		mov	r1, #32
+ 1094 0850 0008A0E1 		.loc 1 579 0
+ 1095 0854 000050E3 		bne	.L145
+ 1096 0858 A8269FE5 		.loc 1 584 0
+ 1097 085c 0130A0D3 		bl	vs1002Finish
+ 1098              		.loc 1 585 0
+ 1099 0860 0030A0C3 		ldr	r2, .L207+40
+ 1100 0864 0030C2E5 		ldr	r3, [r2, #4]
+ 1101              		orr	r3, r3, #3072
+ 1102              		str	r3, [r2, #4]
+ 1103 0868 94469FE5 		.loc 1 586 0
+ 1104 086c 003094E5 		mvn	r2, #0
+ 1105 0870 020613E3 		ldr	r3, [r2, #-4079]
+ 1106              		orr	r3, r3, #32
+ 1107 0874 90069FE5 		str	r3, [r2, #-4079]
+ 1108 0878 2010A0E3 		.loc 1 587 0
+ 1109              		ldr	r3, [r4, #8]
+ 1110 087c EDFFFF1A 		orr	r3, r3, #786432
+ 1111              		orr	r3, r3, #80
+ 1112 0880 FEFFFFEB 		str	r3, [r4, #8]
+ 1113              		b	.L143
+ 1114 0884 84269FE5 	.L139:
+ 1115 0888 043092E5 		.loc 1 591 0
+ 1116 088c 033B83E3 		mov	r3, #32
+ 1117 0890 043082E5 		str	r3, [r5, #-4075]
+ 1118              		.loc 1 592 0
+ 1119 0894 0020E0E3 		ldr	r3, .L207+28
+ 1120 0898 EF3F12E5 		mov	r2, #536870912
+ 1121 089c 203083E3 		str	r2, [r3, #4]
+ 1122 08a0 EF3F02E5 		.loc 1 593 0
+ 1123              		bl	vs1002Config
+ 1124 08a4 083094E5 		.loc 1 594 0
+ 1125 08a8 033783E3 		mov	r0, #0
+ 1126 08ac 503083E3 		mov	r1, #8
+ 1127 08b0 083084E5 		bl	vs1002SCIWrite
+ 1128 08b4 840100EA 		mov	r4, #0
+ 1129              	.LVL56:
+ 1130              	.L149:
+ 1131 08b8 2030A0E3 	.LBB17:
+ 1132 08bc EB3F05E5 		.loc 1 595 0
+ 1133              		mov	r0, #0
+ 1134 08c0 3C369FE5 		add	r4, r4, #1
+ 1135 08c4 0222A0E3 		mov	r1, r0
+ 1136 08c8 042083E5 		bl	vs1002SCIWrite
+ 1137              		cmp	r4, #150
+ 1138 08cc FEFFFFEB 		bne	.L149
+ 1139              	.LBE17:
+ 1140 08d0 0000A0E3 		.loc 1 596 0
+ 1141 08d4 0810A0E3 		bl	vs1002Finish
+ 1142 08d8 FEFFFFEB 		.loc 1 597 0
+ 1143 08dc 0040A0E3 		ldr	r2, .L207+28
+ 1144              		ldr	r3, [r2, #8]
+ 1145              		orr	r3, r3, #786432
+ 1146              		orr	r3, r3, #80
+ 1147              		str	r3, [r2, #8]
+ 1148 08e0 0000A0E3 		.loc 1 598 0
+ 1149 08e4 014084E2 		ldr	r0, .L207+12
+ 1150 08e8 0010A0E1 		bl	closeSong
+ 1151 08ec FEFFFFEB 		.loc 1 599 0
+ 1152 08f0 960054E3 		ldr	r3, .L207+8
+ 1153 08f4 F9FFFF1A 		mov	r2, #0
+ 1154              		strb	r2, [r3, #0]
+ 1155              		.loc 1 600 0
+ 1156 08f8 FEFFFFEB 		add	r2, r2, #16
+ 1157              		mvn	r3, #0
+ 1158 08fc 00269FE5 		str	r2, [r3, #-4079]
+ 1159 0900 083092E5 		b	.L143
+ 1160 0904 033783E3 	.LVL57:
+ 1161 0908 503083E3 	.L137:
+ 1162 090c 083082E5 		.loc 1 606 0
+ 1163              		ldrb	r3, [r4, #0]	@ zero_extendqisi2
+ 1164 0910 DC059FE5 		cmp	r3, #0
+ 1165 0914 FEFFFFEB 		beq	.L151
+ 1166              		mov	r0, r6
+ 1167 0918 D0359FE5 		bl	quickClear
+ 1168 091c 0020A0E3 		b	.L153
+ 1169 0920 0020C3E5 	.L151:
+ 1170              		.loc 1 607 0
+ 1171 0924 102082E2 		ldr	r3, .L207+44
+ 1172 0928 0030E0E3 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 1173 092c EF2F03E5 		bl	LCDClear
+ 1174 0930 650100EA 	.L153:
+ 1175              		.loc 1 608 0
+ 1176              		ldr	r7, .L207
+ 1177              		ldr	r3, [r7, #0]
+ 1178 0934 0030D4E5 		mov	r5, #0
+ 1179 0938 000053E3 		ldr	r0, [r3, #8]
+ 1180 093c 0200000A 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 1181 0940 0600A0E1 		str	r5, [sp, #0]
+ 1182 0944 FEFFFFEB 		mov	r0, r0, asl #5
+ 1183 0948 020000EA 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
+ 1184              		add	r0, r0, #12
+ 1185              		add	r0, r3, r0
+ 1186 094c C0359FE5 		.loc 1 609 0
+ 1187 0950 0400D3E5 		mvn	r6, #0
+ 1188 0954 FEFFFFEB 		.loc 1 608 0
+ 1189              		mov	r3, #1
+ 1190              		mov	r1, r5
+ 1191 0958 88759FE5 		str	ip, [sp, #4]
+ 1192 095c 003097E5 		bl	LCDPrintString
+ 1193 0960 0050A0E3 		.loc 1 609 0
+ 1194 0964 080093E5 		ldr	r3, [r6, #-4079]
+ 1195 0968 0320D3E5 		orr	r3, r3, #16
+ 1196 096c 00508DE5 		str	r3, [r6, #-4079]
+ 1197 0970 8002A0E1 		.loc 1 610 0
+ 1198 0974 02C0D3E5 		ldr	r2, [r7, #0]
+ 1199 0978 0C0080E2 		ldrb	r4, [r2, #0]	@ zero_extendqisi2
+ 1200 097c 000083E0 		cmp	r4, #1
+ 1201              		bne	.L154
+ 1202 0980 0060E0E3 		.loc 1 611 0
+ 1203              		ldr	r3, [r6, #-4079]
+ 1204 0984 0130A0E3 		orr	r3, r3, #16
+ 1205 0988 0510A0E1 		str	r3, [r6, #-4079]
+ 1206 098c 04C08DE5 		.loc 1 612 0
+ 1207 0990 FEFFFFEB 		mov	r1, r5
+ 1208              		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 1209 0994 EF3F16E5 		mov	r0, #2
+ 1210 0998 103083E3 		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 1211 099c EF3F06E5 		bl	LCDSetRowColor
+ 1212              		.loc 1 613 0
+ 1213 09a0 002097E5 		str	r5, [sp, #0]
+ 1214 09a4 0040D2E5 		ldr	r3, .L207+16
+ 1215 09a8 010054E3 		ldr	r1, [r7, #0]
+ 1216 09ac 5B00001A 		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 1217              		ldr	r3, .L207+48
+ 1218 09b0 EF3F16E5 		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 1219 09b4 103083E3 		ldr	r0, .L207+52
+ 1220 09b8 EF3F06E5 		ldr	r1, [r3, #0]
+ 1221              		mov	r3, #2
+ 1222 09bc 0510A0E1 		str	ip, [sp, #4]
+ 1223 09c0 0230D2E5 		bl	LCDPrintString
+ 1224 09c4 0200A0E3 		b	.L156
+ 1225 09c8 0420D2E5 	.L157:
+ 1226 09cc FEFFFFEB 		.loc 1 615 0
+ 1227              		mov	r2, #16
+ 1228 09d0 00508DE5 		mvn	r3, #0
+ 1229 09d4 1C359FE5 		str	r2, [r3, #-4075]
+ 1230 09d8 001097E5 		.loc 1 616 0
+ 1231 09dc 0020D3E5 		bl	delay_ms
+ 1232 09e0 30359FE5 		.loc 1 617 0
+ 1233 09e4 02C0D1E5 		cmp	r4, #2
+ 1234 09e8 2C059FE5 		bne	.L158
+ 1235 09ec 001093E5 		.loc 1 618 0
+ 1236 09f0 0230A0E3 		ldr	r3, [r5, #0]
+ 1237 09f4 04C08DE5 		cmp	r3, #31
+ 1238 09f8 FEFFFFEB 		.loc 1 619 0
+ 1239 09fc 3F0000EA 		add	r2, r3, #1
+ 1240              		.loc 1 618 0
+ 1241              		bgt	.L160
+ 1242 0a00 1020A0E3 		.loc 1 619 0
+ 1243 0a04 0030E0E3 		str	r2, [r5, #0]
+ 1244 0a08 EB2F03E5 		.loc 1 620 0
+ 1245              		bl	vs1002Config
+ 1246 0a0c FEFFFFEB 		.loc 1 621 0
+ 1247              		mov	r0, #49
+ 1248 0a10 020054E3 		bl	vs1002SetVolume
+ 1249 0a14 1700001A 		.loc 1 622 0
+ 1250              		bl	vs1002Finish
+ 1251 0a18 003095E5 	.L160:
+ 1252 0a1c 1F0053E3 		.loc 1 624 0
+ 1253              		ldr	r2, [r6, #0]
+ 1254 0a20 012083E2 		mov	r0, r4
+ 1255              		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 1256 0a24 040000CA 		mov	r1, #0
+ 1257              		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 1258 0a28 002085E5 		bl	LCDSetRowColor
+ 1259              		.loc 1 625 0
+ 1260 0a2c FEFFFFEB 		ldr	r1, [r6, #0]
+ 1261              		mov	r3, #0
+ 1262 0a30 3100A0E3 		ldrb	r2, [r1, #3]	@ zero_extendqisi2
+ 1263 0a34 FEFFFFEB 		str	r3, [sp, #0]
+ 1264              		ldr	r0, .L207+52
+ 1265 0a38 FEFFFFEB 		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 1266              		ldr	r1, [r5, #0]
+ 1267              		mov	r3, r4
+ 1268 0a3c 002096E5 		b	.L203
+ 1269 0a40 0400A0E1 	.L158:
+ 1270 0a44 0230D2E5 		.loc 1 627 0
+ 1271 0a48 0010A0E3 		cmp	r4, #1
+ 1272 0a4c 0420D2E5 		.loc 1 634 0
+ 1273 0a50 FEFFFFEB 		ldr	r6, .L207
+ 1274              		.loc 1 628 0
+ 1275 0a54 001096E5 		ldr	r5, .L207+48
+ 1276 0a58 0030A0E3 		.loc 1 627 0
+ 1277 0a5c 0320D1E5 		bne	.L162
+ 1278 0a60 00308DE5 		.loc 1 628 0
+ 1279 0a64 B0049FE5 		ldr	r3, [r5, #0]
+ 1280 0a68 02C0D1E5 		cmp	r3, #0
+ 1281 0a6c 001095E5 		.loc 1 629 0
+ 1282 0a70 0430A0E1 		sub	r2, r3, #1
+ 1283 0a74 1B0000EA 		.loc 1 628 0
+ 1284              		blt	.L164
+ 1285              		.loc 1 629 0
+ 1286 0a78 010054E3 		str	r2, [r5, #0]
+ 1287              		.loc 1 630 0
+ 1288 0a7c 64649FE5 		bl	vs1002Config
+ 1289              		.loc 1 631 0
+ 1290 0a80 90549FE5 		mov	r0, #48
+ 1291              		bl	vs1002SetVolume
+ 1292 0a84 1900001A 		.loc 1 632 0
+ 1293              		bl	vs1002Finish
+ 1294 0a88 003095E5 	.L164:
+ 1295 0a8c 000053E3 		.loc 1 634 0
+ 1296              		ldr	r2, [r6, #0]
+ 1297 0a90 012043E2 		mov	r0, #2
+ 1298              		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 1299 0a94 040000BA 		mov	r1, #0
+ 1300              		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 1301 0a98 002085E5 		bl	LCDSetRowColor
+ 1302              		.loc 1 635 0
+ 1303 0a9c FEFFFFEB 		mov	r3, #0
+ 1304              		str	r3, [sp, #0]
+ 1305 0aa0 3000A0E3 		ldr	r1, [r6, #0]
+ 1306 0aa4 FEFFFFEB 		ldr	r3, .L207+16
+ 1307              		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 1308 0aa8 FEFFFFEB 		ldr	r0, .L207+52
+ 1309              		ldr	r1, [r5, #0]
+ 1310              		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 1311 0aac 002096E5 		mov	r3, #2
+ 1312 0ab0 0200A0E3 	.L203:
+ 1313 0ab4 0230D2E5 		str	ip, [sp, #4]
+ 1314 0ab8 0010A0E3 		bl	LCDPrintString
+ 1315 0abc 0420D2E5 	.L162:
+ 1316 0ac0 FEFFFFEB 		.loc 1 637 0
+ 1317              		mvn	r2, #0
+ 1318 0ac4 0030A0E3 		ldr	r3, [r2, #-4079]
+ 1319 0ac8 00308DE5 		orr	r3, r3, #16
+ 1320 0acc 001096E5 		str	r3, [r2, #-4079]
+ 1321 0ad0 20349FE5 	.L156:
+ 1322 0ad4 02C0D1E5 		.loc 1 614 0
+ 1323 0ad8 3C049FE5 		ldr	r3, .L207+56
+ 1324 0adc 001095E5 		ldrb	r4, [r3, #0]	@ zero_extendqisi2
+ 1325 0ae0 0020D3E5 		cmp	r4, #2
+ 1326 0ae4 0230A0E3 		.loc 1 624 0
+ 1327              		ldr	r6, .L207
+ 1328 0ae8 04C08DE5 		.loc 1 618 0
+ 1329 0aec FEFFFFEB 		ldr	r5, .L207+48
+ 1330              		.loc 1 616 0
+ 1331              		mov	r0, #150
+ 1332 0af0 0020E0E3 		.loc 1 614 0
+ 1333 0af4 EF3F12E5 		bls	.L157
+ 1334 0af8 103083E3 		b	.L166
+ 1335 0afc EF3F02E5 	.L154:
+ 1336              		.loc 1 640 0
+ 1337              		cmp	r4, #3
+ 1338 0b00 18349FE5 		bne	.L167
+ 1339 0b04 0040D3E5 		.loc 1 641 0
+ 1340 0b08 020054E3 		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 1341              		mov	r0, #2
+ 1342 0b0c D4639FE5 		mov	r1, #0
+ 1343              		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 1344 0b10 00549FE5 		bl	LCDSetRowColor
+ 1345              		.loc 1 642 0
+ 1346 0b14 9600A0E3 		str	r5, [sp, #0]
+ 1347              		ldr	r3, .L207+16
+ 1348 0b18 B8FFFF9A 		ldr	r1, [r7, #0]
+ 1349 0b1c DC0000EA 		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 1350              		ldr	r3, .L207+60
+ 1351              		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 1352 0b20 030054E3 		ldr	r0, .L207+52
+ 1353 0b24 6400001A 		ldr	r1, [r3, #0]
+ 1354              		mov	r3, #2
+ 1355 0b28 0230D2E5 		str	ip, [sp, #4]
+ 1356 0b2c 0200A0E3 		bl	LCDPrintString
+ 1357 0b30 0010A0E3 		.loc 1 644 0
+ 1358 0b34 0420D2E5 		ldr	r3, [r6, #-4079]
+ 1359 0b38 FEFFFFEB 		orr	r3, r3, #16
+ 1360              		str	r3, [r6, #-4079]
+ 1361 0b3c 00508DE5 		.loc 1 643 0
+ 1362 0b40 B0339FE5 		ldr	r3, .L207+56
+ 1363 0b44 001097E5 		strb	r5, [r3, #0]
+ 1364 0b48 0020D3E5 	.L169:
+ 1365 0b4c D0339FE5 		.loc 1 646 0
+ 1366 0b50 02C0D1E5 		mov	r2, #16
+ 1367 0b54 C0039FE5 		mvn	r3, #0
+ 1368 0b58 001093E5 		.loc 1 647 0
+ 1369 0b5c 0230A0E3 		mov	r0, #100
+ 1370 0b60 04C08DE5 		.loc 1 646 0
+ 1371 0b64 FEFFFFEB 		str	r2, [r3, #-4075]
+ 1372              		.loc 1 647 0
+ 1373 0b68 EF3F16E5 		bl	delay_ms
+ 1374 0b6c 103083E3 		.loc 1 648 0
+ 1375 0b70 EF3F06E5 		cmp	r5, #2
+ 1376              		.loc 1 651 0
+ 1377 0b74 A4339FE5 		ldr	r6, .L207
+ 1378 0b78 0050C3E5 		.loc 1 650 0
+ 1379              		ldr	r4, .L207+60
+ 1380              		.loc 1 651 0
+ 1381 0b7c 1020A0E3 		mov	r0, r5
+ 1382 0b80 0030E0E3 		mov	r1, #0
+ 1383              		.loc 1 648 0
+ 1384 0b84 6400A0E3 		bne	.L170
+ 1385              		.loc 1 650 0
+ 1386 0b88 EB2F03E5 		ldr	r2, [r4, #0]
+ 1387              		ldr	r3, .L207+64
+ 1388 0b8c FEFFFFEB 		cmp	r2, r3
+ 1389              		add	r2, r2, #2
+ 1390 0b90 020055E3 		.loc 1 651 0
+ 1391              		ldr	ip, [r6, #0]
+ 1392 0b94 4C639FE5 		.loc 1 650 0
+ 1393              		strle	r2, [r4, #0]
+ 1394 0b98 84439FE5 		.loc 1 651 0
+ 1395              		ldrb	r3, [ip, #2]	@ zero_extendqisi2
+ 1396 0b9c 0500A0E1 		ldrb	r2, [ip, #4]	@ zero_extendqisi2
+ 1397 0ba0 0010A0E3 		bl	LCDSetRowColor
+ 1398              		.loc 1 652 0
+ 1399 0ba4 1200001A 		mov	r3, #0
+ 1400              		str	r3, [sp, #0]
+ 1401 0ba8 002094E5 		ldr	r3, .L207+16
+ 1402 0bac 74339FE5 		ldr	r1, [r6, #0]
+ 1403 0bb0 030052E1 		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 1404 0bb4 022082E2 		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 1405              		ldr	r0, .L207+52
+ 1406 0bb8 00C096E5 		ldr	r1, [r4, #0]
+ 1407              		mov	r3, r5
+ 1408 0bbc 002084D5 		b	.L204
+ 1409              	.L170:
+ 1410 0bc0 0230DCE5 		.loc 1 654 0
+ 1411 0bc4 0420DCE5 		cmp	r5, #1
+ 1412 0bc8 FEFFFFEB 		.loc 1 657 0
+ 1413              		ldr	r6, .L207
+ 1414 0bcc 0030A0E3 		mov	r0, #2
+ 1415 0bd0 00308DE5 		mov	r1, #0
+ 1416 0bd4 1C339FE5 		.loc 1 656 0
+ 1417 0bd8 001096E5 		ldr	r4, .L207+60
+ 1418 0bdc 0020D3E5 		.loc 1 654 0
+ 1419 0be0 02C0D1E5 		bne	.L174
+ 1420 0be4 30039FE5 		.loc 1 656 0
+ 1421 0be8 001094E5 		ldr	r2, [r4, #0]
+ 1422 0bec 0530A0E1 		ldr	r3, .L207+68
+ 1423 0bf0 170000EA 		cmp	r2, r3
+ 1424              		sub	r2, r2, #2
+ 1425              		.loc 1 657 0
+ 1426 0bf4 010055E3 		ldr	ip, [r6, #0]
+ 1427              		.loc 1 656 0
+ 1428 0bf8 E8629FE5 		strgt	r2, [r4, #0]
+ 1429 0bfc 0200A0E3 		.loc 1 657 0
+ 1430 0c00 0010A0E3 		ldrb	r3, [ip, #2]	@ zero_extendqisi2
+ 1431              		ldrb	r2, [ip, #4]	@ zero_extendqisi2
+ 1432 0c04 18439FE5 		bl	LCDSetRowColor
+ 1433              		.loc 1 658 0
+ 1434 0c08 1300001A 		mov	r3, #0
+ 1435              		str	r3, [sp, #0]
+ 1436 0c0c 002094E5 		ldr	r1, [r6, #0]
+ 1437 0c10 14339FE5 		ldr	r3, .L207+16
+ 1438 0c14 030052E1 		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 1439 0c18 022042E2 		ldr	r0, .L207+52
+ 1440              		ldr	r1, [r4, #0]
+ 1441 0c1c 00C096E5 		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 1442              		mov	r3, #2
+ 1443 0c20 002084C5 	.L204:
+ 1444              		str	ip, [sp, #4]
+ 1445 0c24 0230DCE5 		bl	LCDPrintString
+ 1446 0c28 0420DCE5 	.L174:
+ 1447 0c2c FEFFFFEB 		.loc 1 660 0
+ 1448              		ldr	r6, .L207+60
+ 1449 0c30 0030A0E3 		ldr	r0, [r6, #0]
+ 1450 0c34 00308DE5 		bl	ns73SetChannel
+ 1451 0c38 001096E5 		.loc 1 645 0
+ 1452 0c3c B4329FE5 		ldr	r3, .L207+56
+ 1453 0c40 02C0D1E5 		.loc 1 661 0
+ 1454 0c44 D0029FE5 		mvn	r2, #0
+ 1455 0c48 001094E5 		.loc 1 645 0
+ 1456 0c4c 0020D3E5 		ldrb	r5, [r3, #0]	@ zero_extendqisi2
+ 1457 0c50 0230A0E3 		.loc 1 661 0
+ 1458              		ldr	r3, [r2, #-4079]
+ 1459 0c54 04C08DE5 		.loc 1 645 0
+ 1460 0c58 FEFFFFEB 		cmp	r5, #2
+ 1461              		.loc 1 661 0
+ 1462              		orr	r3, r3, #16
+ 1463 0c5c C0629FE5 		str	r3, [r2, #-4079]
+ 1464 0c60 000096E5 		.loc 1 645 0
+ 1465 0c64 FEFFFFEB 		bls	.L169
+ 1466              		.loc 1 663 0
+ 1467 0c68 B0329FE5 		ldr	r4, .L207+28
+ 1468              		ldr	r3, [r4, #28]
+ 1469 0c6c 0020E0E3 		orr	r3, r3, #268435456
+ 1470              		str	r3, [r4, #28]
+ 1471 0c70 0050D3E5 		.loc 1 664 0
+ 1472              		mov	r0, #100
+ 1473 0c74 EF3F12E5 		bl	delay_ms
+ 1474              		.loc 1 665 0
+ 1475 0c78 020055E3 		bl	ns73Config
+ 1476              		.loc 1 666 0
+ 1477 0c7c 103083E3 		ldr	r0, [r6, #0]
+ 1478 0c80 EF3F02E5 		bl	ns73SetChannel
+ 1479              		.loc 1 667 0
+ 1480 0c84 BCFFFF9A 		ldr	r3, [r4, #20]
+ 1481              		orr	r3, r3, #268435456
+ 1482 0c88 74429FE5 		str	r3, [r4, #20]
+ 1483 0c8c 1C3094E5 		b	.L166
+ 1484 0c90 013283E3 	.L167:
+ 1485 0c94 1C3084E5 		.loc 1 669 0
+ 1486              		cmp	r4, #2
+ 1487 0c98 6400A0E3 		bne	.L166
+ 1488 0c9c FEFFFFEB 		.loc 1 670 0
+ 1489              		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 1490 0ca0 FEFFFFEB 		mov	r1, #0
+ 1491              		mov	r0, r4
+ 1492 0ca4 000096E5 		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 1493 0ca8 FEFFFFEB 		bl	LCDSetRowColor
+ 1494              		.loc 1 671 0
+ 1495 0cac 143094E5 		ldr	r3, .L207+72
+ 1496 0cb0 013283E3 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 1497 0cb4 143084E5 		cmp	r3, #0
+ 1498 0cb8 750000EA 		ldr	r1, [r7, #0]
+ 1499              		beq	.L180
+ 1500              		ldrb	r2, [r1, #3]	@ zero_extendqisi2
+ 1501 0cbc 020054E3 		str	r5, [sp, #0]
+ 1502 0cc0 7300001A 		ldr	r0, .L207+76
+ 1503              		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 1504 0cc4 0230D2E5 		mov	r3, r4
+ 1505 0cc8 0010A0E3 		mov	r1, r5
+ 1506 0ccc 0400A0E1 		b	.L205
+ 1507 0cd0 0420D2E5 	.L180:
+ 1508 0cd4 FEFFFFEB 		.loc 1 672 0
+ 1509              		ldrb	r2, [r1, #3]	@ zero_extendqisi2
+ 1510 0cd8 50329FE5 		str	r3, [sp, #0]
+ 1511 0cdc 0030D3E5 		ldr	r0, .L207+80
+ 1512 0ce0 000053E3 		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 1513 0ce4 001097E5 		mov	r1, r3
+ 1514 0ce8 0600000A 		mov	r3, r4
+ 1515 0cec 0320D1E5 	.L205:
+ 1516 0cf0 00508DE5 		str	ip, [sp, #4]
+ 1517 0cf4 38029FE5 		bl	LCDPrintString
+ 1518 0cf8 02C0D1E5 		.loc 1 674 0
+ 1519 0cfc 0430A0E1 		mvn	r2, #0
+ 1520 0d00 0510A0E1 		ldr	r3, [r2, #-4079]
+ 1521 0d04 050000EA 		orr	r3, r3, #16
+ 1522              		str	r3, [r2, #-4079]
+ 1523              		.loc 1 673 0
+ 1524 0d08 0320D1E5 		ldr	r3, .L207+56
+ 1525 0d0c 00308DE5 		mov	r1, #0
+ 1526 0d10 20029FE5 		strb	r1, [r3, #0]
+ 1527 0d14 02C0D1E5 		.loc 1 674 0
+ 1528 0d18 0310A0E1 		mov	r5, r1
+ 1529 0d1c 0430A0E1 	.L183:
+ 1530              		.loc 1 676 0
+ 1531 0d20 04C08DE5 		mov	r2, #16
+ 1532 0d24 FEFFFFEB 		mvn	r3, #0
+ 1533              		.loc 1 677 0
+ 1534 0d28 0020E0E3 		mov	r0, #100
+ 1535 0d2c EF3F12E5 		.loc 1 676 0
+ 1536 0d30 103083E3 		str	r2, [r3, #-4075]
+ 1537 0d34 EF3F02E5 		.loc 1 677 0
+ 1538              		bl	delay_ms
+ 1539 0d38 E0319FE5 		.loc 1 682 0
+ 1540 0d3c 0010A0E3 		mov	r6, #0
+ 1541 0d40 0010C3E5 		.loc 1 678 0
+ 1542              		cmp	r5, #2
+ 1543 0d44 0150A0E1 		.loc 1 681 0
+ 1544              		ldr	r7, .L207
+ 1545              		.loc 1 684 0
+ 1546 0d48 1020A0E3 		ldr	r4, .L207+28
+ 1547 0d4c 0030E0E3 		.loc 1 681 0
+ 1548              		mov	r0, r5
+ 1549 0d50 6400A0E3 		mov	r1, r6
+ 1550              		.loc 1 678 0
+ 1551 0d54 EB2F03E5 		bne	.L184
+ 1552              		.loc 1 680 0
+ 1553 0d58 FEFFFFEB 		ldr	r3, .L207+72
+ 1554              		mov	r2, #1
+ 1555 0d5c 0060A0E3 		strb	r2, [r3, #0]
+ 1556              		.loc 1 681 0
+ 1557 0d60 020055E3 		ldr	r2, [r7, #0]
+ 1558              		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 1559 0d64 7C719FE5 		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 1560              		bl	LCDSetRowColor
+ 1561 0d68 94419FE5 		.loc 1 682 0
+ 1562              		ldr	r3, [r7, #0]
+ 1563 0d6c 0500A0E1 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 1564 0d70 0610A0E1 		str	r6, [sp, #0]
+ 1565              		ldrb	ip, [r3, #2]	@ zero_extendqisi2
+ 1566 0d74 1C00001A 		mov	r1, r6
+ 1567              		mov	r3, r5
+ 1568 0d78 B0319FE5 		ldr	r0, .L207+76
+ 1569 0d7c 0120A0E3 		str	ip, [sp, #4]
+ 1570 0d80 0020C3E5 		bl	LCDPrintString
+ 1571              		.loc 1 684 0
+ 1572 0d84 002097E5 		ldr	r3, [r4, #28]
+ 1573 0d88 0230D2E5 		orr	r3, r3, #268435456
+ 1574 0d8c 0420D2E5 		str	r3, [r4, #28]
+ 1575 0d90 FEFFFFEB 		.loc 1 685 0
+ 1576              		mov	r0, #100
+ 1577 0d94 003097E5 		bl	delay_ms
+ 1578 0d98 0320D3E5 		.loc 1 686 0
+ 1579 0d9c 00608DE5 		bl	ns73Config
+ 1580 0da0 02C0D3E5 		.loc 1 687 0
+ 1581 0da4 0610A0E1 		mov	r0, r6
+ 1582 0da8 0530A0E1 		mov	r1, #129
+ 1583 0dac 80019FE5 		bl	ns73Send
+ 1584 0db0 04C08DE5 		.loc 1 688 0
+ 1585 0db4 FEFFFFEB 		ldr	r3, [r4, #20]
+ 1586              		orr	r3, r3, #268435456
+ 1587 0db8 1C3094E5 		str	r3, [r4, #20]
+ 1588 0dbc 013283E3 		b	.L186
+ 1589 0dc0 1C3084E5 	.L184:
+ 1590              		.loc 1 693 0
+ 1591 0dc4 6400A0E3 		mov	r4, #0
+ 1592 0dc8 FEFFFFEB 		.loc 1 691 0
+ 1593              		cmp	r5, #1
+ 1594 0dcc FEFFFFEB 		.loc 1 694 0
+ 1595              		ldr	r7, .L207
+ 1596 0dd0 0600A0E1 		mov	r0, #2
+ 1597 0dd4 8110A0E3 		mov	r1, r4
+ 1598 0dd8 FEFFFFEB 		.loc 1 697 0
+ 1599              		ldr	r6, .L207+28
+ 1600 0ddc 143094E5 		.loc 1 691 0
+ 1601 0de0 013283E3 		bne	.L186
+ 1602 0de4 143084E5 		.loc 1 693 0
+ 1603 0de8 210000EA 		ldr	r3, .L207+72
+ 1604              		.loc 1 694 0
+ 1605              		ldr	r2, [r7, #0]
+ 1606 0dec 0040A0E3 		.loc 1 693 0
+ 1607              		strb	r4, [r3, #0]
+ 1608 0df0 010055E3 		.loc 1 694 0
+ 1609              		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 1610 0df4 EC709FE5 		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 1611 0df8 0200A0E3 		bl	LCDSetRowColor
+ 1612 0dfc 0410A0E1 		.loc 1 695 0
+ 1613              		ldr	r3, [r7, #0]
+ 1614 0e00 FC609FE5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 1615              		str	r4, [sp, #0]
+ 1616 0e04 1A00001A 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
+ 1617              		mov	r1, r4
+ 1618 0e08 20319FE5 		mov	r3, #2
+ 1619              		ldr	r0, .L207+80
+ 1620 0e0c 002097E5 		str	ip, [sp, #4]
+ 1621              		bl	LCDPrintString
+ 1622 0e10 0040C3E5 		.loc 1 697 0
+ 1623              		ldr	r3, [r6, #28]
+ 1624 0e14 0230D2E5 		orr	r3, r3, #268435456
+ 1625 0e18 0420D2E5 		str	r3, [r6, #28]
+ 1626 0e1c FEFFFFEB 		.loc 1 698 0
+ 1627              		mov	r0, #100
+ 1628 0e20 003097E5 		bl	delay_ms
+ 1629 0e24 0320D3E5 		.loc 1 699 0
+ 1630 0e28 00408DE5 		bl	ns73Config
+ 1631 0e2c 02C0D3E5 		.loc 1 700 0
+ 1632 0e30 0410A0E1 		mov	r0, r4
+ 1633 0e34 0230A0E3 		mov	r1, #4
+ 1634 0e38 F8009FE5 		bl	ns73Send
+ 1635 0e3c 04C08DE5 		.loc 1 701 0
+ 1636 0e40 FEFFFFEB 		ldr	r3, [r6, #20]
+ 1637              		orr	r3, r3, #268435456
+ 1638 0e44 1C3096E5 		str	r3, [r6, #20]
+ 1639 0e48 013283E3 	.L186:
+ 1640 0e4c 1C3086E5 		.loc 1 675 0
+ 1641              		ldr	r3, .L207+56
+ 1642 0e50 6400A0E3 		.loc 1 704 0
+ 1643 0e54 FEFFFFEB 		mvn	r2, #0
+ 1644              		.loc 1 675 0
+ 1645 0e58 FEFFFFEB 		ldrb	r5, [r3, #0]	@ zero_extendqisi2
+ 1646              		.loc 1 704 0
+ 1647 0e5c 0400A0E1 		ldr	r3, [r2, #-4079]
+ 1648 0e60 0410A0E3 		.loc 1 675 0
+ 1649 0e64 FEFFFFEB 		cmp	r5, #2
+ 1650              		.loc 1 704 0
+ 1651 0e68 143096E5 		orr	r3, r3, #16
+ 1652 0e6c 013283E3 		str	r3, [r2, #-4079]
+ 1653 0e70 143086E5 		.loc 1 675 0
+ 1654              		bls	.L183
+ 1655              	.L166:
+ 1656 0e74 A4309FE5 		.loc 1 707 0
+ 1657              		ldr	r3, .L207+8
+ 1658 0e78 0020E0E3 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 1659              		cmp	r3, #0
+ 1660 0e7c 0050D3E5 		ldr	r0, .L207
+ 1661              		beq	.L188
+ 1662 0e80 EF3F12E5 		ldr	r0, [r0, #0]
+ 1663              		bl	quickClear
+ 1664 0e84 020055E3 		b	.L190
+ 1665              	.L188:
+ 1666 0e88 103083E3 		.loc 1 708 0
+ 1667 0e8c EF3F02E5 		ldr	r3, [r0, #0]
+ 1668              		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 1669 0e90 ACFFFF9A 		bl	LCDClear
+ 1670              	.L190:
+ 1671              		.loc 1 709 0
+ 1672 0e94 54309FE5 		ldr	r3, .L207
+ 1673 0e98 0030D3E5 		ldr	r0, [r3, #0]
+ 1674 0e9c 000053E3 	.L206:
+ 1675 0ea0 40009FE5 		bl	printMenu
+ 1676 0ea4 0200000A 	.LVL58:
+ 1677 0ea8 000090E5 	.L143:
+ 1678 0eac FEFFFFEB 		.loc 1 711 0
+ 1679 0eb0 020000EA 		mvn	r2, #0
+ 1680              		ldr	r3, [r2, #-4079]
+ 1681              		orr	r3, r3, #16
+ 1682 0eb4 003090E5 		str	r3, [r2, #-4079]
+ 1683 0eb8 0400D3E5 		.loc 1 712 0
+ 1684 0ebc FEFFFFEB 		add	sp, sp, #8
+ 1685              		ldmfd	sp!, {r4, r5, r6, r7, r8, lr}
+ 1686              		bx	lr
+ 1687 0ec0 20309FE5 	.L208:
+ 1688 0ec4 000093E5 		.align	2
+ 1689              	.L207:
+ 1690 0ec8 FEFFFFEB 		.word	current_display
+ 1691              		.word	file_manager
+ 1692              		.word	file_is_open
+ 1693              		.word	current_song
+ 1694 0ecc 0020E0E3 		.word	white
+ 1695 0ed0 EF3F12E5 		.word	black
+ 1696 0ed4 103083E3 		.word	NotFound
+ 1697 0ed8 EF3F02E5 		.word	-536707072
+ 1698              		.word	song_is_over
+ 1699 0edc 08D08DE2 		.word	current_song+61
+ 1700 0ee0 F041BDE8 		.word	-536690688
+ 1701 0ee4 1EFF2FE1 		.word	settings_menu
+ 1702              		.word	volume_setting
+ 1703              		.word	.LC0
+ 1704              		.word	button_pressed
+ 1705 0ee8 7C040000 		.word	radio_channel
+ 1706 0eec 74000000 		.word	1074
+ 1707 0ef0 01000000 		.word	885
+ 1708 0ef4 14000000 		.word	radio_enable
+ 1709 0ef8 00000000 		.word	.LC1
+ 1710 0efc 00000000 		.word	.LC2
+ 1711 0f00 00000000 	.LFE16:
+ 1713 0f08 02000000 		.section	.rodata.str1.4
+ 1714 0f0c 51000000 		.align	2
+ 1715 0f10 00C002E0 	.LC3:
+ 1716 0f14 78020000 		.ascii	"SD Init Error\012\000"
+ 1717 0f18 00000000 		.align	2
+ 1718 0f1c 00000000 	.LC4:
+ 1719 0f20 08000000 		.ascii	"SD OpenRoot Error\012\000"
+ 1720 0f24 00000000 		.text
+ 1721 0f28 32040000 		.align	2
+ 1722 0f2c 75030000 		.global	bootUp
+ 1724 0f34 04000000 	bootUp:
+ 1725 0f38 08000000 	.LFB4:
+ 1726              		.loc 1 256 0
+ 1727              		@ Function supports interworking.
+ 1728              		@ args = 0, pretend = 0, frame = 0
+ 1729              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1730              		str	lr, [sp, #-4]!
+ 1731 000c 53442049 	.LCFI15:
+ 1731      6E697420 
+ 1731      4572726F 
+ 1731      720A00
+ 1732 001b 00       		.loc 1 257 0
+ 1733              		ldr	r0, .L215
+ 1734 001c 5344204F 		bl	rprintf_devopen
+ 1734      70656E52 
+ 1734      6F6F7420 
+ 1734      4572726F 
+ 1734      720A00
+ 1735 002f 00       		.loc 1 258 0
+ 1736              		mov	r0, #10
+ 1737              		bl	delay_ms
+ 1738              		.loc 1 261 0
+ 1739              		bl	sd_raw_init
+ 1740              		cmp	r0, #0
+ 1741              		.loc 1 263 0
+ 1742              		ldreq	r0, .L215+4
+ 1743              		bleq	rprintf
+ 1744              	.L210:
+ 1745 0f3c 04E02DE5 		.loc 1 265 0
+ 1746              		bl	openroot
+ 1747              		cmp	r0, #0
+ 1748 0f40 A0019FE5 		.loc 1 267 0
+ 1749 0f44 FEFFFFEB 		ldrne	r0, .L215+8
+ 1750              		blne	rprintf
+ 1751 0f48 0A00A0E3 	.L212:
+ 1752 0f4c FEFFFFEB 		.loc 1 272 0
+ 1753              		ldr	r2, .L215+12
+ 1754 0f50 FEFFFFEB 		ldr	r3, [r2, #8]
+ 1755 0f54 000050E3 		orr	r3, r3, #1048576
+ 1756              		str	r3, [r2, #8]
+ 1757 0f58 8C019F05 		.loc 1 273 0
+ 1758 0f5c FEFFFF0B 		ldr	r3, [r2, #8]
+ 1759              		bic	r3, r3, #2097152
+ 1760              		str	r3, [r2, #8]
+ 1761 0f60 FEFFFFEB 		.loc 1 274 0
+ 1762 0f64 000050E3 		ldr	r1, .L215+16
+ 1763              		ldr	r3, [r1, #4]
+ 1764 0f68 80019F15 		orr	r3, r3, #3072
+ 1765 0f6c FEFFFF1B 		str	r3, [r1, #4]
+ 1766              		.loc 1 275 0
+ 1767              		ldr	r3, [r2, #24]
+ 1768 0f70 7C219FE5 		orr	r3, r3, #16777216
+ 1769 0f74 083092E5 		orr	r3, r3, #196608
+ 1770 0f78 013683E3 		str	r3, [r2, #24]
+ 1771 0f7c 083082E5 		.loc 1 278 0
+ 1772              		ldr	r3, [r2, #24]
+ 1773 0f80 083092E5 		orr	r3, r3, #33554432
+ 1774 0f84 0236C3E3 		str	r3, [r2, #24]
+ 1775 0f88 083082E5 		.loc 1 279 0
+ 1776              		ldr	r3, [r2, #24]
+ 1777 0f8c 64119FE5 		orr	r3, r3, #268435456
+ 1778 0f90 043091E5 		str	r3, [r2, #24]
+ 1779 0f94 033B83E3 		.loc 1 282 0
+ 1780 0f98 043081E5 		ldr	r3, [r2, #8]
+ 1781              		orr	r3, r3, #128
+ 1782 0f9c 183092E5 		str	r3, [r2, #8]
+ 1783 0fa0 013483E3 		.loc 1 285 0
+ 1784 0fa4 033883E3 		ldr	r3, [r2, #8]
+ 1785 0fa8 183082E5 		orr	r3, r3, #3072
+ 1786              		str	r3, [r2, #8]
+ 1787 0fac 183092E5 		.loc 1 286 0
+ 1788 0fb0 023483E3 		ldr	r3, [r1, #0]
+ 1789 0fb4 183082E5 		orr	r3, r3, #-822083584
+ 1790              		str	r3, [r1, #0]
+ 1791 0fb8 183092E5 		.loc 1 287 0
+ 1792 0fbc 013283E3 		mov	r3, #3072
+ 1793 0fc0 183082E5 		str	r3, [r2, #12]
+ 1794              		.loc 1 290 0
+ 1795 0fc4 083092E5 		ldr	r3, [r2, #8]
+ 1796 0fc8 803083E3 		orr	r3, r3, #786432
+ 1797 0fcc 083082E5 		str	r3, [r2, #8]
+ 1798              		.loc 1 293 0
+ 1799 0fd0 083092E5 		ldr	r3, [r2, #8]
+ 1800 0fd4 033B83E3 		orr	r3, r3, #1879048192
+ 1801 0fd8 083082E5 		str	r3, [r2, #8]
+ 1802              		.loc 1 294 0
+ 1803 0fdc 003091E5 		mov	r3, #536870912
+ 1804 0fe0 CF3483E3 		str	r3, [r2, #4]
+ 1805 0fe4 003081E5 		.loc 1 295 0
+ 1806              		add	r3, r3, r3
+ 1807 0fe8 033BA0E3 		str	r3, [r2, #4]
+ 1808 0fec 0C3082E5 		.loc 1 296 0
+ 1809              		add	r3, r3, #-805306368
+ 1810 0ff0 083092E5 		str	r3, [r2, #4]
+ 1811 0ff4 033783E3 		.loc 1 299 0
+ 1812 0ff8 083082E5 		ldr	r3, [r2, #24]
+ 1813              		bic	r3, r3, #14680064
+ 1814 0ffc 083092E5 		str	r3, [r2, #24]
+ 1815 1000 073283E3 		.loc 1 301 0
+ 1816 1004 083082E5 		ldr	r3, [r2, #8]
+ 1817              		bic	r3, r3, #8388608
+ 1818 1008 0232A0E3 		str	r3, [r2, #8]
+ 1819 100c 043082E5 		.loc 1 304 0
+ 1820              		ldr	r3, .L215+20
+ 1821 1010 033083E0 		mov	r2, #1
+ 1822 1014 043082E5 		.loc 1 305 0
+ 1823              		mvn	r1, #0
+ 1824 1018 0D3283E2 		.loc 1 304 0
+ 1825 101c 043082E5 		str	r2, [r3, #256]
+ 1826              		.loc 1 305 0
+ 1827 1020 183092E5 		mvn	r3, #48
+ 1828 1024 0E36C3E3 		str	r3, [r1, #-4083]
+ 1829 1028 183082E5 		.loc 1 306 0
+ 1830              		add	r3, r3, #65
+ 1831 102c 083092E5 		str	r3, [r1, #-4079]
+ 1832 1030 0235C3E3 		.loc 1 307 0
+ 1833 1034 083082E5 		add	r3, r3, #21
+ 1834              		str	r3, [r1, #-3583]
+ 1835 1038 BC309FE5 		.loc 1 308 0
+ 1836 103c 0120A0E3 		ldr	r3, .L215+24
+ 1837              		str	r3, [r1, #-3839]
+ 1838 1040 0010E0E3 		.loc 1 309 0
+ 1839              		mov	r3, #36
+ 1840 1044 002183E5 		str	r3, [r1, #-3579]
+ 1841              		.loc 1 310 0
+ 1842 1048 3030E0E3 		ldr	r3, .L215+28
+ 1843 104c F33F01E5 		.loc 1 313 0
+ 1844              		ldr	r0, .L215+32
+ 1845 1050 413083E2 		.loc 1 310 0
+ 1846 1054 EF3F01E5 		str	r3, [r1, #-3835]
+ 1847              		.loc 1 313 0
+ 1848 1058 153083E2 		mov	r3, #300
+ 1849 105c FF3D01E5 		str	r3, [r0, #12]
+ 1850              		.loc 1 314 0
+ 1851 1060 98309FE5 		ldr	r3, [r0, #4]
+ 1852 1064 FF3E01E5 		orr	r3, r3, #1
+ 1853              		str	r3, [r0, #4]
+ 1854 1068 2430A0E3 		.loc 1 315 0
+ 1855 106c FB3D01E5 		mov	ip, #0
+ 1856              		.loc 1 316 0
+ 1857 1070 8C309FE5 		mov	r3, #3
+ 1858              		.loc 1 315 0
+ 1859 1074 8C009FE5 		str	ip, [r0, #112]
+ 1860              		.loc 1 320 0
+ 1861 1078 FB3E01E5 		ldr	r2, .L215+36
+ 1862              		.loc 1 316 0
+ 1863 107c 4B3FA0E3 		str	r3, [r0, #20]
+ 1864 1080 0C3080E5 		.loc 1 317 0
+ 1865              		mov	r3, #1000
+ 1866 1084 043090E5 		str	r3, [r0, #24]
+ 1867 1088 013083E3 		.loc 1 320 0
+ 1868 108c 043080E5 		sub	r3, r3, #800
+ 1869              		str	r3, [r2, #12]
+ 1870 1090 00C0A0E3 		.loc 1 321 0
+ 1871              		ldr	r3, [r2, #4]
+ 1872 1094 0330A0E3 		orr	r3, r3, #1
+ 1873              		str	r3, [r2, #4]
+ 1874 1098 70C080E5 		.loc 1 326 0
+ 1875              		ldr	r1, .L215+40
+ 1876 109c 68209FE5 		.loc 1 323 0
+ 1877              		mov	r3, #2560
+ 1878 10a0 143080E5 		.loc 1 322 0
+ 1879              		str	ip, [r2, #112]
+ 1880 10a4 FA3FA0E3 		.loc 1 323 0
+ 1881 10a8 183080E5 		str	r3, [r2, #40]
+ 1882              		.loc 1 326 0
+ 1883 10ac 323E43E2 		sub	r3, r3, #2496
+ 1884 10b0 0C3082E5 		str	r3, [r1, #12]
+ 1885              		.loc 1 327 0
+ 1886 10b4 043092E5 		mov	r3, #32
+ 1887 10b8 013083E3 		str	r3, [r1, #0]
+ 1888 10bc 043082E5 		.loc 1 328 0
+ 1889              		ldr	lr, [sp], #4
+ 1890 10c0 48109FE5 		bx	lr
+ 1891              	.L216:
+ 1892 10c4 0A3CA0E3 		.align	2
+ 1893              	.L215:
+ 1894 10c8 70C082E5 		.word	putc_serial0
+ 1895              		.word	.LC3
+ 1896 10cc 283082E5 		.word	.LC4
+ 1897              		.word	-536707072
+ 1898 10d0 273D43E2 		.word	-536690688
+ 1899 10d4 0C3081E5 		.word	-534790144
+ 1900              		.word	timer1ISR
+ 1901 10d8 2030A0E3 		.word	timer0ISR
+ 1902 10dc 003081E5 		.word	-536854528
+ 1903              		.word	-536838144
+ 1904 10e0 04E09DE4 		.word	-536739840
+ 1905 10e4 1EFF2FE1 	.LFE4:
+ 1907              		.align	2
+ 1909 10e8 00000000 	timer0ISR:
+ 1910 10ec 0C000000 	.LFB6:
+ 1911 10f0 1C000000 		.loc 1 355 0
+ 1912 10f4 008002E0 		@ Function supports interworking.
+ 1913 10f8 00C002E0 		@ args = 0, pretend = 0, frame = 0
+ 1914 10fc 00C01FE0 		@ frame_needed = 0, uses_anonymous_args = 0
+ 1915 1100 00000000 		str	lr, [sp, #-4]!
+ 1916 1104 00000000 	.LCFI16:
+ 1917 1108 004000E0 		.loc 1 356 0
+ 1918 110c 008000E0 		bl	getButton
+ 1919 1110 000002E0 		ldr	r3, .L226
+ 1920              		strb	r0, [r3, #0]
+ 1921              		.loc 1 357 0
+ 1922              		bl	MMA_get_y
+ 1923              		.loc 1 358 0
+ 1924              		ldr	r3, .L226+4
+ 1925              		ldr	r1, .L226+8
+ 1926              		ldr	r2, [r3, #0]
+ 1927              		.loc 1 357 0
+ 1928              		ldr	r3, .L226+12
+ 1929              		.loc 1 358 0
+ 1930 1114 04E02DE5 		cmp	r2, r1
+ 1931              		.loc 1 357 0
+ 1932              		str	r0, [r3, #0]
+ 1933 1118 FEFFFFEB 		ldr	ip, .L226+16
+ 1934 111c 78309FE5 		.loc 1 358 0
+ 1935 1120 0000C3E5 		bgt	.L218
+ 1936              		cmp	r0, #700
+ 1937 1124 FEFFFFEB 		bgt	.L220
+ 1938              		b	.L221
+ 1939 1128 70309FE5 	.L218:
+ 1940 112c 70109FE5 		cmp	r2, #700
+ 1941 1130 002093E5 		beq	.L221
+ 1942              		cmp	r0, r1
+ 1943 1134 6C309FE5 		bgt	.L221
+ 1944              	.L220:
+ 1945 1138 010052E1 		mov	r3, #1
+ 1946              		b	.L225
+ 1947 113c 000083E5 	.L221:
+ 1948 1140 64C09FE5 		.loc 1 359 0
+ 1949              		mov	r3, #0
+ 1950 1144 020000CA 	.L225:
+ 1951 1148 AF0F50E3 		strb	r3, [ip, #0]
+ 1952 114c 040000CA 		.loc 1 361 0
+ 1953 1150 050000EA 		ldr	r3, .L226+20
+ 1954              		mov	r2, #255
+ 1955 1154 AF0F52E3 		str	r2, [r3, #0]
+ 1956 1158 0300000A 		.loc 1 360 0
+ 1957 115c 010050E1 		ldr	r3, .L226+4
+ 1958 1160 010000CA 		.loc 1 362 0
+ 1959              		mov	r2, #0
+ 1960 1164 0130A0E3 		.loc 1 360 0
+ 1961 1168 000000EA 		str	r0, [r3, #0]
+ 1962              		.loc 1 362 0
+ 1963              		mvn	r3, #0
+ 1964 116c 0030A0E3 		str	r2, [r3, #-4047]
+ 1965              		.loc 1 363 0
+ 1966 1170 0030CCE5 		ldr	lr, [sp], #4
+ 1967              		bx	lr
+ 1968 1174 34309FE5 	.L227:
+ 1969 1178 FF20A0E3 		.align	2
+ 1970 117c 002083E5 	.L226:
+ 1971              		.word	button_pressed
+ 1972 1180 18309FE5 		.word	prev_position
+ 1973              		.word	699
+ 1974 1184 0020A0E3 		.word	cur_position
+ 1975              		.word	update_screen
+ 1976 1188 000083E5 		.word	-536854528
+ 1977              	.LFE6:
+ 1979 1190 CF2F03E5 		.global	__divsi3
+ 1980              		.global	__modsi3
+ 1981 1194 04E09DE4 		.align	2
+ 1982 1198 1EFF2FE1 		.global	main
+ 1984              	main:
+ 1985              	.LFB2:
+ 1986 119c 08000000 		.loc 1 79 0
+ 1987 11a0 0C000000 		@ Function supports interworking.
+ 1988 11a4 BB020000 		@ args = 0, pretend = 0, frame = 0
+ 1989 11a8 10000000 		@ frame_needed = 1, uses_anonymous_args = 0
+ 1990 11ac 09000000 		mov	ip, sp
+ 1991 11b0 004000E0 	.LCFI17:
+ 1992              		stmfd	sp!, {r4, r5, r6, r7, r8, sl, fp, ip, lr, pc}
+ 1993              	.LCFI18:
+ 1994              		sub	fp, ip, #4
+ 1995              	.LCFI19:
+ 1996              		sub	sp, sp, #8
+ 1997              	.LCFI20:
+ 1998              		.loc 1 89 0
+ 1999              		bl	bootUp
+ 2000              		.loc 1 92 0
+ 2001              		bl	vs1002Config
+ 2002              		.loc 1 93 0
+ 2003              		bl	vs1002Reset
+ 2004              		.loc 1 94 0
+ 2005 11b4 0DC0A0E1 		bl	vs1002Init
+ 2006              		mov	r4, #0
+ 2007 11b8 F0DD2DE9 	.LVL59:
+ 2008              	.L229:
+ 2009 11bc 04B04CE2 	.LBB18:
+ 2010              		.loc 1 95 0
+ 2011 11c0 08D04DE2 		mov	r0, #48
+ 2012              		bl	vs1002SetVolume
+ 2013              		add	r3, r4, #1
+ 2014 11c4 FEFFFFEB 		and	r4, r3, #255
+ 2015              		cmp	r4, #2
+ 2016 11c8 FEFFFFEB 		bne	.L229
+ 2017              	.LBE18:
+ 2018 11cc FEFFFFEB 		.loc 1 96 0
+ 2019              		bl	vs1002Finish
+ 2020 11d0 FEFFFFEB 		.loc 1 99 0
+ 2021 11d4 0040A0E3 		bl	LCDInit
+ 2022              		.loc 1 100 0
+ 2023              		ldr	r3, .L294
+ 2024              		.loc 1 104 0
+ 2025              		ldr	r4, .L294+4
+ 2026 11d8 3000A0E3 	.LVL60:
+ 2027 11dc FEFFFFEB 		.loc 1 100 0
+ 2028 11e0 013084E2 		ldrb	r0, [r3, #0]	@ zero_extendqisi2
+ 2029 11e4 FF4003E2 		bl	LCDClear
+ 2030 11e8 020054E3 		.loc 1 101 0
+ 2031 11ec F9FFFF1A 		bl	LCDPrintLogo
+ 2032              		.loc 1 104 0
+ 2033              		ldr	r3, [r4, #28]
+ 2034 11f0 FEFFFFEB 		orr	r3, r3, #268435456
+ 2035              		str	r3, [r4, #28]
+ 2036 11f4 FEFFFFEB 		.loc 1 105 0
+ 2037              		mov	r0, #900
+ 2038 11f8 0C359FE5 		bl	delay_ms
+ 2039              		.loc 1 106 0
+ 2040 11fc 0C459FE5 		bl	ns73Config
+ 2041              		.loc 1 107 0
+ 2042              		bl	ns73Init
+ 2043 1200 0000D3E5 		.loc 1 108 0
+ 2044 1204 FEFFFFEB 		ldr	r0, .L294+8
+ 2045              		bl	ns73SetChannel
+ 2046 1208 FEFFFFEB 		.loc 1 109 0
+ 2047              		ldr	r3, [r4, #20]
+ 2048 120c 1C3094E5 		orr	r3, r3, #268435456
+ 2049 1210 013283E3 		str	r3, [r4, #20]
+ 2050 1214 1C3084E5 		.loc 1 110 0
+ 2051              		mov	r0, #100
+ 2052 1218 E10FA0E3 		bl	delay_ms
+ 2053 121c FEFFFFEB 		.loc 1 113 0
+ 2054              		ldr	r2, .L294+12
+ 2055 1220 FEFFFFEB 		ldr	r3, [r2, #0]
+ 2056              		orr	r3, r3, #5376
+ 2057 1224 FEFFFFEB 		str	r3, [r2, #0]
+ 2058              		mov	r7, #0
+ 2059 1228 E4049FE5 	.LVL61:
+ 2060 122c FEFFFFEB 	.L231:
+ 2061              		.loc 1 116 0
+ 2062 1230 143094E5 		mov	r0, #0
+ 2063 1234 013283E3 		bl	rootDirectory_files_stream
+ 2064 1238 143084E5 		subs	r4, r0, #0
+ 2065              		.loc 1 115 0
+ 2066 123c 6400A0E3 		add	r7, r7, #1
+ 2067 1240 FEFFFFEB 		.loc 1 116 0
+ 2068              		bne	.L231
+ 2069 1244 CC249FE5 		.loc 1 117 0
+ 2070 1248 003092E5 		add	r3, r7, #6
+ 2071 124c 153C83E3 		bic	r3, r3, #3
+ 2072 1250 003082E5 		rsb	sp, r3, sp
+ 2073 1254 0070A0E3 		add	sl, sp, #8
+ 2074              		.loc 1 118 0
+ 2075              		mov	r0, sl
+ 2076              	.LVL62:
+ 2077 1258 0000A0E3 		add	r1, r7, #1
+ 2078 125c FEFFFFEB 		bl	rootDirectory_files
+ 2079 1260 004050E2 	.LVL63:
+ 2080              		.loc 1 119 0
+ 2081 1264 017087E2 		mov	r3, r0, asl #5
+ 2082              		add	r3, r3, #4
+ 2083 1268 FAFFFF1A 		rsb	sp, r3, sp
+ 2084              		add	r8, sp, #8
+ 2085 126c 063087E2 		.loc 1 118 0
+ 2086 1270 0330C3E3 		ldr	r3, .L294+16
+ 2087 1274 0DD063E0 		mov	r6, r0
+ 2088 1278 08A08DE2 	.LVL64:
+ 2089              	.LBB19:
+ 2090 127c 0A00A0E1 		.loc 1 123 0
+ 2091              		mov	r5, r4
+ 2092 1280 011087E2 	.LVL65:
+ 2093 1284 FEFFFFEB 		mov	r0, r4
+ 2094              	.LVL66:
+ 2095              		mov	lr, r8
+ 2096 1288 8032A0E1 	.LBE19:
+ 2097 128c 043083E2 		.loc 1 118 0
+ 2098 1290 0DD063E0 		str	r6, [r3, #0]
+ 2099 1294 08808DE2 		b	.L233
+ 2100              	.LVL67:
+ 2101 1298 7C349FE5 	.L234:
+ 2102 129c 0060A0E1 	.LBB20:
+ 2103              		.loc 1 123 0
+ 2104              		mov	r2, #0
+ 2105              	.L235:
+ 2106 12a0 0450A0E1 	.LBB21:
+ 2107              		.loc 1 125 0
+ 2108 12a4 0400A0E1 		cmp	r5, r7
+ 2109              		.loc 1 133 0
+ 2110 12a8 08E0A0E1 		movhi	r3, #0
+ 2111              		strhib	r3, [lr, r2]
+ 2112              		.loc 1 125 0
+ 2113 12ac 006083E5 		bhi	.L241
+ 2114 12b0 130000EA 		.loc 1 126 0
+ 2115              		ldrb	r1, [sl, r5]	@ zero_extendqisi2
+ 2116              		.loc 1 127 0
+ 2117              		add	ip, r4, r8
+ 2118              		.loc 1 126 0
+ 2119 12b4 0020A0E3 		cmp	r1, #44
+ 2120              		.loc 1 130 0
+ 2121              		mov	r3, ip
+ 2122              		strneb	r1, [r3, r2]
+ 2123 12b8 070055E1 		.loc 1 127 0
+ 2124              		moveq	r3, #0
+ 2125 12bc 0030A083 		streqb	r3, [ip, r2]
+ 2126 12c0 0230CE87 		.loc 1 131 0
+ 2127              		add	r5, r5, #1
+ 2128 12c4 0800008A 		.loc 1 127 0
+ 2129              		moveq	r2, #31
+ 2130 12c8 0510DAE7 	.L241:
+ 2131              		.loc 1 124 0
+ 2132 12cc 08C084E0 		add	r2, r2, #1
+ 2133              		cmp	r2, #31
+ 2134 12d0 2C0051E3 		ble	.L235
+ 2135              	.LBE21:
+ 2136 12d4 0C30A0E1 		.loc 1 123 0
+ 2137 12d8 0210C317 		add	r0, r0, #1
+ 2138              		add	r4, r4, #32
+ 2139 12dc 0030A003 		add	lr, lr, #32
+ 2140 12e0 0230CC07 	.L233:
+ 2141              		cmp	r0, r6
+ 2142 12e4 015085E2 		blt	.L234
+ 2143              	.LBE20:
+ 2144 12e8 1F20A003 		.loc 1 139 0
+ 2145              		mov	r1, #15
+ 2146              		mov	r0, r6
+ 2147 12ec 012082E2 	.LVL68:
+ 2148 12f0 1F0052E3 		bl	__divsi3
+ 2149 12f4 EFFFFFDA 	.LVL69:
+ 2150              		ldr	r4, .L294+20
+ 2151              	.LVL70:
+ 2152 12f8 010080E2 		sub	r0, r0, #1
+ 2153 12fc 204084E2 		and	r5, r0, #255
+ 2154 1300 20E08EE2 	.LVL71:
+ 2155              		.loc 1 140 0
+ 2156 1304 060050E1 		mov	r1, #15
+ 2157 1308 E9FFFFBA 		mov	r0, r6
+ 2158              		.loc 1 139 0
+ 2159              		strb	r5, [r4, #5]
+ 2160 130c 0F10A0E3 		.loc 1 140 0
+ 2161 1310 0600A0E1 		bl	__modsi3
+ 2162              		cmp	r0, #0
+ 2163 1314 FEFFFFEB 		addne	r3, r5, #1
+ 2164              		strneb	r3, [r4, #5]
+ 2165 1318 00449FE5 		.loc 1 143 0
+ 2166              		ldr	r3, .L294
+ 2167 131c 010040E2 		ldrb	ip, [r3, #0]	@ zero_extendqisi2
+ 2168 1320 FF5000E2 		.loc 1 144 0
+ 2169              		ldr	r3, .L294+24
+ 2170              		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2171 1324 0F10A0E3 		.loc 1 142 0
+ 2172 1328 0600A0E1 		mov	r2, #0
+ 2173              		.loc 1 144 0
+ 2174 132c 0550C4E5 		strb	r3, [r4, #4]
+ 2175              		.loc 1 147 0
+ 2176 1330 FEFFFFEB 		mov	r3, #1
+ 2177 1334 000050E3 		.loc 1 149 0
+ 2178 1338 01308512 		mov	r0, r4
+ 2179 133c 0530C415 		mov	r1, r8
+ 2180              		.loc 1 143 0
+ 2181 1340 C4339FE5 		strb	ip, [r4, #3]
+ 2182 1344 00C0D3E5 		.loc 1 147 0
+ 2183              		strb	r3, [r4, #0]
+ 2184 1348 D4339FE5 		.loc 1 148 0
+ 2185 134c 0030D3E5 		str	r2, [r4, #8]
+ 2186              		.loc 1 142 0
+ 2187 1350 0020A0E3 		strb	r2, [r4, #2]
+ 2188              		.loc 1 146 0
+ 2189 1354 0430C4E5 		strb	r2, [r4, #6]
+ 2190              		.loc 1 149 0
+ 2191 1358 0130A0E3 		bl	getNewFiles
+ 2192              		ldr	r1, .L294+28
+ 2193 135c 0400A0E1 		mov	r0, r4
+ 2194 1360 0810A0E1 	.L246:
+ 2195              	.LBB22:
+ 2196 1364 03C0C4E5 		.loc 1 150 0
+ 2197              		ldrb	r2, [r1], #1	@ zero_extendqisi2
+ 2198 1368 0030C4E5 		ldr	r3, .L294+32
+ 2199              		cmp	r1, r3
+ 2200 136c 082084E5 		strb	r2, [r0, #492]
+ 2201              		add	r0, r0, #1
+ 2202 1370 0220C4E5 		bne	.L246
+ 2203              	.LBE22:
+ 2204 1374 0620C4E5 		.loc 1 153 0
+ 2205              		ldr	r0, .L294+36
+ 2206 1378 FEFFFFEB 		bl	fillSettings
+ 2207 137c A4139FE5 		.loc 1 157 0
+ 2208 1380 0400A0E1 		ldr	r1, .L294+12
+ 2209              		ldr	r3, [r1, #0]
+ 2210              		.loc 1 156 0
+ 2211              		ldr	r2, .L294+20
+ 2212 1384 0120D1E4 		ldr	r4, .L294+40
+ 2213 1388 9C339FE5 		.loc 1 157 0
+ 2214 138c 030051E1 		bic	r3, r3, #16320
+ 2215 1390 EC21C0E5 		bic	r3, r3, #48
+ 2216 1394 010080E2 		.loc 1 158 0
+ 2217 1398 F9FFFF1A 		ldrb	r0, [r2, #4]	@ zero_extendqisi2
+ 2218              		.loc 1 156 0
+ 2219              		str	r2, [r4, #0]
+ 2220 139c 8C039FE5 		.loc 1 157 0
+ 2221 13a0 FEFFFFEB 		str	r3, [r1, #0]
+ 2222              		.loc 1 158 0
+ 2223 13a4 6C139FE5 		bl	LCDClear
+ 2224 13a8 003091E5 		.loc 1 159 0
+ 2225              		ldr	r0, [r4, #0]
+ 2226 13ac 6C239FE5 		bl	printMenu
+ 2227 13b0 7C439FE5 	.L248:
+ 2228              		.loc 1 162 0
+ 2229 13b4 FF3DC3E3 		ldr	r5, .L294+4
+ 2230 13b8 3030C3E3 		ldr	r3, [r5, #0]
+ 2231              		tst	r3, #8388608
+ 2232 13bc 0400D2E5 		beq	.L249
+ 2233              		.loc 1 164 0
+ 2234 13c0 002084E5 		ldr	r3, .L294
+ 2235              		ldrb	r0, [r3, #0]	@ zero_extendqisi2
+ 2236 13c4 003081E5 		bl	LCDClear
+ 2237              		.loc 1 165 0
+ 2238 13c8 FEFFFFEB 		mov	r3, #4
+ 2239              		str	r3, [sp, #0]
+ 2240 13cc 000094E5 		ldr	r3, .L294+40
+ 2241 13d0 FEFFFFEB 		ldr	r1, [r3, #0]
+ 2242              		ldr	r3, .L294+24
+ 2243              		ldrb	ip, [r1, #2]	@ zero_extendqisi2
+ 2244 13d4 34539FE5 		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 2245 13d8 003095E5 		mov	r1, #0
+ 2246 13dc 020513E3 		mov	r3, #7
+ 2247 13e0 1300000A 		ldr	r0, .L294+44
+ 2248              		str	ip, [sp, #4]
+ 2249 13e4 20339FE5 		bl	LCDPrintString
+ 2250 13e8 0000D3E5 		.loc 1 166 0
+ 2251 13ec FEFFFFEB 		mov	r2, #48
+ 2252              		mvn	r3, #0
+ 2253 13f0 0430A0E3 		str	r2, [r3, #-4075]
+ 2254 13f4 00308DE5 		.loc 1 167 0
+ 2255 13f8 34339FE5 		bl	main_msc
+ 2256 13fc 001093E5 		.loc 1 168 0
+ 2257 1400 1C339FE5 		bl	reset
+ 2258 1404 02C0D1E5 	.L249:
+ 2259 1408 0020D3E5 		.loc 1 173 0
+ 2260 140c 0010A0E3 		ldr	r3, .L294+48
+ 2261 1410 0730A0E3 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2262 1414 1C039FE5 		cmp	r3, #0
+ 2263 1418 04C08DE5 		bne	.L251
+ 2264 141c FEFFFFEB 		ldr	r3, .L294+52
+ 2265              		ldrb	r4, [r3, #0]	@ zero_extendqisi2
+ 2266 1420 3020A0E3 		cmp	r4, #0
+ 2267 1424 0030E0E3 		bne	.L253
+ 2268 1428 EB2F03E5 		.loc 1 175 0
+ 2269              		ldr	r3, .L294+56
+ 2270 142c FEFFFFEB 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2271              		cmp	r3, #0
+ 2272 1430 FEFFFFEB 		beq	.L253
+ 2273              		.loc 1 176 0
+ 2274              		mov	r2, #32
+ 2275 1434 00339FE5 		mvn	r3, #0
+ 2276 1438 0030D3E5 		str	r2, [r3, #-4075]
+ 2277 143c 000053E3 		.loc 1 177 0
+ 2278 1440 4200001A 		ldr	r0, .L294+60
+ 2279 1444 F4329FE5 		bl	closeSong
+ 2280 1448 0040D3E5 		.loc 1 181 0
+ 2281 144c 000054E3 		ldr	ip, .L294+20
+ 2282 1450 5200001A 		.loc 1 179 0
+ 2283              		mov	r3, #536870912
+ 2284 1454 E8329FE5 		.loc 1 181 0
+ 2285 1458 0030D3E5 		ldrb	r2, [ip, #0]	@ zero_extendqisi2
+ 2286 145c 000053E3 		.loc 1 179 0
+ 2287 1460 4E00000A 		str	r3, [r5, #4]
+ 2288              		.loc 1 178 0
+ 2289 1464 2020A0E3 		ldr	r3, .L294+64
+ 2290 1468 0030E0E3 		.loc 1 181 0
+ 2291 146c EB2F03E5 		cmp	r2, #14
+ 2292              		.loc 1 178 0
+ 2293 1470 D0029FE5 		strb	r4, [r3, #0]
+ 2294 1474 FEFFFFEB 		.loc 1 182 0
+ 2295              		addls	r2, r2, #1
+ 2296 1478 A0C29FE5 		.loc 1 183 0
+ 2297              		ldrls	r3, [ip, #8]
+ 2298 147c 0232A0E3 		.loc 1 182 0
+ 2299              		strlsb	r2, [ip, #0]
+ 2300 1480 0020DCE5 		.loc 1 183 0
+ 2301              		addls	r3, r3, #1
+ 2302 1484 043085E5 		strls	r3, [ip, #8]
+ 2303              		.loc 1 186 0
+ 2304 1488 BC329FE5 		ldrb	r3, [ip, #0]	@ zero_extendqisi2
+ 2305              		cmp	r3, #15
+ 2306 148c 0E0052E3 		bne	.L258
+ 2307              		ldrb	r2, [ip, #6]	@ zero_extendqisi2
+ 2308 1490 0040C3E5 		ldrb	r3, [ip, #5]	@ zero_extendqisi2
+ 2309              		cmp	r2, r3
+ 2310 1494 01208292 		bcs	.L258
+ 2311              		.loc 1 189 0
+ 2312 1498 08309C95 		add	r2, r2, #1
+ 2313              		.loc 1 187 0
+ 2314 149c 0020CC95 		mov	r3, #1
+ 2315              		.loc 1 190 0
+ 2316 14a0 01308392 		mov	r0, ip
+ 2317 14a4 08308C95 		mov	r1, r8
+ 2318              		.loc 1 187 0
+ 2319 14a8 0030DCE5 		strb	r3, [ip, #0]
+ 2320 14ac 0F0053E3 		.loc 1 188 0
+ 2321 14b0 0B00001A 		str	r4, [ip, #8]
+ 2322 14b4 0620DCE5 		.loc 1 189 0
+ 2323 14b8 0530DCE5 		strb	r2, [ip, #6]
+ 2324 14bc 030052E1 		.loc 1 190 0
+ 2325 14c0 0700002A 		bl	getNewFiles
+ 2326              	.L258:
+ 2327 14c4 012082E2 		.loc 1 193 0
+ 2328              		ldr	r4, .L294+20
+ 2329 14c8 0130A0E3 		ldrb	r3, [r4, #0]	@ zero_extendqisi2
+ 2330              		add	r3, r4, r3, asl #5
+ 2331 14cc 0C00A0E1 		ldrb	r3, [r3, #44]	@ zero_extendqisi2
+ 2332 14d0 0810A0E1 		cmp	r3, #0
+ 2333              		beq	.L251
+ 2334 14d4 0030CCE5 		.loc 1 194 0
+ 2335              		ldrb	r0, [r4, #4]	@ zero_extendqisi2
+ 2336 14d8 08408CE5 		bl	LCDClear
+ 2337              		.loc 1 195 0
+ 2338 14dc 0620CCE5 		mov	r0, r4
+ 2339              		bl	printMenu
+ 2340 14e0 FEFFFFEB 		.loc 1 196 0
+ 2341              		mov	r1, r4
+ 2342              		ldr	r0, .L294+60
+ 2343 14e4 34429FE5 		bl	loadSongInfo
+ 2344 14e8 0030D4E5 		ldr	r3, .L294+64
+ 2345 14ec 833284E0 		strb	r0, [r3, #0]
+ 2346 14f0 2C30D3E5 		.loc 1 197 0
+ 2347 14f4 000053E3 		bl	vs1002Config
+ 2348 14f8 1400000A 		.loc 1 198 0
+ 2349              		mov	r0, #0
+ 2350 14fc 0400D4E5 		mov	r1, #2048
+ 2351 1500 FEFFFFEB 		bl	vs1002SCIWrite
+ 2352              		.loc 1 199 0
+ 2353 1504 0400A0E1 		bl	vs1002Finish
+ 2354 1508 FEFFFFEB 		.loc 1 200 0
+ 2355              		ldr	r3, .L294+4
+ 2356 150c 0410A0E1 		mov	r2, #536870912
+ 2357 1510 30029FE5 		str	r2, [r3, #12]
+ 2358 1514 FEFFFFEB 		.loc 1 201 0
+ 2359 1518 2C329FE5 		mvn	r2, #0
+ 2360 151c 0000C3E5 		ldr	r3, [r2, #-4079]
+ 2361              		orr	r3, r3, #32
+ 2362 1520 FEFFFFEB 		str	r3, [r2, #-4079]
+ 2363              	.L251:
+ 2364 1524 0000A0E3 		.loc 1 206 0
+ 2365 1528 021BA0E3 		ldr	r3, .L294+48
+ 2366 152c FEFFFFEB 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2367              		cmp	r3, #2
+ 2368 1530 FEFFFFEB 		bne	.L262
+ 2369              		ldr	r3, .L294+40
+ 2370 1534 D4319FE5 		mov	r1, r8
+ 2371 1538 0222A0E3 		ldr	r0, [r3, #0]
+ 2372 153c 0C2083E5 		bl	handleUpButton
+ 2373              		b	.L264
+ 2374 1540 0020E0E3 	.L262:
+ 2375 1544 EF3F12E5 		.loc 1 207 0
+ 2376 1548 203083E3 		cmp	r3, #1
+ 2377 154c EF3F02E5 		bne	.L265
+ 2378              		ldr	r3, .L294+40
+ 2379              		mov	r1, r8
+ 2380 1550 E4319FE5 		ldr	r0, [r3, #0]
+ 2381 1554 0030D3E5 		bl	handleDownButton
+ 2382 1558 020053E3 		b	.L264
+ 2383 155c 0400001A 	.L265:
+ 2384 1560 CC319FE5 		.loc 1 208 0
+ 2385 1564 0810A0E1 		cmp	r3, #3
+ 2386 1568 000093E5 		bne	.L253
+ 2387 156c FEFFFFEB 		bl	handleMiddleButton
+ 2388 1570 5D0000EA 		b	.L264
+ 2389              	.L253:
+ 2390              		.loc 1 210 0
+ 2391 1574 010053E3 		ldr	r3, .L294+52
+ 2392 1578 0400001A 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2393 157c B0319FE5 		cmp	r3, #0
+ 2394 1580 0810A0E1 		beq	.L264
+ 2395 1584 000093E5 		.loc 1 211 0
+ 2396 1588 FEFFFFEB 		mov	r2, #16
+ 2397 158c 560000EA 		mvn	r3, #0
+ 2398              		.loc 1 212 0
+ 2399              		mov	r0, #300
+ 2400 1590 030053E3 		.loc 1 211 0
+ 2401 1594 0100001A 		str	r2, [r3, #-4075]
+ 2402 1598 FEFFFFEB 		.loc 1 212 0
+ 2403 159c 520000EA 		bl	delay_ms
+ 2404              		.loc 1 213 0
+ 2405              		bl	MMA_get_y
+ 2406 15a0 98319FE5 		cmp	r0, #700
+ 2407 15a4 0030D3E5 		ble	.L269
+ 2408 15a8 000053E3 		ldr	r3, .L294+68
+ 2409 15ac 4E00000A 		ldr	r3, [r3, #0]
+ 2410              		cmp	r3, #700
+ 2411 15b0 1020A0E3 		ble	.L269
+ 2412 15b4 0030E0E3 		.loc 1 214 0
+ 2413              		ldr	r3, .L294+64
+ 2414 15b8 4B0FA0E3 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2415              		cmp	r3, #0
+ 2416 15bc EB2F03E5 		ldr	r0, .L294+40
+ 2417              		beq	.L272
+ 2418 15c0 FEFFFFEB 		ldr	r0, [r0, #0]
+ 2419              		bl	quickClear
+ 2420 15c4 FEFFFFEB 		b	.L274
+ 2421 15c8 AF0F50E3 	.L272:
+ 2422 15cc 1C0000DA 		.loc 1 215 0
+ 2423 15d0 78319FE5 		ldr	r3, [r0, #0]
+ 2424 15d4 003093E5 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 2425 15d8 AF0F53E3 		bl	LCDClear
+ 2426 15dc 180000DA 	.L274:
+ 2427              		.loc 1 219 0
+ 2428 15e0 64319FE5 		ldr	r3, .L294+64
+ 2429 15e4 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2430 15e8 000053E3 		.loc 1 216 0
+ 2431 15ec 40019FE5 		ldr	r2, .L294+36
+ 2432 15f0 0200000A 		.loc 1 219 0
+ 2433 15f4 000090E5 		cmp	r3, #0
+ 2434 15f8 FEFFFFEB 		.loc 1 217 0
+ 2435 15fc 020000EA 		mov	r3, #1
+ 2436              		strb	r3, [r2, #2]
+ 2437              		.loc 1 216 0
+ 2438 1600 003090E5 		ldr	r3, .L294+40
+ 2439 1604 0400D3E5 		.loc 1 218 0
+ 2440 1608 FEFFFFEB 		ldr	r1, .L294+4
+ 2441              		.loc 1 216 0
+ 2442              		str	r2, [r3, #0]
+ 2443 160c 38319FE5 		.loc 1 218 0
+ 2444 1610 0030D3E5 		mov	r3, #536870912
+ 2445              		str	r3, [r1, #4]
+ 2446 1614 14219FE5 		.loc 1 219 0
+ 2447              		addne	r3, r3, #-268435456
+ 2448 1618 000053E3 		.loc 1 220 0
+ 2449              		moveq	r3, #1073741824
+ 2450 161c 0130A0E3 		b	.L293
+ 2451 1620 0230C2E5 	.L269:
+ 2452              		.loc 1 222 0
+ 2453 1624 08319FE5 		bl	MMA_get_y
+ 2454              		ldr	r2, .L294+72
+ 2455 1628 E0109FE5 		cmp	r0, r2
+ 2456              		bgt	.L277
+ 2457 162c 002083E5 		ldr	r3, .L294+68
+ 2458              		ldr	r3, [r3, #0]
+ 2459 1630 0232A0E3 		cmp	r3, r2
+ 2460 1634 043081E5 		bgt	.L277
+ 2461              		.loc 1 223 0
+ 2462 1638 0F328312 		ldr	r3, .L294+64
+ 2463              		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2464 163c 0131A003 		cmp	r3, #0
+ 2465 1640 210000EA 		ldr	r0, .L294+40
+ 2466              		beq	.L280
+ 2467              		ldr	r0, [r0, #0]
+ 2468 1644 FEFFFFEB 		bl	quickClear
+ 2469 1648 04219FE5 		b	.L282
+ 2470 164c 020050E1 	.L280:
+ 2471 1650 1E0000CA 		.loc 1 224 0
+ 2472 1654 F4309FE5 		ldr	r3, [r0, #0]
+ 2473 1658 003093E5 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 2474 165c 020053E1 		bl	LCDClear
+ 2475 1660 1A0000CA 	.L282:
+ 2476              		.loc 1 229 0
+ 2477 1664 E0309FE5 		ldr	r3, .L294+64
+ 2478 1668 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2479 166c 000053E3 		.loc 1 225 0
+ 2480 1670 BC009FE5 		ldr	r2, .L294+20
+ 2481 1674 0200000A 		.loc 1 227 0
+ 2482 1678 000090E5 		ldr	r1, .L294+4
+ 2483 167c FEFFFFEB 		.loc 1 229 0
+ 2484 1680 020000EA 		cmp	r3, #0
+ 2485              		.loc 1 226 0
+ 2486              		mov	r3, #0
+ 2487 1684 003090E5 		strb	r3, [r2, #2]
+ 2488 1688 0400D3E5 		.loc 1 227 0
+ 2489 168c FEFFFFEB 		add	r3, r3, #268435456
+ 2490              		str	r3, [r1, #4]
+ 2491              		.loc 1 225 0
+ 2492 1690 B4309FE5 		ldr	r3, .L294+40
+ 2493 1694 0030D3E5 		str	r2, [r3, #0]
+ 2494              		.loc 1 228 0
+ 2495 1698 80209FE5 		mov	r3, #1073741824
+ 2496              		str	r3, [r1, #4]
+ 2497 169c 6C109FE5 		.loc 1 229 0
+ 2498              		beq	.L277
+ 2499 16a0 000053E3 		add	r3, r3, #-536870912
+ 2500              	.L293:
+ 2501 16a4 0030A0E3 		str	r3, [r1, #12]
+ 2502 16a8 0230C2E5 	.L277:
+ 2503              		.loc 1 231 0
+ 2504 16ac 013283E2 		ldr	r3, .L294+40
+ 2505 16b0 043081E5 		ldr	r0, [r3, #0]
+ 2506              		bl	printMenu
+ 2507 16b4 78309FE5 		.loc 1 232 0
+ 2508 16b8 002083E5 		mvn	r2, #0
+ 2509              		ldr	r3, [r2, #-4079]
+ 2510 16bc 0131A0E3 		orr	r3, r3, #16
+ 2511 16c0 043081E5 		str	r3, [r2, #-4079]
+ 2512              	.L264:
+ 2513 16c4 0100000A 		.loc 1 235 0
+ 2514 16c8 0E3283E2 		mvn	r0, #0
+ 2515              		ldr	r2, [r0, #-4079]
+ 2516 16cc 0C3081E5 		.loc 1 234 0
+ 2517              		ldr	r3, .L294+48
+ 2518              		.loc 1 235 0
+ 2519 16d0 5C309FE5 		orr	r2, r2, #16
+ 2520 16d4 000093E5 		.loc 1 234 0
+ 2521 16d8 FEFFFFEB 		mov	r1, #0
+ 2522              		strb	r1, [r3, #0]
+ 2523 16dc 0020E0E3 		.loc 1 235 0
+ 2524 16e0 EF3F12E5 		str	r2, [r0, #-4079]
+ 2525 16e4 103083E3 		b	.L248
+ 2526 16e8 EF3F02E5 	.L295:
+ 2527              		.align	2
+ 2528              	.L294:
+ 2529 16ec 0000E0E3 		.word	white
+ 2530 16f0 EF2F10E5 		.word	-536707072
+ 2531              		.word	973
+ 2532 16f4 40309FE5 		.word	-536690688
+ 2533              		.word	NUMBEROFFILES
+ 2534 16f8 102082E3 		.word	file_manager
+ 2535              		.word	black
+ 2536 16fc 0010A0E3 		.word	welcome
+ 2537 1700 0010C3E5 		.word	welcome+22
+ 2538              		.word	settings_menu
+ 2539 1704 EF2F00E5 		.word	current_display
+ 2540 1708 31FFFFEA 		.word	USB
+ 2541              		.word	button_pressed
+ 2542              		.word	update_screen
+ 2543              		.word	song_is_over
+ 2544 170c 00000000 		.word	current_song
+ 2545 1710 008002E0 		.word	file_is_open
+ 2546 1714 CD030000 		.word	prev_position
+ 2547 1718 00C002E0 		.word	699
+ 2548 171c 04000000 	.LFE2:
+ 2550 1724 00000000 		.global	volume_setting
+ 2551 1728 00000000 		.data
+ 2552 172c 16000000 		.align	2
+ 2555 1738 00000000 	volume_setting:
+ 2556 173c 08000000 		.word	16
+ 2557 1740 09000000 		.global	radio_channel
+ 2558 1744 02000000 		.align	2
+ 2561 1750 0C000000 	radio_channel:
+ 2562 1754 BB020000 		.word	973
+ 2563              		.global	radio_enable
+ 2564              		.bss
+ 2567              	radio_enable:
+ 2568              		.space	1
+ 2569              		.global	welcome
+ 2570              		.section	.rodata
+ 2571 0000 10000000 		.align	2
+ 2574              	welcome:
+ 2575              		.ascii	"Song List:\012\015\000"
+ 2576              		.space	9
+ 2577 0004 CD030000 		.global	NotFound
+ 2578              		.align	2
+ 2581              	NotFound:
+ 2582              		.ascii	"File Not Found!"
+ 2583 0000 00       		.global	USB
+ 2584              		.align	2
+ 2587              	USB:
+ 2588              		.ascii	"USB Connected!"
+ 2589              		.global	newline
+ 2590 0000 536F6E67 		.align	2
+ 2590      204C6973 
+ 2590      743A0A0D 
+ 2590      00
+ 2593 0016 0000     	newline:
+ 2594              		.ascii	"\012\000"
+ 2595              		.global	volume
+ 2596              		.align	2
+ 2599 0027 00       	volume:
+ 2600              		.ascii	"Volume\000"
+ 2601              		.global	contrast
+ 2602              		.align	2
+ 2605 0036 0000     	contrast:
+ 2606              		.ascii	"Contrast\000"
+ 2607              		.global	radio_power
+ 2608              		.align	2
+ 2611 003a 0000     	radio_power:
+ 2612              		.ascii	"Radio Power"
+ 2613              		.global	radio_channel_menu
+ 2614              		.align	2
+ 2617 0043 00       	radio_channel_menu:
+ 2618              		.ascii	"Radio Channel"
+ 2619              		.global	settings
+ 2620              		.align	2
+ 2623 004d 000000   	settings:
+ 2624              		.ascii	"Settings:\000"
+ 2625              		.bss
+ 2626              	file_is_open:
+ 2627 0050 52616469 		.space	1
+ 2627      6F20506F 
+ 2627      776572
+ 2628              	song_is_over:
+ 2629 005b 00       		.space	1
+ 2630              		.align	2
+ 2631              	NUMBEROFFILES:
+ 2632              		.space	4
+ 2633 005c 52616469 	button_pressed:
+ 2633      6F204368 
+ 2633      616E6E65 
+ 2633      6C
+ 2634              		.space	1
+ 2635 0069 000000   	update_screen:
+ 2636              		.space	1
+ 2637              		.align	2
+ 2638              	prev_position:
+ 2639 006c 53657474 		.space	4
+ 2639      696E6773 
+ 2639      3A00
+ 2640 0076 0000     		.align	2
+ 2641              	cur_position:
+ 2642 0001 00       		.space	4
+ 2643              		.align	2
+ 2644 0002 00       	current_song:
+ 2645 0003 00       		.space	96
+ 2646              		.align	2
+ 2647 0004 00000000 	file_manager:
+ 2648              		.space	516
+ 2649 0008 00       		.align	2
+ 2650              	settings_menu:
+ 2651 0009 00       		.space	516
+ 2652 000a 0000     		.align	2
+ 2653              	current_display:
+ 2654 000c 00000000 		.space	4
+ 2655              		.section	.debug_frame,"",%progbits
+ 2656              	.Lframe0:
+ 2657 0010 00000000 		.4byte	.LECIE0-.LSCIE0
+ 2658              	.LSCIE0:
+ 2659              		.4byte	0xffffffff
+ 2660 0014 00000000 		.byte	0x1
+ 2660      00000000 
+ 2660      00000000 
+ 2660      00000000 
+ 2660      00000000 
+ 2661              		.ascii	"\000"
+ 2662              		.uleb128 0x1
+ 2663 0074 00000000 		.sleb128 -4
+ 2663      00000000 
+ 2663      00000000 
+ 2663      00000000 
+ 2663      00000000 
+ 2664              		.byte	0xe
+ 2665              		.byte	0xc
+ 2666 0278 00000000 		.uleb128 0xd
+ 2666      00000000 
+ 2666      00000000 
+ 2666      00000000 
+ 2666      00000000 
+ 2667              		.uleb128 0x0
+ 2668              		.align	2
+ 2669 047c 00000000 	.LECIE0:
+ 3002              		.4byte	.LFB8-.Ltext0
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:13     .text:00000000 delay_ms
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:23     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:44     .text:00000024 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:50     .text:00000028 getButton
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:58     .text:00000028 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:81     .text:00000060 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:87     .text:00000064 getNewFiles
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:94     .text:00000064 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:211    .text:00000154 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2646   .bss:00000004 NUMBEROFFILES
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:217    .text:00000158 fillSettings
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:224    .text:00000158 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:307    .text:00000200 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2614   .rodata:0000003c volume
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2626   .rodata:00000050 radio_power
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2632   .rodata:0000005c radio_channel_menu
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2638   .rodata:0000006c settings
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:319    .text:0000021c reset
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:327    .text:0000021c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:354    .text:0000024c quickClear
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:441    .text:00000310 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2608   .rodata:00000038 newline
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:449    .text:0000031c printMenu
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:457    .text:0000031c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:533    .text:000003e8 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:539    .text:000003ec highlightRow
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:547    .text:000003ec $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:629    .text:000004cc $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:635    .text:000004d0 handleDownButton
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:642    .text:000004d0 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:702    .text:00000548 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2662   .bss:00000074 file_manager
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:708    .text:0000054c handleUpButton
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:715    .text:0000054c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:773    .text:000005bc $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:778    .text:000005c0 timer1ISR
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:784    .text:000005c0 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:830    .text:00000634 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2659   .bss:00000014 current_song
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2643   .bss:00000002 song_is_over
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:840    .text:00000648 closeSong
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:847    .text:00000648 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:869    .text:0000067c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:875    .text:00000680 loadSongInfo
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:882    .text:00000680 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:986    .text:00000764 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1003   .text:00000768 handleMiddleButton
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1009   .text:00000768 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1705   .text:00000ee8 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2668   .bss:0000047c current_display
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2641   .bss:00000001 file_is_open
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2596   .rodata:00000018 NotFound
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2665   .bss:00000278 settings_menu
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2570   .data:00000000 volume_setting
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2648   .bss:00000008 button_pressed
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2576   .data:00000004 radio_channel
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2582   .bss:00000000 radio_enable
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1739   .text:00000f3c bootUp
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1745   .text:00000f3c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1909   .text:000010e8 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1924   .text:00001114 timer0ISR
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1930   .text:00001114 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1986   .text:0000119c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2653   .bss:0000000c prev_position
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2656   .bss:00000010 cur_position
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2650   .bss:00000009 update_screen
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:1999   .text:000011b4 main
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2005   .text:000011b4 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2544   .text:0000170c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2589   .rodata:00000000 welcome
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2602   .rodata:00000028 USB
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2571   .data:00000000 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2620   .rodata:00000044 contrast
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccw5aaaa.s:2585   .bss:00000001 $d
+
+UNDEFINED SYMBOLS
+white
+black
+LCDPrintString
+LCDSetRowColor
+vs1002Config
+vs1002SendMusic
+fat16_read_file
+vs1002Finish
+fat16_close_file
+root_file_exists
+root_open
+fat16_file_size
+LCDClear
+vs1002SCIWrite
+vs1002SetVolume
+ns73SetChannel
+ns73Config
+ns73Send
+rprintf_devopen
+sd_raw_init
+rprintf
+openroot
+putc_serial0
+MMA_get_y
+__divsi3
+__modsi3
+vs1002Reset
+vs1002Init
+LCDInit
+LCDPrintLogo
+ns73Init
+rootDirectory_files_stream
+rootDirectory_files
+main_msc

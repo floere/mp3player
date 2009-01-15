@@ -1,0 +1,804 @@
+   1              		.file	"msc_scsi.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	SCSIReset
+  13              	SCSIReset:
+  14              	.LFB2:
+  15              		.file 1 "../Bootloader/LPCUSB/msc_scsi.c"
+   1:../Bootloader/LPCUSB/msc_scsi.c **** /*
+   2:../Bootloader/LPCUSB/msc_scsi.c ****     LPCUSB, an USB device driver for LPC microcontrollers
+   3:../Bootloader/LPCUSB/msc_scsi.c ****     Copyright (C) 2006 Bertrik Sikken (bertrik@sikken.nl)
+   4:../Bootloader/LPCUSB/msc_scsi.c **** 
+   5:../Bootloader/LPCUSB/msc_scsi.c ****     This library is free software; you can redistribute it and/or
+   6:../Bootloader/LPCUSB/msc_scsi.c ****     modify it under the terms of the GNU Lesser General Public
+   7:../Bootloader/LPCUSB/msc_scsi.c ****     License as published by the Free Software Foundation; either
+   8:../Bootloader/LPCUSB/msc_scsi.c ****     version 2.1 of the License, or (at your option) any later version.
+   9:../Bootloader/LPCUSB/msc_scsi.c **** 
+  10:../Bootloader/LPCUSB/msc_scsi.c ****     This library is distributed in the hope that it will be useful,
+  11:../Bootloader/LPCUSB/msc_scsi.c ****     but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:../Bootloader/LPCUSB/msc_scsi.c ****     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  13:../Bootloader/LPCUSB/msc_scsi.c ****     Lesser General Public License for more details.
+  14:../Bootloader/LPCUSB/msc_scsi.c **** 
+  15:../Bootloader/LPCUSB/msc_scsi.c ****     You should have received a copy of the GNU Lesser General Public
+  16:../Bootloader/LPCUSB/msc_scsi.c ****     License along with this library; if not, write to the Free Software
+  17:../Bootloader/LPCUSB/msc_scsi.c ****     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  18:../Bootloader/LPCUSB/msc_scsi.c **** */
+  19:../Bootloader/LPCUSB/msc_scsi.c **** 
+  20:../Bootloader/LPCUSB/msc_scsi.c **** /*
+  21:../Bootloader/LPCUSB/msc_scsi.c ****     This is the SCSI layer of the USB mass storage application example.
+  22:../Bootloader/LPCUSB/msc_scsi.c ****     This layer depends directly on the blockdev layer.
+  23:../Bootloader/LPCUSB/msc_scsi.c **** */
+  24:../Bootloader/LPCUSB/msc_scsi.c **** 
+  25:../Bootloader/LPCUSB/msc_scsi.c **** 
+  26:../Bootloader/LPCUSB/msc_scsi.c **** #include <string.h>     // memcpy
+  27:../Bootloader/LPCUSB/msc_scsi.c **** 
+  28:../Bootloader/LPCUSB/msc_scsi.c **** #include "type.h"
+  29:../Bootloader/LPCUSB/msc_scsi.c **** #include "usbdebug.h"
+  30:../Bootloader/LPCUSB/msc_scsi.c **** #include <stdio.h>
+  31:../Bootloader/LPCUSB/msc_scsi.c **** #include "rprintf.h"
+  32:../Bootloader/LPCUSB/msc_scsi.c **** 
+  33:../Bootloader/LPCUSB/msc_scsi.c **** #include "blockdev.h"
+  34:../Bootloader/LPCUSB/msc_scsi.c **** #include "msc_scsi.h"
+  35:../Bootloader/LPCUSB/msc_scsi.c **** 
+  36:../Bootloader/LPCUSB/msc_scsi.c **** #undef MIN
+  37:../Bootloader/LPCUSB/msc_scsi.c **** #define MIN(x,y)	((x)<(y)?(x):(y))	/**< MIN */
+  38:../Bootloader/LPCUSB/msc_scsi.c **** 
+  39:../Bootloader/LPCUSB/msc_scsi.c **** #define BLOCKSIZE       512
+  40:../Bootloader/LPCUSB/msc_scsi.c **** 
+  41:../Bootloader/LPCUSB/msc_scsi.c **** // SCSI commands
+  42:../Bootloader/LPCUSB/msc_scsi.c **** #define SCSI_CMD_TEST_UNIT_READY    0x00
+  43:../Bootloader/LPCUSB/msc_scsi.c **** #define SCSI_CMD_REQUEST_SENSE      0x03
+  44:../Bootloader/LPCUSB/msc_scsi.c **** #define SCSI_CMD_INQUIRY            0x12
+  45:../Bootloader/LPCUSB/msc_scsi.c **** #define SCSI_CMD_READ_CAPACITY      0x25
+  46:../Bootloader/LPCUSB/msc_scsi.c **** #define SCSI_CMD_READ_10            0x28
+  47:../Bootloader/LPCUSB/msc_scsi.c **** #define SCSI_CMD_WRITE_10           0x2A
+  48:../Bootloader/LPCUSB/msc_scsi.c **** 
+  49:../Bootloader/LPCUSB/msc_scsi.c **** // sense code
+  50:../Bootloader/LPCUSB/msc_scsi.c **** #define WRITE_ERROR             0x030C00
+  51:../Bootloader/LPCUSB/msc_scsi.c **** #define READ_ERROR              0x031100
+  52:../Bootloader/LPCUSB/msc_scsi.c **** #define INVALID_CMD_OPCODE      0x052000
+  53:../Bootloader/LPCUSB/msc_scsi.c **** #define INVALID_FIELD_IN_CDB    0x052400
+  54:../Bootloader/LPCUSB/msc_scsi.c **** 
+  55:../Bootloader/LPCUSB/msc_scsi.c **** //  Sense code, which is set on error conditions
+  56:../Bootloader/LPCUSB/msc_scsi.c **** static U32          dwSense;    // hex: 00aabbcc, where aa=KEY, bb=ASC, cc=ASCQ
+  57:../Bootloader/LPCUSB/msc_scsi.c **** 
+  58:../Bootloader/LPCUSB/msc_scsi.c **** static const U8     abInquiry[] =
+  59:../Bootloader/LPCUSB/msc_scsi.c **** {
+  60:../Bootloader/LPCUSB/msc_scsi.c ****     0x00,       // PDT = direct-access device
+  61:../Bootloader/LPCUSB/msc_scsi.c ****     0x80,       // removeable medium bit = set
+  62:../Bootloader/LPCUSB/msc_scsi.c ****     0x04,       // version = complies to SPC2r20
+  63:../Bootloader/LPCUSB/msc_scsi.c ****     0x02,       // response data format = SPC2r20
+  64:../Bootloader/LPCUSB/msc_scsi.c ****     0x1F,       // additional length
+  65:../Bootloader/LPCUSB/msc_scsi.c ****     0x00,
+  66:../Bootloader/LPCUSB/msc_scsi.c ****     0x00,
+  67:../Bootloader/LPCUSB/msc_scsi.c ****     0x00,
+  68:../Bootloader/LPCUSB/msc_scsi.c ****     'L','P','C','U','S','B',' ',' ',    // vendor
+  69:../Bootloader/LPCUSB/msc_scsi.c ****     'M','a','s','s',' ','s','t','o',    // product
+  70:../Bootloader/LPCUSB/msc_scsi.c ****     'r','a','g','e',' ',' ',' ',' ',
+  71:../Bootloader/LPCUSB/msc_scsi.c ****     '0','.','1',' '                     // revision
+  72:../Bootloader/LPCUSB/msc_scsi.c **** };
+  73:../Bootloader/LPCUSB/msc_scsi.c **** 
+  74:../Bootloader/LPCUSB/msc_scsi.c **** //  Data for "request sense" command. The 0xFF are filled in later
+  75:../Bootloader/LPCUSB/msc_scsi.c **** static const U8 abSense[] =
+  76:../Bootloader/LPCUSB/msc_scsi.c **** {
+  77:../Bootloader/LPCUSB/msc_scsi.c ****     0x70, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x0A,
+  78:../Bootloader/LPCUSB/msc_scsi.c ****     0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
+  79:../Bootloader/LPCUSB/msc_scsi.c ****     0x00, 0x00
+  80:../Bootloader/LPCUSB/msc_scsi.c **** };
+  81:../Bootloader/LPCUSB/msc_scsi.c **** 
+  82:../Bootloader/LPCUSB/msc_scsi.c **** //  Buffer for holding one block of disk data
+  83:../Bootloader/LPCUSB/msc_scsi.c **** static U8 abBlockBuf[512];
+  84:../Bootloader/LPCUSB/msc_scsi.c **** 
+  85:../Bootloader/LPCUSB/msc_scsi.c **** 
+  86:../Bootloader/LPCUSB/msc_scsi.c **** typedef struct
+  87:../Bootloader/LPCUSB/msc_scsi.c **** {
+  88:../Bootloader/LPCUSB/msc_scsi.c ****     U8      bOperationCode;
+  89:../Bootloader/LPCUSB/msc_scsi.c ****     U8      abLBA[3];
+  90:../Bootloader/LPCUSB/msc_scsi.c ****     U8      bLength;
+  91:../Bootloader/LPCUSB/msc_scsi.c ****     U8      bControl;
+  92:../Bootloader/LPCUSB/msc_scsi.c **** }
+  93:../Bootloader/LPCUSB/msc_scsi.c **** TCDB6;
+  94:../Bootloader/LPCUSB/msc_scsi.c **** 
+  95:../Bootloader/LPCUSB/msc_scsi.c **** 
+  96:../Bootloader/LPCUSB/msc_scsi.c **** /*************************************************************************
+  97:../Bootloader/LPCUSB/msc_scsi.c ****     SCSIReset
+  98:../Bootloader/LPCUSB/msc_scsi.c ****     =========
+  99:../Bootloader/LPCUSB/msc_scsi.c ****         Resets any SCSI state
+ 100:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 101:../Bootloader/LPCUSB/msc_scsi.c **** **************************************************************************/
+ 102:../Bootloader/LPCUSB/msc_scsi.c **** void SCSIReset(void)
+ 103:../Bootloader/LPCUSB/msc_scsi.c **** {
+  16              	@ Function supports interworking.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              		@ link register save eliminated.
+  20              		.loc 1 104 0
+ 104:../Bootloader/LPCUSB/msc_scsi.c ****     dwSense = 0;
+  21              	r3, .L3
+  22 0000 08309FE5 		mov	r2, #0
+  23 0004 0020A0E3 		.loc 1 103 0
+  24              		@ lr needed for prologue
+  25              		.loc 1 104 0
+  26              		str	r2, [r3, #0]
+  27 0008 002083E5 		.loc 1 105 0
+ 105:../Bootloader/LPCUSB/msc_scsi.c **** }
+  28              	.L4:
+  29 000c 1EFF2FE1 		.align	2
+  30              	.L3:
+  31              		.word	dwSense
+  32              	.LFE2:
+  34              		.align	2
+  35              		.global	SCSIHandleCmd
+  37              	SCSIHandleCmd:
+  38              	.LFB3:
+  39              		.loc 1 125 0
+  40              		@ Function supports interworking.
+ 106:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 107:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 108:../Bootloader/LPCUSB/msc_scsi.c **** /*************************************************************************
+ 109:../Bootloader/LPCUSB/msc_scsi.c ****     SCSIHandleCmd
+ 110:../Bootloader/LPCUSB/msc_scsi.c ****     =============
+ 111:../Bootloader/LPCUSB/msc_scsi.c ****         Verifies a SCSI CDB and indicates the direction and amount of data
+ 112:../Bootloader/LPCUSB/msc_scsi.c ****         that the device wants to transfer.
+ 113:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 114:../Bootloader/LPCUSB/msc_scsi.c ****     If this call fails, a sense code is set in dwSense.
+ 115:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 116:../Bootloader/LPCUSB/msc_scsi.c ****     IN      pbCDB       Command data block
+ 117:../Bootloader/LPCUSB/msc_scsi.c ****             iCDBLen     Command data block len
+ 118:../Bootloader/LPCUSB/msc_scsi.c ****     OUT     *piRspLen   Length of intended response data:
+ 119:../Bootloader/LPCUSB/msc_scsi.c ****             *pfDevIn    TRUE if data is transferred from device-to-host
+ 120:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 121:../Bootloader/LPCUSB/msc_scsi.c ****     Returns a pointer to the data exchange buffer if successful,
+ 122:../Bootloader/LPCUSB/msc_scsi.c ****     return NULL otherwise.
+ 123:../Bootloader/LPCUSB/msc_scsi.c **** **************************************************************************/
+ 124:../Bootloader/LPCUSB/msc_scsi.c **** U8 * SCSIHandleCmd(U8 *pbCDB, int iCDBLen, int *piRspLen, BOOL *pfDevIn)
+ 125:../Bootloader/LPCUSB/msc_scsi.c **** {
+  41              	pretend = 0, frame = 8
+  42              		@ frame_needed = 0, uses_anonymous_args = 0
+  43              	.LVL0:
+  44              		stmfd	sp!, {r4, r5, r6, r7, r8, lr}
+  45              	.LCFI0:
+  46 0014 F0412DE9 		mov	r4, r0
+  47              		sub	sp, sp, #8
+  48 0018 0040A0E1 	.LCFI1:
+  49 001c 08D04DE2 		.loc 1 134 0
+  50              		mov	r8, #8
+ 126:../Bootloader/LPCUSB/msc_scsi.c ****     int     i;
+ 127:../Bootloader/LPCUSB/msc_scsi.c ****     TCDB6   *pCDB;
+ 128:../Bootloader/LPCUSB/msc_scsi.c ****     U32     dwLen, dwLBA;
+ 129:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 130:../Bootloader/LPCUSB/msc_scsi.c **** 	//pCDB = (TCDB6 *)pbCDB;
+ 131:../Bootloader/LPCUSB/msc_scsi.c **** 	//Compiler warning fix
+ 132:../Bootloader/LPCUSB/msc_scsi.c ****     TCDB6 cdb;
+ 133:../Bootloader/LPCUSB/msc_scsi.c **** 	pCDB = &cdb;
+ 134:../Bootloader/LPCUSB/msc_scsi.c **** 	memcpy(pCDB, pbCDB, sizeof(TCDB6));
+  51              	5 0
+  52 0020 0880A0E3 		mov	r6, r1
+  53              		mov	r5, r2
+  54 0024 0160A0E1 		.loc 1 134 0
+  55 0028 0250A0E1 		mov	r0, sp
+  56              	.LVL1:
+  57 002c 0D00A0E1 		mov	r2, r8
+  58              	.LVL2:
+  59 0030 0820A0E1 		mov	r1, r4
+  60              	.LVL3:
+  61 0034 0410A0E1 		.loc 1 125 0
+  62              		mov	r7, r3
+  63              		.loc 1 134 0
+  64 0038 0370A0E1 		bl	memcpy
+  65              	.LVL4:
+  66 003c FEFFFFEB 		.loc 1 139 0
+  67              		ldrb	r2, [sp, #0]	@ zero_extendqisi2
+ 135:../Bootloader/LPCUSB/msc_scsi.c **** 	
+ 136:../Bootloader/LPCUSB/msc_scsi.c ****     // default direction is from device to host
+ 137:../Bootloader/LPCUSB/msc_scsi.c ****     *pfDevIn = TRUE;
+ 138:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 139:../Bootloader/LPCUSB/msc_scsi.c ****     switch (pCDB->bOperationCode)
+  68              	v	r3, #1
+  69 0040 0020DDE5 		.loc 1 139 0
+  70              		cmp	r2, #18
+  71 0044 0130A0E3 		.loc 1 137 0
+  72              		str	r3, [r7, #0]
+  73 0048 120052E3 		.loc 1 139 0
+  74              		beq	.L9
+  75 004c 003087E5 		bhi	.L13
+  76              		cmp	r2, #0
+  77 0050 1300000A 		.loc 1 145 0
+  78 0054 0600008A 		ldreq	r0, .L26
+  79 0058 000052E3 		streq	r2, [r5, #0]
+ 140:../Bootloader/LPCUSB/msc_scsi.c ****     {
+ 141:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 142:../Bootloader/LPCUSB/msc_scsi.c ****         // test unit ready (6)
+ 143:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_TEST_UNIT_READY:
+ 144:../Bootloader/LPCUSB/msc_scsi.c ****             DBG("TEST UNIT READY\n");
+ 145:../Bootloader/LPCUSB/msc_scsi.c ****             *piRspLen = 0;
+  80              	0
+  81 005c DC009F05 		beq	.L14
+  82 0060 00208505 		cmp	r2, #3
+  83              		bne	.L6
+  84 0064 3200000A 		b	.L8
+  85 0068 030052E3 	.L13:
+  86 006c 2800001A 		cmp	r2, #40
+  87 0070 060000EA 		beq	.L11
+  88              		cmp	r2, #42
+  89 0074 280052E3 		beq	.L12
+  90 0078 1200000A 		cmp	r2, #37
+  91 007c 2A0052E3 		bne	.L6
+  92 0080 1800000A 		b	.L10
+  93 0084 250052E3 	.L8:
+  94 0088 2100001A 		.loc 1 152 0
+  95 008c 0A0000EA 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+  96              		ldr	r0, .L26
+ 146:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 147:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 148:../Bootloader/LPCUSB/msc_scsi.c ****         // request sense (6)
+ 149:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_REQUEST_SENSE:
+ 150:../Bootloader/LPCUSB/msc_scsi.c ****             DBG("REQUEST SENSE (%06X)\n", dwSense);
+ 151:../Bootloader/LPCUSB/msc_scsi.c ****             // check params
+ 152:../Bootloader/LPCUSB/msc_scsi.c ****             *piRspLen = MIN(18, pCDB->bLength);
+  97              	cs	r3, #18
+  98 0090 0430DDE5 		b	.L25
+  99 0094 A4009FE5 	.L9:
+ 100 0098 120053E3 		.loc 1 159 0
+ 101 009c 1230A023 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 102 00a0 030000EA 		ldr	r0, .L26
+ 103              		cmp	r3, #36
+ 153:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 154:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 155:../Bootloader/LPCUSB/msc_scsi.c ****         // inquiry (6)
+ 156:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_INQUIRY:
+ 157:../Bootloader/LPCUSB/msc_scsi.c ****             DBG("INQUIRY\n");
+ 158:../Bootloader/LPCUSB/msc_scsi.c ****             // see SPC20r20, 4.3.4.6
+ 159:../Bootloader/LPCUSB/msc_scsi.c ****             *piRspLen = MIN(36, pCDB->bLength);
+ 104              	r3, #36
+ 105 00a4 0430DDE5 	.L25:
+ 106 00a8 90009FE5 		str	r3, [r5, #0]
+ 107 00ac 240053E3 		b	.L14
+ 108 00b0 2430A023 	.L10:
+ 109              		.loc 1 165 0
+ 110 00b4 003085E5 		ldr	r0, .L26
+ 111 00b8 1D0000EA 		str	r8, [r5, #0]
+ 112              		b	.L14
+ 160:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 161:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 162:../Bootloader/LPCUSB/msc_scsi.c ****         // read capacity (10)
+ 163:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_READ_CAPACITY:
+ 164:../Bootloader/LPCUSB/msc_scsi.c ****             DBG("READ CAPACITY\n");
+ 165:../Bootloader/LPCUSB/msc_scsi.c ****             *piRspLen = 8;
+ 113              	oc 1 170 0
+ 114 00bc 7C009FE5 		cmp	r6, #10
+ 115 00c0 008085E5 		bne	.L21
+ 116 00c4 1A0000EA 		.loc 1 177 0
+ 117              		ldrb	r3, [r4, #8]	@ zero_extendqisi2
+ 166:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 167:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 168:../Bootloader/LPCUSB/msc_scsi.c ****         // read (10)
+ 169:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_READ_10:
+ 170:../Bootloader/LPCUSB/msc_scsi.c ****             if (iCDBLen != 10)
+ 118              		r2, [r4, #7]	@ zero_extendqisi2
+ 119 00c8 0A0056E3 		ldr	r0, .L26
+ 120 00cc 1700001A 		orr	r3, r3, r2, asl #8
+ 171:../Bootloader/LPCUSB/msc_scsi.c ****             {
+ 172:../Bootloader/LPCUSB/msc_scsi.c ****                 return NULL;
+ 173:../Bootloader/LPCUSB/msc_scsi.c ****             }
+ 174:../Bootloader/LPCUSB/msc_scsi.c ****             dwLBA = (pbCDB[2] << 24) | (pbCDB[3] << 16) | (pbCDB[4] << 8) | (pbCDB[5]);
+ 175:../Bootloader/LPCUSB/msc_scsi.c ****             dwLen = (pbCDB[7] << 8) | pbCDB[8];
+ 176:../Bootloader/LPCUSB/msc_scsi.c ****             DBG("READ10, LBA=%d, len=%d\n", dwLBA, dwLen);
+ 177:../Bootloader/LPCUSB/msc_scsi.c ****             *piRspLen = dwLen * BLOCKSIZE;
+ 121              	v	r3, r3, asl #9
+ 122 00d0 0830D4E5 		b	.L25
+ 123 00d4 0720D4E5 	.L12:
+ 124 00d8 60009FE5 		.loc 1 182 0
+ 125 00dc 023483E1 		cmp	r6, #10
+ 126 00e0 8334A0E1 		bne	.L21
+ 127 00e4 F2FFFFEA 		.loc 1 189 0
+ 128              		ldrb	r3, [r4, #8]	@ zero_extendqisi2
+ 178:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 179:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 180:../Bootloader/LPCUSB/msc_scsi.c ****         // write (10)
+ 181:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_WRITE_10:
+ 182:../Bootloader/LPCUSB/msc_scsi.c ****             if (iCDBLen != 10)
+ 129              	, [r4, #7]	@ zero_extendqisi2
+ 130 00e8 0A0056E3 		orr	r3, r3, r2, asl #8
+ 131 00ec 0F00001A 		mov	r3, r3, asl #9
+ 183:../Bootloader/LPCUSB/msc_scsi.c ****             {
+ 184:../Bootloader/LPCUSB/msc_scsi.c ****                 return NULL;
+ 185:../Bootloader/LPCUSB/msc_scsi.c ****             }
+ 186:../Bootloader/LPCUSB/msc_scsi.c ****             dwLBA = (pbCDB[2] << 24) | (pbCDB[3] << 16) | (pbCDB[4] << 8) | (pbCDB[5]);
+ 187:../Bootloader/LPCUSB/msc_scsi.c ****             dwLen = (pbCDB[7] << 8) | pbCDB[8];
+ 188:../Bootloader/LPCUSB/msc_scsi.c ****             DBG("WRITE10, LBA=%d, len=%d\n", dwLBA, dwLen);
+ 189:../Bootloader/LPCUSB/msc_scsi.c ****             *piRspLen = dwLen * BLOCKSIZE;
+ 132              	oc 1 190 0
+ 133 00f0 0830D4E5 		ldr	r0, .L26
+ 134 00f4 0720D4E5 		.loc 1 189 0
+ 135 00f8 023483E1 		str	r3, [r5, #0]
+ 136 00fc 8334A0E1 		.loc 1 190 0
+ 190:../Bootloader/LPCUSB/msc_scsi.c ****             *pfDevIn = FALSE;
+ 137              	r3, #0
+ 138 0100 38009FE5 		str	r3, [r7, #0]
+ 139              		b	.L14
+ 140 0104 003085E5 	.L6:
+ 141              		.loc 1 202 0
+ 142 0108 0030A0E3 		mov	r1, #0
+ 143 010c 003087E5 		.loc 1 201 0
+ 144 0110 070000EA 		ldr	r3, .L26+4
+ 145              		mov	r2, #335872
+ 191:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 192:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 193:../Bootloader/LPCUSB/msc_scsi.c ****         default:
+ 194:../Bootloader/LPCUSB/msc_scsi.c ****             DBG("Unhandled SCSI: ");
+ 195:../Bootloader/LPCUSB/msc_scsi.c ****             for (i = 0; i < iCDBLen; i++)
+ 196:../Bootloader/LPCUSB/msc_scsi.c ****             {
+ 197:../Bootloader/LPCUSB/msc_scsi.c ****                 DBG(" %02X", pbCDB[i]);
+ 198:../Bootloader/LPCUSB/msc_scsi.c ****             }
+ 199:../Bootloader/LPCUSB/msc_scsi.c ****             DBG("\n");
+ 200:../Bootloader/LPCUSB/msc_scsi.c ****             // unsupported command
+ 201:../Bootloader/LPCUSB/msc_scsi.c ****             dwSense = INVALID_CMD_OPCODE;
+ 202:../Bootloader/LPCUSB/msc_scsi.c ****             *piRspLen = 0;
+ 146              	02 0
+ 147 0114 0010A0E3 		mov	r0, r1
+ 148              		.loc 1 201 0
+ 149 0118 24309FE5 		str	r2, [r3, #0]
+ 150 011c 522AA0E3 		.loc 1 202 0
+ 151              		str	r1, [r5, #0]
+ 152 0120 0100A0E1 		b	.L14
+ 153              	.L21:
+ 154 0124 002083E5 		.loc 1 203 0
+ 155              		mov	r0, #0
+ 156 0128 001085E5 	.L14:
+ 157 012c 000000EA 		.loc 1 208 0
+ 158              		add	sp, sp, #8
+ 203:../Bootloader/LPCUSB/msc_scsi.c ****             return NULL;
+ 159              	r4, r5, r6, r7, r8, lr}
+ 160 0130 0000A0E3 		bx	lr
+ 161              	.L27:
+ 204:../Bootloader/LPCUSB/msc_scsi.c ****         }
+ 205:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 206:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 207:../Bootloader/LPCUSB/msc_scsi.c ****     return abBlockBuf;
+ 208:../Bootloader/LPCUSB/msc_scsi.c **** }
+ 162              	lign	2
+ 163 0134 08D08DE2 	.L26:
+ 164 0138 F041BDE8 		.word	abBlockBuf
+ 165 013c 1EFF2FE1 		.word	dwSense
+ 166              	.LFE3:
+ 168              		.align	2
+ 169 0140 04000000 		.global	SCSIHandleData
+ 171              	SCSIHandleData:
+ 172              	.LFB4:
+ 173              		.loc 1 225 0
+ 174              		@ Function supports interworking.
+ 175              		@ args = 0, pretend = 0, frame = 12
+ 176              		@ frame_needed = 0, uses_anonymous_args = 0
+ 177              	.LVL5:
+ 209:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 210:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 211:../Bootloader/LPCUSB/msc_scsi.c **** /*************************************************************************
+ 212:../Bootloader/LPCUSB/msc_scsi.c ****     SCSIHandleData
+ 213:../Bootloader/LPCUSB/msc_scsi.c ****     ==============
+ 214:../Bootloader/LPCUSB/msc_scsi.c ****         Handles a block of SCSI data.
+ 215:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 216:../Bootloader/LPCUSB/msc_scsi.c ****     IN      pbCDB       Command data block
+ 217:../Bootloader/LPCUSB/msc_scsi.c ****             iCDBLen     Command data block len
+ 218:../Bootloader/LPCUSB/msc_scsi.c ****     IN/OUT  pbData      Data buffer
+ 219:../Bootloader/LPCUSB/msc_scsi.c ****     IN      dwOffset    Offset in data
+ 220:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 221:../Bootloader/LPCUSB/msc_scsi.c ****     Returns a pointer to the next data to be exchanged if successful,
+ 222:../Bootloader/LPCUSB/msc_scsi.c ****     returns NULL otherwise.
+ 223:../Bootloader/LPCUSB/msc_scsi.c **** **************************************************************************/
+ 224:../Bootloader/LPCUSB/msc_scsi.c **** U8 * SCSIHandleData(U8 *pbCDB, int iCDBLen, U8 *pbData, U32 dwOffset)
+ 225:../Bootloader/LPCUSB/msc_scsi.c **** {
+ 178              	 r5, r6, lr}
+ 179              	.LCFI2:
+ 180              		mov	r4, r0
+ 181              		sub	sp, sp, #12
+ 182              	.LCFI3:
+ 183 0148 70402DE9 		.loc 1 225 0
+ 184              		mov	r5, r2
+ 185 014c 0040A0E1 		.loc 1 235 0
+ 186 0150 0CD04DE2 		mov	r0, sp
+ 187              	.LVL6:
+ 188              		mov	r1, r4
+ 189 0154 0250A0E1 	.LVL7:
+ 226:../Bootloader/LPCUSB/msc_scsi.c ****     TCDB6   *pCDB;
+ 227:../Bootloader/LPCUSB/msc_scsi.c ****     U32     dwLBA;
+ 228:../Bootloader/LPCUSB/msc_scsi.c ****     U32     dwBufPos, dwBlockNr;
+ 229:../Bootloader/LPCUSB/msc_scsi.c ****     U32     dwNumBlocks, dwMaxBlock;
+ 230:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 231:../Bootloader/LPCUSB/msc_scsi.c **** 	//pCDB = (TCDB6 *)pbCDB;
+ 232:../Bootloader/LPCUSB/msc_scsi.c **** 	//Compiler warning fix
+ 233:../Bootloader/LPCUSB/msc_scsi.c ****     TCDB6 cdb;
+ 234:../Bootloader/LPCUSB/msc_scsi.c **** 	pCDB = &cdb;
+ 235:../Bootloader/LPCUSB/msc_scsi.c **** 	memcpy(pCDB, pbCDB, sizeof(TCDB6));
+ 190              	.LVL8:
+ 191 0158 0D00A0E1 		.loc 1 225 0
+ 192              		mov	r6, r3
+ 193 015c 0410A0E1 		.loc 1 235 0
+ 194              		bl	memcpy
+ 195 0160 0820A0E3 	.LVL9:
+ 196              		.loc 1 237 0
+ 197              		ldrb	r3, [sp, #0]	@ zero_extendqisi2
+ 198 0164 0360A0E1 		cmp	r3, #18
+ 199              		beq	.L32
+ 200 0168 FEFFFFEB 		bhi	.L36
+ 201              		cmp	r3, #0
+ 236:../Bootloader/LPCUSB/msc_scsi.c **** 	
+ 237:../Bootloader/LPCUSB/msc_scsi.c ****     switch (pCDB->bOperationCode)
+ 202              	mp	r3, #3
+ 203 016c 0030DDE5 		bne	.L29
+ 204 0170 120053E3 		b	.L31
+ 205 0174 2200000A 	.L36:
+ 206 0178 0400008A 		cmp	r3, #40
+ 207 017c 000053E3 		beq	.L34
+ 208 0180 0900000A 		cmp	r3, #42
+ 209 0184 030053E3 		beq	.L35
+ 210 0188 6500001A 		cmp	r3, #37
+ 211 018c 0D0000EA 		bne	.L29
+ 212              		b	.L33
+ 213 0190 280053E3 	.L30:
+ 214 0194 3400000A 		.loc 1 242 0
+ 215 0198 2A0053E3 		ldr	r3, .L48
+ 216 019c 4600000A 		ldr	r2, [r3, #0]
+ 217 01a0 250053E3 		ldr	r3, .L48+4
+ 218 01a4 5E00001A 		cmp	r2, #0
+ 219 01a8 1B0000EA 		moveq	lr, r3
+ 220              		movne	lr, #0
+ 238:../Bootloader/LPCUSB/msc_scsi.c ****     {
+ 239:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 240:../Bootloader/LPCUSB/msc_scsi.c ****         // test unit ready
+ 241:../Bootloader/LPCUSB/msc_scsi.c ****         case 0x00:
+ 242:../Bootloader/LPCUSB/msc_scsi.c ****             if (dwSense != 0)
+ 221              	 1 250 0
+ 222 01ac 90319FE5 		ldr	r1, .L48+8
+ 223 01b0 002093E5 		mov	r2, #18
+ 224 01b4 8C319FE5 		mov	r0, r5
+ 225 01b8 000052E3 		bl	memcpy
+ 226 01bc 03E0A001 		.loc 1 252 0
+ 227 01c0 00E0A013 		ldr	r0, .L48
+ 228 01c4 5A0000EA 		ldr	r3, [r0, #0]
+ 229              		.loc 1 256 0
+ 243:../Bootloader/LPCUSB/msc_scsi.c ****             {
+ 244:../Bootloader/LPCUSB/msc_scsi.c ****                 return NULL;
+ 245:../Bootloader/LPCUSB/msc_scsi.c ****             }
+ 246:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 247:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 248:../Bootloader/LPCUSB/msc_scsi.c ****         // request sense
+ 249:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_REQUEST_SENSE:
+ 250:../Bootloader/LPCUSB/msc_scsi.c ****             memcpy(pbData, abSense, 18);
+ 230              	.L48+4
+ 231 01c8 7C119FE5 		.loc 1 252 0
+ 232 01cc 1220A0E3 		mov	r2, r3, lsr #16
+ 233 01d0 0500A0E1 		.loc 1 253 0
+ 234 01d4 FEFFFFEB 		mov	r1, r3, lsr #8
+ 251:../Bootloader/LPCUSB/msc_scsi.c ****             // fill in KEY/ASC/ASCQ
+ 252:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[2] = (dwSense >> 16) & 0xFF;
+ 235              	 1 254 0
+ 236 01d8 64019FE5 		strb	r3, [r5, #13]
+ 237 01dc 003090E5 		.loc 1 256 0
+ 253:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[12] = (dwSense >> 8) & 0xFF;
+ 254:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[13] = (dwSense >> 0) & 0xFF;
+ 255:../Bootloader/LPCUSB/msc_scsi.c ****             // reset sense data
+ 256:../Bootloader/LPCUSB/msc_scsi.c ****             dwSense = 0;
+ 238              	v	r3, #0
+ 239 01e0 60E19FE5 		.loc 1 252 0
+ 240              		strb	r2, [r5, #2]
+ 241 01e4 2328A0E1 		.loc 1 253 0
+ 242              		strb	r1, [r5, #12]
+ 243 01e8 2314A0E1 		.loc 1 256 0
+ 244              		str	r3, [r0, #0]
+ 245 01ec 0D30C5E5 		b	.L39
+ 246              	.L32:
+ 247 01f0 0030A0E3 		.loc 1 261 0
+ 248              		mov	r0, r5
+ 249 01f4 0220C5E5 		ldr	r1, .L48+12
+ 250              		mov	r2, #36
+ 251 01f8 0C10C5E5 		bl	memcpy
+ 252              		ldr	lr, .L48+4
+ 253 01fc 003080E5 		b	.L39
+ 254 0200 4B0000EA 	.L33:
+ 255              		.loc 1 267 0
+ 257:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 258:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 259:../Bootloader/LPCUSB/msc_scsi.c ****         // inquiry
+ 260:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_INQUIRY:
+ 261:../Bootloader/LPCUSB/msc_scsi.c ****             memcpy(pbData, abInquiry, sizeof(abInquiry));
+ 256              	l	BlockDevGetSize
+ 257 0204 0500A0E1 	.LVL10:
+ 258 0208 40119FE5 		.loc 1 269 0
+ 259 020c 2420A0E3 		ldr	r3, [sp, #8]
+ 260 0210 FEFFFFEB 		sub	r3, r3, #1
+ 261 0214 2CE19FE5 		mov	r0, r3, lsr #9
+ 262 0218 450000EA 	.LVL11:
+ 263              		.loc 1 273 0
+ 262:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 263:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 264:../Bootloader/LPCUSB/msc_scsi.c ****         // read capacity
+ 265:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_READ_CAPACITY:
+ 266:../Bootloader/LPCUSB/msc_scsi.c ****         // get size of drive (bytes)
+ 267:../Bootloader/LPCUSB/msc_scsi.c ****             BlockDevGetSize(&dwNumBlocks);
+ 264              	 r3, lsr #17
+ 265 021c 08008DE2 		.loc 1 278 0
+ 266 0220 FEFFFFEB 		ldr	lr, .L48+4
+ 267              		.loc 1 272 0
+ 268:../Bootloader/LPCUSB/msc_scsi.c ****             // calculate highest LBA
+ 269:../Bootloader/LPCUSB/msc_scsi.c ****             dwMaxBlock = (dwNumBlocks - 1) / 512;
+ 268              		r3, r3, lsr #25
+ 269 0224 08309DE5 		.loc 1 275 0
+ 270 0228 013043E2 		mov	r2, #0
+ 271 022c A304A0E1 		.loc 1 271 0
+ 272              		mov	r1, r0, lsr #24
+ 270:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 271:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[0] = (dwMaxBlock >> 24) & 0xFF;
+ 272:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[1] = (dwMaxBlock >> 16) & 0xFF;
+ 273:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[2] = (dwMaxBlock >> 8) & 0xFF;
+ 273              	 1 272 0
+ 274 0230 A3C8A0E1 		strb	r3, [r5, #1]
+ 274:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[3] = (dwMaxBlock >> 0) & 0xFF;
+ 275:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[4] = (BLOCKSIZE >> 24) & 0xFF;
+ 276:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[5] = (BLOCKSIZE >> 16) & 0xFF;
+ 277:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[6] = (BLOCKSIZE >> 8) & 0xFF;
+ 278:../Bootloader/LPCUSB/msc_scsi.c ****             pbData[7] = (BLOCKSIZE >> 0) & 0xFF;
+ 275              	loc 1 277 0
+ 276 0234 0CE19FE5 		mov	r3, #2
+ 277              		.loc 1 278 0
+ 278 0238 A33CA0E1 		strb	r2, [r5, #7]
+ 279              		.loc 1 271 0
+ 280 023c 0020A0E3 		strb	r1, [r5, #0]
+ 281              		.loc 1 273 0
+ 282 0240 201CA0E1 		strb	ip, [r5, #2]
+ 283              		.loc 1 274 0
+ 284 0244 0130C5E5 		strb	r0, [r5, #3]
+ 285              		.loc 1 277 0
+ 286 0248 0230A0E3 		strb	r3, [r5, #6]
+ 287              		.loc 1 275 0
+ 288 024c 0720C5E5 		strb	r2, [r5, #4]
+ 289              		.loc 1 276 0
+ 290 0250 0010C5E5 		strb	r2, [r5, #5]
+ 291              		b	.L39
+ 292 0254 02C0C5E5 	.LVL12:
+ 293              	.L34:
+ 294 0258 0300C5E5 		.loc 1 286 0
+ 295              		mov	r5, r6, asl #23
+ 296 025c 0630C5E5 	.LVL13:
+ 297              		mov	r5, r5, lsr #23
+ 298 0260 0420C5E5 		.loc 1 287 0
+ 299              		cmp	r5, #0
+ 300 0264 0520C5E5 		.loc 1 283 0
+ 301 0268 310000EA 		ldrb	r2, [r4, #5]	@ zero_extendqisi2
+ 302              		ldrb	r3, [r4, #2]	@ zero_extendqisi2
+ 303              		ldrb	r0, [r4, #3]	@ zero_extendqisi2
+ 279:../Bootloader/LPCUSB/msc_scsi.c ****             break;
+ 280:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 281:../Bootloader/LPCUSB/msc_scsi.c ****         // read10
+ 282:../Bootloader/LPCUSB/msc_scsi.c ****         case SCSI_CMD_READ_10:
+ 283:../Bootloader/LPCUSB/msc_scsi.c ****             dwLBA = (pbCDB[2] << 24) | (pbCDB[3] << 16) | (pbCDB[4] << 8) | (pbCDB[5]);
+ 284:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 285:../Bootloader/LPCUSB/msc_scsi.c ****             // copy data from block buffer
+ 286:../Bootloader/LPCUSB/msc_scsi.c ****             dwBufPos = (dwOffset & (BLOCKSIZE - 1));
+ 304              	endqisi2
+ 305 026c 865BA0E1 		.loc 1 287 0
+ 306              		bne	.L43
+ 307 0270 A55BA0E1 		.loc 1 292 0
+ 287:../Bootloader/LPCUSB/msc_scsi.c ****             if (dwBufPos == 0)
+ 308              		r0, r0, asl #16
+ 309 0274 000055E3 		orr	r0, r0, r3, asl #24
+ 310              		orr	r0, r0, r2
+ 311 0278 0520D4E5 		orr	r0, r0, r1, asl #8
+ 312 027c 0230D4E5 		add	r0, r0, r6, lsr #9
+ 313 0280 0300D4E5 		ldr	r1, .L48+4
+ 314 0284 0410D4E5 		bl	BlockDevRead
+ 315              		cmp	r0, #0
+ 316 0288 2200001A 		.loc 1 294 0
+ 288:../Bootloader/LPCUSB/msc_scsi.c ****             {
+ 289:../Bootloader/LPCUSB/msc_scsi.c ****                 // read new block
+ 290:../Bootloader/LPCUSB/msc_scsi.c ****                 dwBlockNr = dwLBA + (dwOffset / BLOCKSIZE);
+ 291:../Bootloader/LPCUSB/msc_scsi.c ****                 DBG("R");
+ 292:../Bootloader/LPCUSB/msc_scsi.c ****                 if (BlockDevRead(dwBlockNr, abBlockBuf) < 0)
+ 317              	, r5
+ 318 028c 0008A0E1 		ldrlt	r2, .L48+16
+ 319 0290 030C80E1 		.loc 1 292 0
+ 320 0294 020080E1 		blt	.L47
+ 321 0298 010480E1 		b	.L43
+ 322 029c A60480E0 	.LVL14:
+ 323 02a0 A0109FE5 	.L35:
+ 324 02a4 FEFFFFEB 		.loc 1 307 0
+ 325 02a8 000050E3 		add	r3, r6, #64
+ 293:../Bootloader/LPCUSB/msc_scsi.c ****                 {
+ 294:../Bootloader/LPCUSB/msc_scsi.c ****                     dwSense = READ_ERROR;
+ 326              	r3, asl #23
+ 327 02ac 05E0A0B1 	.LVL15:
+ 328 02b0 9C209FB5 		mov	r5, r5, lsr #23
+ 329              		.loc 1 308 0
+ 330 02b4 140000BA 		cmp	r5, #0
+ 331 02b8 160000EA 		.loc 1 304 0
+ 332              		ldrb	r2, [r4, #5]	@ zero_extendqisi2
+ 333              		ldrb	r3, [r4, #2]	@ zero_extendqisi2
+ 295:../Bootloader/LPCUSB/msc_scsi.c ****                     DBG("BlockDevRead failed\n");
+ 296:../Bootloader/LPCUSB/msc_scsi.c ****                     return NULL;
+ 297:../Bootloader/LPCUSB/msc_scsi.c ****                 }
+ 298:../Bootloader/LPCUSB/msc_scsi.c ****             }
+ 299:../Bootloader/LPCUSB/msc_scsi.c ****             // return pointer to data
+ 300:../Bootloader/LPCUSB/msc_scsi.c ****             return abBlockBuf + dwBufPos;
+ 301:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 302:../Bootloader/LPCUSB/msc_scsi.c ****             // write10
+ 303:../Bootloader/LPCUSB/msc_scsi.c ****             case SCSI_CMD_WRITE_10:
+ 304:../Bootloader/LPCUSB/msc_scsi.c ****             dwLBA = (pbCDB[2] << 24) | (pbCDB[3] << 16) | (pbCDB[4] << 8) | (pbCDB[5]);
+ 305:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 306:../Bootloader/LPCUSB/msc_scsi.c ****             // copy data to block buffer
+ 307:../Bootloader/LPCUSB/msc_scsi.c ****             dwBufPos = ((dwOffset + 64) & (BLOCKSIZE - 1));
+ 334              	, [r4, #3]	@ zero_extendqisi2
+ 335 02bc 403086E2 		ldrb	r1, [r4, #4]	@ zero_extendqisi2
+ 336 02c0 835BA0E1 		.loc 1 308 0
+ 337              		bne	.L43
+ 338 02c4 A55BA0E1 		.loc 1 313 0
+ 308:../Bootloader/LPCUSB/msc_scsi.c ****             if (dwBufPos == 0)
+ 339              	r0, r0, asl #16
+ 340 02c8 000055E3 		orr	r0, r0, r3, asl #24
+ 341              		orr	r0, r0, r2
+ 342 02cc 0520D4E5 		orr	r0, r0, r1, asl #8
+ 343 02d0 0230D4E5 		add	r0, r0, r6, lsr #9
+ 344 02d4 0300D4E5 		ldr	r1, .L48+4
+ 345 02d8 0410D4E5 		bl	BlockDevWrite
+ 346              		cmp	r0, #0
+ 347 02dc 0D00001A 		bge	.L43
+ 309:../Bootloader/LPCUSB/msc_scsi.c ****             {
+ 310:../Bootloader/LPCUSB/msc_scsi.c ****                 // write new block
+ 311:../Bootloader/LPCUSB/msc_scsi.c ****                 dwBlockNr = dwLBA + (dwOffset / BLOCKSIZE);
+ 312:../Bootloader/LPCUSB/msc_scsi.c ****                 DBG("W");
+ 313:../Bootloader/LPCUSB/msc_scsi.c ****                 if (BlockDevWrite(dwBlockNr, abBlockBuf) < 0)
+ 348              	15 0
+ 349 02e0 0008A0E1 		mov	lr, r5
+ 350 02e4 030C80E1 		mov	r2, #199680
+ 351 02e8 020080E1 	.LVL16:
+ 352 02ec 010480E1 	.L47:
+ 353 02f0 A60480E0 		ldr	r3, .L48
+ 354 02f4 4C109FE5 		str	r2, [r3, #0]
+ 355 02f8 FEFFFFEB 		b	.L39
+ 356 02fc 000050E3 	.L43:
+ 357 0300 040000AA 		.loc 1 321 0
+ 314:../Bootloader/LPCUSB/msc_scsi.c ****                 {
+ 315:../Bootloader/LPCUSB/msc_scsi.c ****                     dwSense = WRITE_ERROR;
+ 358              	L48+4
+ 359 0304 05E0A0E1 	.LVL17:
+ 360 0308 C32BA0E3 		add	lr, r5, r3
+ 361              		b	.L39
+ 362              	.LVL18:
+ 363 030c 30309FE5 	.L29:
+ 364 0310 002083E5 		.loc 1 325 0
+ 365 0314 060000EA 		ldr	r3, .L48
+ 366              		mov	r2, #335872
+ 316:../Bootloader/LPCUSB/msc_scsi.c ****                     DBG("BlockDevWrite failed\n");
+ 317:../Bootloader/LPCUSB/msc_scsi.c ****                     return NULL;
+ 318:../Bootloader/LPCUSB/msc_scsi.c ****                 }
+ 319:../Bootloader/LPCUSB/msc_scsi.c ****             }
+ 320:../Bootloader/LPCUSB/msc_scsi.c ****             // return pointer to next data
+ 321:../Bootloader/LPCUSB/msc_scsi.c ****             return abBlockBuf + dwBufPos;
+ 367              	[r3, #0]
+ 368 0318 28309FE5 		mov	lr, #0
+ 369              	.LVL19:
+ 370 031c 03E085E0 	.L39:
+ 371 0320 030000EA 		.loc 1 331 0
+ 372              		mov	r0, lr
+ 373              	.LVL20:
+ 322:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 323:../Bootloader/LPCUSB/msc_scsi.c ****             default:
+ 324:../Bootloader/LPCUSB/msc_scsi.c ****             // unsupported command
+ 325:../Bootloader/LPCUSB/msc_scsi.c ****             dwSense = INVALID_CMD_OPCODE;
+ 374              	, sp, #12
+ 375 0324 18309FE5 		ldmfd	sp!, {r4, r5, r6, lr}
+ 376 0328 522AA0E3 		bx	lr
+ 377 032c 002083E5 	.L49:
+ 378 0330 00E0A0E3 		.align	2
+ 379              	.L48:
+ 380              		.word	dwSense
+ 326:../Bootloader/LPCUSB/msc_scsi.c ****             return NULL;
+ 327:../Bootloader/LPCUSB/msc_scsi.c ****         }
+ 328:../Bootloader/LPCUSB/msc_scsi.c **** 
+ 329:../Bootloader/LPCUSB/msc_scsi.c ****     // default: return pointer to start of block buffer
+ 330:../Bootloader/LPCUSB/msc_scsi.c ****     return abBlockBuf;
+ 331:../Bootloader/LPCUSB/msc_scsi.c **** }
+ 381              	abBlockBuf
+ 382 0334 0E00A0E1 		.word	abSense
+ 383              		.word	abInquiry
+ 384 0338 0CD08DE2 		.word	200960
+ 385 033c 7040BDE8 	.LFE4:
+ 387              		.section	.rodata
+ 390 0344 00000000 	abSense:
+ 391 0348 04000000 		.byte	112
+ 392 034c 00000000 		.byte	0
+ 393 0350 12000000 		.byte	-1
+ 394 0354 00110300 		.byte	0
+ 395              		.byte	0
+ 396              		.byte	0
+ 397              		.byte	0
+ 398              		.byte	10
+ 399              		.byte	0
+ 400              		.byte	0
+ 401 0000 70       		.byte	0
+ 402 0001 00       		.byte	0
+ 403 0002 FF       		.byte	-1
+ 404 0003 00       		.byte	-1
+ 405 0004 00       		.byte	0
+ 406 0005 00       		.byte	0
+ 407 0006 00       		.byte	0
+ 408 0007 0A       		.byte	0
+ 411 000a 00       	abInquiry:
+ 412 000b 00       		.byte	0
+ 413 000c FF       		.byte	-128
+ 414 000d FF       		.byte	4
+ 415 000e 00       		.byte	2
+ 416 000f 00       		.byte	31
+ 417 0010 00       		.byte	0
+ 418 0011 00       		.byte	0
+ 419              		.byte	0
+ 420              		.byte	76
+ 421              		.byte	80
+ 422 0012 00       		.byte	67
+ 423 0013 80       		.byte	85
+ 424 0014 04       		.byte	83
+ 425 0015 02       		.byte	66
+ 426 0016 1F       		.byte	32
+ 427 0017 00       		.byte	32
+ 428 0018 00       		.byte	77
+ 429 0019 00       		.byte	97
+ 430 001a 4C       		.byte	115
+ 431 001b 50       		.byte	115
+ 432 001c 43       		.byte	32
+ 433 001d 55       		.byte	115
+ 434 001e 53       		.byte	116
+ 435 001f 42       		.byte	111
+ 436 0020 20       		.byte	114
+ 437 0021 20       		.byte	97
+ 438 0022 4D       		.byte	103
+ 439 0023 61       		.byte	101
+ 440 0024 73       		.byte	32
+ 441 0025 73       		.byte	32
+ 442 0026 20       		.byte	32
+ 443 0027 73       		.byte	32
+ 444 0028 74       		.byte	48
+ 445 0029 6F       		.byte	46
+ 446 002a 72       		.byte	49
+ 447 002b 61       		.byte	32
+ 448 002c 67       		.bss
+ 449 002d 65       		.align	2
+ 450 002e 20       	dwSense:
+ 451 002f 20       		.space	4
+ 452 0030 20       	abBlockBuf:
+ 453 0031 20       		.space	512
+ 454 0032 30       		.section	.debug_frame,"",%progbits
+ 455 0033 2E       	.Lframe0:
+ 456 0034 31       		.4byte	.LECIE0-.LSCIE0
+ 457 0035 20       	.LSCIE0:
+ 458              		.4byte	0xffffffff
+ 459              		.byte	0x1
+ 460              		.ascii	"\000"
+ 461 0000 00000000 		.uleb128 0x1
+ 462              		.sleb128 -4
+ 463 0004 00000000 		.byte	0xe
+ 463      00000000 
+ 463      00000000 
+ 463      00000000 
+ 463      00000000 
+ 541              		.2byte	0x2
+DEFINED SYMBOLS
+                            *ABS*:00000000 msc_scsi.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:13     .text:00000000 SCSIReset
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:22     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:33     .text:00000010 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:460    .bss:00000000 dwSense
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:39     .text:00000014 SCSIHandleCmd
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:46     .text:00000014 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:169    .text:00000140 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:462    .bss:00000004 abBlockBuf
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:176    .text:00000148 SCSIHandleData
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:183    .text:00000148 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:390    .text:00000344 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:400    .rodata:00000000 abSense
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/cccVaaaa.s:421    .rodata:00000012 abInquiry
+                             .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+memcpy
+BlockDevGetSize
+BlockDevRead
+BlockDevWrite

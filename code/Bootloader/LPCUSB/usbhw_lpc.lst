@@ -1,0 +1,1483 @@
+   1              		.file	"usbhw_lpc.c"
+   9              	.Ltext0:
+  10              		.align	2
+  12              	USBHwCmd:
+  13              	.LFB3:
+  14              		.file 1 "../Bootloader/LPCUSB/usbhw_lpc.c"
+   1:../Bootloader/LPCUSB/usbhw_lpc.c **** /*
+   2:../Bootloader/LPCUSB/usbhw_lpc.c **** 	LPCUSB, an USB device driver for LPC microcontrollers	
+   3:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Copyright (C) 2006 Bertrik Sikken (bertrik@sikken.nl)
+   4:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+   5:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Redistribution and use in source and binary forms, with or without
+   6:../Bootloader/LPCUSB/usbhw_lpc.c **** 	modification, are permitted provided that the following conditions are met:
+   7:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+   8:../Bootloader/LPCUSB/usbhw_lpc.c **** 	1. Redistributions of source code must retain the above copyright
+   9:../Bootloader/LPCUSB/usbhw_lpc.c **** 	   notice, this list of conditions and the following disclaimer.
+  10:../Bootloader/LPCUSB/usbhw_lpc.c **** 	2. Redistributions in binary form must reproduce the above copyright
+  11:../Bootloader/LPCUSB/usbhw_lpc.c **** 	   notice, this list of conditions and the following disclaimer in the
+  12:../Bootloader/LPCUSB/usbhw_lpc.c **** 	   documentation and/or other materials provided with the distribution.
+  13:../Bootloader/LPCUSB/usbhw_lpc.c **** 	3. The name of the author may not be used to endorse or promote products
+  14:../Bootloader/LPCUSB/usbhw_lpc.c **** 	   derived from this software without specific prior written permission.
+  15:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  16:../Bootloader/LPCUSB/usbhw_lpc.c **** 	THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+  17:../Bootloader/LPCUSB/usbhw_lpc.c **** 	IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  18:../Bootloader/LPCUSB/usbhw_lpc.c **** 	OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  19:../Bootloader/LPCUSB/usbhw_lpc.c **** 	IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, 
+  20:../Bootloader/LPCUSB/usbhw_lpc.c **** 	INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+  21:../Bootloader/LPCUSB/usbhw_lpc.c **** 	NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  22:../Bootloader/LPCUSB/usbhw_lpc.c **** 	DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  23:../Bootloader/LPCUSB/usbhw_lpc.c **** 	THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  24:../Bootloader/LPCUSB/usbhw_lpc.c **** 	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  25:../Bootloader/LPCUSB/usbhw_lpc.c **** 	THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  26:../Bootloader/LPCUSB/usbhw_lpc.c **** */
+  27:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  28:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  29:../Bootloader/LPCUSB/usbhw_lpc.c **** /** @file
+  30:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USB hardware layer
+  31:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+  32:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  33:../Bootloader/LPCUSB/usbhw_lpc.c **** #include "type.h"
+  34:../Bootloader/LPCUSB/usbhw_lpc.c **** #include "usbdebug.h"
+  35:../Bootloader/LPCUSB/usbhw_lpc.c **** #include "usbhw_lpc.h"
+  36:../Bootloader/LPCUSB/usbhw_lpc.c **** #include "usbapi.h"
+  37:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  38:../Bootloader/LPCUSB/usbhw_lpc.c **** #include "rprintf.h"
+  39:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  40:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  41:../Bootloader/LPCUSB/usbhw_lpc.c **** #ifdef DEBUG
+  42:../Bootloader/LPCUSB/usbhw_lpc.c **** // comment out the following line if you don't want to use debug LEDs
+  43:../Bootloader/LPCUSB/usbhw_lpc.c **** //#define DEBUG_LED
+  44:../Bootloader/LPCUSB/usbhw_lpc.c **** #endif
+  45:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  46:../Bootloader/LPCUSB/usbhw_lpc.c **** #ifdef DEBUG_LED
+  47:../Bootloader/LPCUSB/usbhw_lpc.c **** #define DEBUG_LED_ON(x)		IOCLR0 = (1 << x);
+  48:../Bootloader/LPCUSB/usbhw_lpc.c **** #define DEBUG_LED_OFF(x)	IOSET0 = (1 << x);
+  49:../Bootloader/LPCUSB/usbhw_lpc.c **** #define DEBUG_LED_INIT(x)	PINSEL0 &= ~(0x3 << (2*x)); IODIR0 |= (1 << x); DEBUG_LED_OFF(x);
+  50:../Bootloader/LPCUSB/usbhw_lpc.c **** #else
+  51:../Bootloader/LPCUSB/usbhw_lpc.c **** #define DEBUG_LED_INIT(x)	/**< LED initialisation macro */
+  52:../Bootloader/LPCUSB/usbhw_lpc.c **** #define DEBUG_LED_ON(x)		/**< turn LED on */
+  53:../Bootloader/LPCUSB/usbhw_lpc.c **** #define DEBUG_LED_OFF(x)	/**< turn LED off */
+  54:../Bootloader/LPCUSB/usbhw_lpc.c **** #endif
+  55:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  56:../Bootloader/LPCUSB/usbhw_lpc.c **** /** Installed device interrupt handler */
+  57:../Bootloader/LPCUSB/usbhw_lpc.c **** static TFnDevIntHandler *_pfnDevIntHandler = NULL;
+  58:../Bootloader/LPCUSB/usbhw_lpc.c **** /** Installed endpoint interrupt handlers */
+  59:../Bootloader/LPCUSB/usbhw_lpc.c **** static TFnEPIntHandler	*_apfnEPIntHandlers[16];
+  60:../Bootloader/LPCUSB/usbhw_lpc.c **** /** Installed frame interrupt handlers */
+  61:../Bootloader/LPCUSB/usbhw_lpc.c **** static TFnFrameHandler	*_pfnFrameHandler = NULL;
+  62:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  63:../Bootloader/LPCUSB/usbhw_lpc.c **** /** convert from endpoint address to endpoint index */
+  64:../Bootloader/LPCUSB/usbhw_lpc.c **** #define EP2IDX(bEP)	((((bEP)&0xF)<<1)|(((bEP)&0x80)>>7))
+  65:../Bootloader/LPCUSB/usbhw_lpc.c **** /** convert from endpoint index to endpoint address */
+  66:../Bootloader/LPCUSB/usbhw_lpc.c **** #define IDX2EP(idx)	((((idx)<<7)&0x80)|(((idx)>>1)&0xF))
+  67:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  68:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  69:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  70:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+  71:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Local function to wait for a device interrupt (and clear it)
+  72:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+  73:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	dwIntr		Bitmask of interrupts to wait for	
+  74:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+  75:../Bootloader/LPCUSB/usbhw_lpc.c **** static void Wait4DevInt(U32 dwIntr)
+  76:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+  77:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// wait for specific interrupt
+  78:../Bootloader/LPCUSB/usbhw_lpc.c **** 	while ((USBDevIntSt & dwIntr) != dwIntr);
+  79:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// clear the interrupt bits
+  80:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBDevIntClr = dwIntr;
+  81:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+  82:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  83:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  84:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+  85:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Local function to send a command to the USB protocol engine
+  86:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+  87:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bCmd		Command to send
+  88:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+  89:../Bootloader/LPCUSB/usbhw_lpc.c **** static void USBHwCmd(U8 bCmd)
+  90:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+  15              	@ Function supports interworking.
+  16              		@ args = 0, pretend = 0, frame = 0
+  17              		@ frame_needed = 0, uses_anonymous_args = 0
+  18              		@ link register save eliminated.
+  19              	.LVL0:
+  20              		mov	r0, r0, asl #16
+  21 0000 0008A0E1 		.loc 1 92 0
+  91:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// clear CDFULL/CCEMTY
+  92:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBDevIntClr = CDFULL | CCEMTY;
+  22              	, .L7
+  23 0004 2C209FE5 		.loc 1 94 0
+  93:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// write command code
+  94:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBCmdCode = 0x00000500 | (bCmd << 16);
+  24              	nd	r0, r0, #16711680
+  25 0008 FF0800E2 	.LVL1:
+  26              		orr	r0, r0, #1280
+  27 000c 050C80E3 		.loc 1 92 0
+  28              		mov	r3, #48
+  29 0010 3030A0E3 		str	r3, [r2, #8]
+  30 0014 083082E5 		.loc 1 94 0
+  31              		str	r0, [r2, #16]
+  32 0018 100082E5 		.loc 1 90 0
+  33              		@ lr needed for prologue
+  34              	.L2:
+  35              	.LBB10:
+  36              	.LBB11:
+  37              		.loc 1 78 0
+  38              		ldr	r2, .L7
+  39 001c 14209FE5 		ldr	r3, [r2, #0]
+  40 0020 003092E5 		and	r3, r3, #16
+  41 0024 103003E2 		cmp	r3, #16
+  42 0028 100053E3 		bne	.L2
+  43 002c FAFFFF1A 		.loc 1 80 0
+  44              		str	r3, [r2, #8]
+  45 0030 083082E5 	.LBE11:
+  46              	.LBE10:
+  47              		.loc 1 96 0
+  95:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Wait4DevInt(CCEMTY);
+  96:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+  48              	7:
+  49 0034 1EFF2FE1 		.word	-536281088
+  50              	.LFE3:
+  52              		.align	2
+  54              	USBHwCmdWrite:
+  55              	.LFB4:
+  56              		.loc 1 106 0
+  57              		@ Function supports interworking.
+  58              		@ args = 0, pretend = 0, frame = 0
+  59              		@ frame_needed = 0, uses_anonymous_args = 0
+  97:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  98:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+  99:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 100:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Local function to send a command + data to the USB protocol engine
+ 101:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 102:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bCmd		Command to send
+ 103:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bData		Data to send
+ 104:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 105:../Bootloader/LPCUSB/usbhw_lpc.c **** static void USBHwCmdWrite(U8 bCmd, U16 bData)
+ 106:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+  60              	d	sp!, {r4, lr}
+  61              	.LCFI0:
+  62              		.loc 1 106 0
+  63              		mov	r4, r1, asl #16
+  64              		and	r0, r0, #255
+  65 003c 10402DE9 		mov	r4, r4, lsr #16
+  66              		.loc 1 108 0
+  67              		bl	USBHwCmd
+  68 0040 0148A0E1 	.LVL3:
+  69 0044 FF0000E2 		.loc 1 111 0
+  70 0048 2448A0E1 		mov	r4, r4, asl #16
+ 107:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// write command code
+ 108:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmd(bCmd);
+  71              		r3, .L15
+  72 004c EBFFFFEB 		orr	r4, r4, #256
+  73              		str	r4, [r3, #16]
+ 109:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 110:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// write command data
+ 111:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBCmdCode = 0x00000100 | (bData << 16);
+  74              	0:
+  75 0050 0448A0E1 	.LBB12:
+  76              	.LBB13:
+  77 0054 24309FE5 		.loc 1 78 0
+  78 0058 014C84E3 		ldr	r2, .L15
+  79 005c 104083E5 		ldr	r3, [r2, #0]
+  80              		and	r3, r3, #16
+  81              		cmp	r3, #16
+  82              		bne	.L10
+  83              		.loc 1 80 0
+  84 0060 18209FE5 		str	r3, [r2, #8]
+  85 0064 003092E5 	.LBE13:
+  86 0068 103003E2 	.LBE12:
+  87 006c 100053E3 		.loc 1 113 0
+  88 0070 FAFFFF1A 		ldmfd	sp!, {r4, lr}
+  89              		bx	lr
+  90 0074 083082E5 	.L16:
+  91              		.align	2
+  92              	.L15:
+ 112:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Wait4DevInt(CCEMTY);
+ 113:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+  93              	LFE4:
+  95 007c 1EFF2FE1 		.align	2
+  97              	USBHwCmdRead:
+  98              	.LFB5:
+  99 0080 000009E0 		.loc 1 124 0
+ 100              		@ Function supports interworking.
+ 101              		@ args = 0, pretend = 0, frame = 0
+ 102              		@ frame_needed = 0, uses_anonymous_args = 0
+ 103              	.LVL5:
+ 104              		stmfd	sp!, {r4, lr}
+ 105              	.LCFI1:
+ 114:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 115:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 116:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 117:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Local function to send a command to the USB protocol engine and read data
+ 118:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 119:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bCmd		Command to send
+ 120:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 121:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@return the data
+ 122:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 123:../Bootloader/LPCUSB/usbhw_lpc.c **** static U8 USBHwCmdRead(U8 bCmd)
+ 124:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 106              	
+ 107              		and	r4, r0, #255
+ 108              		.loc 1 126 0
+ 109              		mov	r0, r4
+ 110              	.LVL6:
+ 111 0084 10402DE9 		bl	USBHwCmd
+ 112              		.loc 1 129 0
+ 113              		mov	r4, r4, asl #16
+ 114 0088 FF4000E2 	.LVL7:
+ 125:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// write command code
+ 126:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmd(bCmd);
+ 115              	 .L23
+ 116 008c 0400A0E1 		orr	r4, r4, #512
+ 117              		str	r4, [r3, #16]
+ 118 0090 DAFFFFEB 	.L18:
+ 127:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 128:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// get data
+ 129:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBCmdCode = 0x00000200 | (bCmd << 16);
+ 119              	14:
+ 120 0094 0448A0E1 	.LBB15:
+ 121              		.loc 1 78 0
+ 122 0098 2C309FE5 		ldr	r2, .L23
+ 123 009c 024C84E3 		ldr	r3, [r2, #0]
+ 124 00a0 104083E5 		and	r3, r3, #32
+ 125              		cmp	r3, #32
+ 126              		bne	.L18
+ 127              		.loc 1 80 0
+ 128              		str	r3, [r2, #8]
+ 129 00a4 20209FE5 	.LBE15:
+ 130 00a8 003092E5 	.LBE14:
+ 131 00ac 203003E2 		.loc 1 131 0
+ 132 00b0 200053E3 		ldr	r0, [r2, #20]
+ 133 00b4 FAFFFF1A 		and	r0, r0, #255
+ 134              		.loc 1 132 0
+ 135 00b8 083082E5 		ldmfd	sp!, {r4, lr}
+ 136              		bx	lr
+ 137              	.L24:
+ 130:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Wait4DevInt(CDFULL);
+ 131:../Bootloader/LPCUSB/usbhw_lpc.c **** 	return USBCmdData;
+ 138              	ord	-536281088
+ 139 00bc 140092E5 	.LFE5:
+ 132:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 141              	lign	2
+ 142 00c4 1040BDE8 		.global	USBHwEPConfig
+ 144              	USBHwEPConfig:
+ 145              	.LFB8:
+ 146              		.loc 1 174 0
+ 147 00cc 000009E0 		@ Function supports interworking.
+ 148              		@ args = 0, pretend = 0, frame = 0
+ 149              		@ frame_needed = 0, uses_anonymous_args = 0
+ 150              		@ link register save eliminated.
+ 151              	.LVL8:
+ 152              	.LBB22:
+ 153              	.LBB23:
+ 154              		.loc 1 148 0
+ 133:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 134:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 135:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 136:../Bootloader/LPCUSB/usbhw_lpc.c **** 	'Realizes' an endpoint, meaning that buffer space is reserved for
+ 137:../Bootloader/LPCUSB/usbhw_lpc.c **** 	it. An endpoint needs to be realised before it can be used.
+ 138:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 139:../Bootloader/LPCUSB/usbhw_lpc.c **** 	From experiments, it appears that a USB reset causes USBReEP to
+ 140:../Bootloader/LPCUSB/usbhw_lpc.c **** 	re-initialise to 3 (= just the control endpoints).
+ 141:../Bootloader/LPCUSB/usbhw_lpc.c **** 	However, a USB bus reset does not disturb the USBMaxPSize settings.
+ 142:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 143:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	idx			Endpoint index
+ 144:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in] wMaxPSize	Maximum packet size for this endpoint
+ 145:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 146:../Bootloader/LPCUSB/usbhw_lpc.c **** static void USBHwEPRealize(int idx, U16 wMaxPSize)
+ 147:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 148:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBReEP |= (1 << idx);
+ 149:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBEpInd = idx;
+ 150:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBMaxPSize = wMaxPSize;
+ 151:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Wait4DevInt(EP_RLZED);
+ 152:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 153:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 154:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 155:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 156:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Enables or disables an endpoint
+ 157:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 158:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	idx		Endpoint index
+ 159:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	fEnable	TRUE to enable, FALSE to disable
+ 160:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 161:../Bootloader/LPCUSB/usbhw_lpc.c **** static void USBHwEPEnable(int idx, BOOL fEnable)
+ 162:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 163:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmdWrite(CMD_EP_SET_STATUS | idx, fEnable ? 0 : EP_DA);
+ 164:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 165:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 166:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 167:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 168:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Configures an endpoint and enables it
+ 169:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 170:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bEP				Endpoint number
+ 171:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	wMaxPacketSize	Maximum packet size for this EP
+ 172:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 173:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwEPConfig(U8 bEP, U16 wMaxPacketSize)
+ 174:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 155              	.LBE23:
+ 156              	.LBE22:
+ 157              		.loc 1 177 0
+ 158              		and	r3, r0, #128
+ 159              	.LBB24:
+ 160              	.LBB25:
+ 161              		.loc 1 148 0
+ 162              		ldr	r2, [ip, #68]
+ 163              	.LBE25:
+ 164 00d0 50C09FE5 	.LBE24:
+ 165              		.loc 1 177 0
+ 166              		mov	r3, r3, asr #7
+ 175:../Bootloader/LPCUSB/usbhw_lpc.c **** 	int idx;
+ 176:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 177:../Bootloader/LPCUSB/usbhw_lpc.c **** 	idx = EP2IDX(bEP);
+ 167              	 #15
+ 168 00d4 803000E2 	.LVL9:
+ 169              		orr	r0, r3, r0, asl #1
+ 170              	.LVL10:
+ 171              	.LBB26:
+ 172 00d8 44209CE5 	.LBB27:
+ 173              		.loc 1 148 0
+ 174              		mov	r3, #1
+ 175              		orr	r2, r2, r3, asl r0
+ 176 00dc C333A0E1 		.loc 1 150 0
+ 177 00e0 0F0000E2 		mov	r1, r1, asl #16
+ 178              	.LVL11:
+ 179 00e4 800083E1 		mov	r1, r1, lsr #16
+ 180              		.loc 1 148 0
+ 181              		str	r2, [ip, #68]
+ 182              		.loc 1 149 0
+ 183              		str	r0, [ip, #72]
+ 184 00e8 0130A0E3 		.loc 1 150 0
+ 185 00ec 132082E1 		str	r1, [ip, #76]
+ 186              	.LBE27:
+ 187 00f0 0118A0E1 	.LBE26:
+ 188              		.loc 1 174 0
+ 189 00f4 2118A0E1 		@ lr needed for prologue
+ 190              	.L26:
+ 191 00f8 44208CE5 	.LBB28:
+ 192              	.LBB29:
+ 193 00fc 48008CE5 	.LBB30:
+ 194              	.LBB31:
+ 195 0100 4C108CE5 		.loc 1 78 0
+ 196              		ldr	r2, .L31
+ 197              		ldr	r3, [r2, #0]
+ 198              		and	r3, r3, #256
+ 199              		cmp	r3, #256
+ 200              		bne	.L26
+ 201              	.LBE31:
+ 202              	.LBE30:
+ 203              	.LBE29:
+ 204              	.LBE28:
+ 205              	.LBB32:
+ 206 0104 1C209FE5 	.LBB33:
+ 207 0108 003092E5 		.loc 1 163 0
+ 208 010c 013C03E2 		orr	r0, r0, #64
+ 209 0110 010C53E3 	.LVL12:
+ 210 0114 FAFFFF1A 		mov	r1, #0
+ 211              	.LBE33:
+ 212              	.LBE32:
+ 213              	.LBB34:
+ 214              	.LBB35:
+ 215              	.LBB36:
+ 216              	.LBB37:
+ 217              		.loc 1 80 0
+ 218 0118 400080E3 		str	r3, [r2, #8]
+ 219              	.LBE37:
+ 220 011c 0010A0E3 	.LBE36:
+ 221              	.LBE35:
+ 222              	.LBE34:
+ 223              		.loc 1 184 0
+ 224              	.LBB38:
+ 225              	.LBB39:
+ 226              		.loc 1 163 0
+ 227              		b	USBHwCmdWrite
+ 228 0120 083082E5 	.L32:
+ 229              		.align	2
+ 230              	.L31:
+ 231              		.word	-536281088
+ 232              	.LBE39:
+ 178:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 179:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// realise EP
+ 180:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwEPRealize(idx, wMaxPacketSize);
+ 181:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 182:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// enable EP
+ 183:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwEPEnable(idx, TRUE);
+ 184:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 233              	lobal	USBHwRegisterEPIntHandler
+ 235              	USBHwRegisterEPIntHandler:
+ 236              	.LFB9:
+ 237 0124 C4FFFFEA 		.loc 1 194 0
+ 238              		@ Function supports interworking.
+ 239              		@ args = 0, pretend = 0, frame = 0
+ 240              		@ frame_needed = 0, uses_anonymous_args = 0
+ 241 0128 000009E0 	.LVL13:
+ 242              		str	lr, [sp, #-4]!
+ 243              	.LCFI2:
+ 244              		.loc 1 205 0
+ 245              		ldr	lr, .L35
+ 246              		.loc 1 197 0
+ 247              		and	r3, r0, #128
+ 248              		.loc 1 205 0
+ 249              		ldr	ip, [lr, #52]
+ 250              		.loc 1 197 0
+ 185:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 186:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 187:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 188:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Registers an endpoint event callback
+ 189:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 190:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bEP				Endpoint number
+ 191:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	pfnHandler		Callback function
+ 192:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 193:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwRegisterEPIntHandler(U8 bEP, TFnEPIntHandler *pfnHandler)
+ 194:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 251              	LVL14:
+ 252              		mov	r3, r3, asr #7
+ 253              		.loc 1 202 0
+ 254              		orr	r3, r3, r0, asl #1
+ 255              	.LVL15:
+ 256 012c 04E02DE5 		.loc 1 205 0
+ 257              		mov	r2, #1
+ 195:../Bootloader/LPCUSB/usbhw_lpc.c **** 	int idx;
+ 196:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 197:../Bootloader/LPCUSB/usbhw_lpc.c **** 	idx = EP2IDX(bEP);
+ 198:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 199:../Bootloader/LPCUSB/usbhw_lpc.c **** 	ASSERT(idx<32);
+ 200:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 201:../Bootloader/LPCUSB/usbhw_lpc.c **** 	/* add handler to list of EP handlers */
+ 202:../Bootloader/LPCUSB/usbhw_lpc.c **** 	_apfnEPIntHandlers[idx / 2] = pfnHandler;
+ 203:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 204:../Bootloader/LPCUSB/usbhw_lpc.c **** 	/* enable EP interrupt */
+ 205:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBEpIntEn |= (1 << idx);
+ 258              	, ip, r2, asl r3
+ 259 0130 38E09FE5 		str	ip, [lr, #52]
+ 260              		.loc 1 206 0
+ 261 0134 803000E2 		ldr	r3, [lr, #4]
+ 262              	.LVL16:
+ 263 0138 34C09EE5 		.loc 1 202 0
+ 264              		ldr	r2, .L35+4
+ 265 013c 0F0000E2 		.loc 1 206 0
+ 266              		orr	r3, r3, #4
+ 267 0140 C333A0E1 		.loc 1 202 0
+ 268              		str	r1, [r2, r0, asl #2]
+ 269 0144 803083E1 		.loc 1 206 0
+ 270              		str	r3, [lr, #4]
+ 271              		.loc 1 209 0
+ 272 0148 0120A0E3 		ldr	lr, [sp], #4
+ 273 014c 12C38CE1 		bx	lr
+ 274 0150 34C08EE5 	.L36:
+ 206:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBDevIntEn |= EP_SLOW;
+ 275              	.word	-536281088
+ 276 0154 04309EE5 		.word	_apfnEPIntHandlers
+ 277              	.LFE9:
+ 279 0158 14209FE5 		.align	2
+ 280              		.global	USBHwRegisterDevIntHandler
+ 282              	USBHwRegisterDevIntHandler:
+ 283 0160 001182E7 	.LFB10:
+ 284              		.loc 1 218 0
+ 285 0164 04308EE5 		@ Function supports interworking.
+ 207:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 208:../Bootloader/LPCUSB/usbhw_lpc.c **** 	DBG("Registered handler for EP 0x%x\n", bEP);
+ 209:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 286              	, pretend = 0, frame = 0
+ 287 0168 04E09DE4 		@ frame_needed = 0, uses_anonymous_args = 0
+ 288 016c 1EFF2FE1 		@ link register save eliminated.
+ 289              	.LVL17:
+ 290              		.loc 1 222 0
+ 291              		ldr	r3, .L39
+ 292 0170 000009E0 		ldr	r2, [r3, #4]
+ 293 0174 08000000 		.loc 1 219 0
+ 294              		ldr	r1, .L39+4
+ 295              		.loc 1 222 0
+ 296              		orr	r2, r2, #8
+ 297              		.loc 1 218 0
+ 298              		@ lr needed for prologue
+ 299              		.loc 1 219 0
+ 300              		str	r0, [r1, #0]
+ 210:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 211:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 212:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 213:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Registers an device status callback
+ 214:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 215:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	pfnHandler	Callback function
+ 216:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 217:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwRegisterDevIntHandler(TFnDevIntHandler *pfnHandler)
+ 218:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 301              	str	r2, [r3, #4]
+ 302              		.loc 1 225 0
+ 303              		bx	lr
+ 304              	.L40:
+ 305              		.align	2
+ 306              	.L39:
+ 219:../Bootloader/LPCUSB/usbhw_lpc.c **** 	_pfnDevIntHandler = pfnHandler;
+ 220:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 221:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// enable device interrupt
+ 222:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBDevIntEn |= DEV_STAT;
+ 307              		-536281088
+ 308 0178 14309FE5 		.word	_pfnDevIntHandler
+ 309 017c 042093E5 	.LFE10:
+ 311 0180 10109FE5 		.align	2
+ 312              		.global	USBHwRegisterFrameHandler
+ 314              	USBHwRegisterFrameHandler:
+ 315              	.LFB11:
+ 316              		.loc 1 234 0
+ 317 0188 000081E5 		@ Function supports interworking.
+ 318              		@ args = 0, pretend = 0, frame = 0
+ 319 018c 042083E5 		@ frame_needed = 0, uses_anonymous_args = 0
+ 223:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 224:../Bootloader/LPCUSB/usbhw_lpc.c **** 	DBG("Registered handler for device status\n");
+ 225:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 320              	ter save eliminated.
+ 321 0190 1EFF2FE1 	.LVL18:
+ 322              		.loc 1 238 0
+ 323              		ldr	r3, .L43
+ 324              		ldr	r2, [r3, #4]
+ 325 0194 000009E0 		.loc 1 235 0
+ 326 0198 04000000 		ldr	r1, .L43+4
+ 327              		.loc 1 238 0
+ 328              		orr	r2, r2, #1
+ 329              		.loc 1 234 0
+ 330              		@ lr needed for prologue
+ 331              		.loc 1 235 0
+ 332              		str	r0, [r1, #0]
+ 333              		.loc 1 238 0
+ 226:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 227:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 228:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 229:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Registers the frame callback
+ 230:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 231:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	pfnHandler	Callback function
+ 232:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 233:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwRegisterFrameHandler(TFnFrameHandler *pfnHandler)
+ 234:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 334              	#4]
+ 335              		.loc 1 241 0
+ 336              		bx	lr
+ 337              	.L44:
+ 338              		.align	2
+ 339              	.L43:
+ 235:../Bootloader/LPCUSB/usbhw_lpc.c **** 	_pfnFrameHandler = pfnHandler;
+ 236:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 237:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// enable device interrupt
+ 238:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBDevIntEn |= FRAME;
+ 340              		-536281088
+ 341 019c 14309FE5 		.word	_pfnFrameHandler
+ 342 01a0 042093E5 	.LFE11:
+ 344 01a4 10109FE5 		.align	2
+ 345              		.global	USBHwSetAddress
+ 347              	USBHwSetAddress:
+ 348              	.LFB12:
+ 349              		.loc 1 250 0
+ 350 01ac 000081E5 		@ Function supports interworking.
+ 351              		@ args = 0, pretend = 0, frame = 0
+ 352 01b0 042083E5 		@ frame_needed = 0, uses_anonymous_args = 0
+ 239:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 240:../Bootloader/LPCUSB/usbhw_lpc.c **** 	DBG("Registered handler for frame\n");
+ 241:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 353              	ter save eliminated.
+ 354 01b4 1EFF2FE1 	.LVL19:
+ 355              		and	r1, r0, #255
+ 356              		.loc 1 251 0
+ 357              		orr	r1, r1, #128
+ 358 01b8 000009E0 		mov	r0, #208
+ 359 01bc 00000000 	.LVL20:
+ 360              		.loc 1 250 0
+ 361              		@ lr needed for prologue
+ 362              		.loc 1 252 0
+ 363              		.loc 1 251 0
+ 364              		b	USBHwCmdWrite
+ 365              	.LFE12:
+ 242:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 243:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 244:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 245:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Sets the USB address.
+ 246:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 247:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bAddr		Device address to set
+ 248:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 249:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwSetAddress(U8 bAddr)
+ 250:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 367              	obal	USBHwConnect
+ 369              	USBHwConnect:
+ 370              	.LFB13:
+ 371              		.loc 1 261 0
+ 372              		@ Function supports interworking.
+ 373 01c0 FF1000E2 		@ args = 0, pretend = 0, frame = 0
+ 251:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmdWrite(CMD_DEV_SET_ADDRESS, DEV_EN | bAddr);
+ 374              	e_needed = 0, uses_anonymous_args = 0
+ 375 01c4 801081E3 		@ link register save eliminated.
+ 376 01c8 D000A0E3 	.LVL21:
+ 377              		.loc 1 262 0
+ 378              		subs	r1, r0, #0
+ 379              		movne	r1, #1
+ 252:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 380              	0, #254
+ 381              	.LVL22:
+ 382 01cc 9AFFFFEA 		.loc 1 261 0
+ 383              		@ lr needed for prologue
+ 384              		.loc 1 264 0
+ 385              		.loc 1 262 0
+ 386              		b	USBHwCmdWrite
+ 387              	.LFE13:
+ 389              		.align	2
+ 253:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 254:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 255:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 256:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Connects or disconnects from the USB bus
+ 257:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 258:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	fConnect	If TRUE, connect, otherwise disconnect
+ 259:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 260:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwConnect(BOOL fConnect)
+ 261:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 390              	SBHwNakIntEnable
+ 392              	USBHwNakIntEnable:
+ 393              	.LFB14:
+ 394              		.loc 1 281 0
+ 395              		@ Function supports interworking.
+ 262:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmdWrite(CMD_DEV_STATUS, fConnect ? CON : 0);
+ 396              	s = 0, pretend = 0, frame = 0
+ 397 01d0 001050E2 		@ frame_needed = 0, uses_anonymous_args = 0
+ 398 01d4 0110A013 		@ link register save eliminated.
+ 399 01d8 FE00A0E3 	.LVL23:
+ 400              		and	r1, r0, #255
+ 401              		.loc 1 282 0
+ 402              		mov	r0, #243
+ 263:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 264:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 403              	
+ 404              		.loc 1 281 0
+ 405 01dc 96FFFFEA 		@ lr needed for prologue
+ 406              		.loc 1 283 0
+ 407              		.loc 1 282 0
+ 408              		b	USBHwCmdWrite
+ 409              	.LVL25:
+ 410              	.LFE14:
+ 412              		.align	2
+ 265:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 266:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 267:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 268:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Enables interrupt on NAK condition
+ 269:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 270:../Bootloader/LPCUSB/usbhw_lpc.c **** 	For IN endpoints a NAK is generated when the host wants to read data
+ 271:../Bootloader/LPCUSB/usbhw_lpc.c **** 	from the device, but none is available in the endpoint buffer.
+ 272:../Bootloader/LPCUSB/usbhw_lpc.c **** 	For OUT endpoints a NAK is generated when the host wants to write data
+ 273:../Bootloader/LPCUSB/usbhw_lpc.c **** 	to the device, but the endpoint buffer is still full.
+ 274:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 275:../Bootloader/LPCUSB/usbhw_lpc.c **** 	The endpoint interrupt handlers can distinguish regular (ACK) interrupts
+ 276:../Bootloader/LPCUSB/usbhw_lpc.c **** 	from NAK interrupt by checking the bits in their bEPStatus argument.
+ 277:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 278:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bIntBits	Bitmap indicating which NAK interrupts to enable
+ 279:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 280:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwNakIntEnable(U8 bIntBits)
+ 281:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 413              	USBHwEPGetStatus
+ 415              	USBHwEPGetStatus:
+ 416              	.LFB15:
+ 417              		.loc 1 293 0
+ 418              		@ Function supports interworking.
+ 419 01e0 FF1000E2 		@ args = 0, pretend = 0, frame = 0
+ 282:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmdWrite(CMD_DEV_SET_MODE, bIntBits);
+ 420              	e_needed = 0, uses_anonymous_args = 0
+ 421 01e4 F300A0E3 	.LVL26:
+ 422              		mov	r3, r0
+ 423              		.loc 1 296 0
+ 424              		and	r0, r0, #128
+ 283:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 425              	7:
+ 426              		and	r3, r3, #15
+ 427 01e8 93FFFFEA 	.LVL28:
+ 428              		mov	r0, r0, asr #7
+ 429              		.loc 1 293 0
+ 430              		str	lr, [sp, #-4]!
+ 431              	.LCFI3:
+ 432              		.loc 1 296 0
+ 433              		orr	r0, r0, r3, asl #1
+ 434              		bl	USBHwCmdRead
+ 435              		.loc 1 297 0
+ 284:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 285:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 286:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 287:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Gets the status from a specific endpoint.
+ 288:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 289:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bEP		Endpoint number
+ 290:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@return Endpoint status byte (containing EP_STATUS_xxx bits)
+ 291:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 292:../Bootloader/LPCUSB/usbhw_lpc.c **** U8	USBHwEPGetStatus(U8 bEP)
+ 293:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 436              	p], #4
+ 437              		bx	lr
+ 438              	.LFE15:
+ 440              		.align	2
+ 441 01ec 0030A0E1 		.global	USBHwEPStall
+ 294:../Bootloader/LPCUSB/usbhw_lpc.c **** 	int idx = EP2IDX(bEP);
+ 295:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 296:../Bootloader/LPCUSB/usbhw_lpc.c **** 	return USBHwCmdRead(CMD_EP_SELECT | idx);
+ 442              		USBHwEPStall, %function
+ 443 01f0 800000E2 	USBHwEPStall:
+ 444              	.LFB16:
+ 445 01f4 0F3003E2 		.loc 1 307 0
+ 446              		@ Function supports interworking.
+ 447 01f8 C003A0E1 		@ args = 0, pretend = 0, frame = 0
+ 448              		@ frame_needed = 0, uses_anonymous_args = 0
+ 449 01fc 04E02DE5 		@ link register save eliminated.
+ 450              	.LVL29:
+ 451              		.loc 1 310 0
+ 452 0200 830080E1 		and	r3, r0, #128
+ 453 0204 9EFFFFEB 		mov	r3, r3, asr #7
+ 297:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 454              	 #15
+ 455 0208 04E09DE4 	.LVL30:
+ 456 020c 1EFF2FE1 		orr	r3, r3, r0, asl #1
+ 457              		subs	r1, r1, #0
+ 458              		movne	r1, #1
+ 459              	.LVL31:
+ 460              		orr	r0, r3, #64
+ 461              		.loc 1 307 0
+ 462              		@ lr needed for prologue
+ 463              		.loc 1 311 0
+ 298:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 299:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 300:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 301:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Sets the stalled property of an endpoint
+ 302:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 303:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bEP		Endpoint number
+ 304:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	fStall	TRUE to stall, FALSE to unstall
+ 305:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 306:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwEPStall(U8 bEP, BOOL fStall)
+ 307:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 464              	0 0
+ 465              		b	USBHwCmdWrite
+ 466              	.LFE16:
+ 468              		.align	2
+ 469              		.global	USBHwEPWrite
+ 308:../Bootloader/LPCUSB/usbhw_lpc.c **** 	int idx = EP2IDX(bEP);
+ 309:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 310:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmdWrite(CMD_EP_SET_STATUS | idx, fStall ? EP_ST : 0);
+ 470              		USBHwEPWrite, %function
+ 471 0210 803000E2 	USBHwEPWrite:
+ 472 0214 C333A0E1 	.LFB17:
+ 473 0218 0F0000E2 		.loc 1 324 0
+ 474              		@ Function supports interworking.
+ 475 021c 803083E1 		@ args = 0, pretend = 0, frame = 0
+ 476 0220 001051E2 		@ frame_needed = 0, uses_anonymous_args = 0
+ 477 0224 0110A013 	.LVL32:
+ 478              		stmfd	sp!, {r4, r5, lr}
+ 479 0228 400083E3 	.LCFI4:
+ 480              		.loc 1 327 0
+ 481              		and	r4, r0, #15
+ 311:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 482              	0
+ 483              		ldr	ip, .L60
+ 484 022c 82FFFFEA 		mov	r3, r4, asl #2
+ 485              		orr	r3, r3, #2
+ 486              		.loc 1 324 0
+ 487              		mov	r5, r2
+ 488              		.loc 1 333 0
+ 489              		mov	lr, r1
+ 490              		.loc 1 324 0
+ 491              		and	r0, r0, #255
+ 312:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 313:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 314:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 315:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Writes data to an endpoint buffer
+ 316:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 317:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bEP		Endpoint number
+ 318:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	pbBuf	Endpoint data
+ 319:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	iLen	Number of bytes to write
+ 320:../Bootloader/LPCUSB/usbhw_lpc.c **** 			
+ 321:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@return TRUE if the data was successfully written or <0 in case of error.
+ 322:../Bootloader/LPCUSB/usbhw_lpc.c **** */
+ 323:../Bootloader/LPCUSB/usbhw_lpc.c **** int USBHwEPWrite(U8 bEP, U8 *pbBuf, int iLen)
+ 324:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 492              	loc 1 330 0
+ 493              		str	r3, [ip, #40]
+ 494              		.loc 1 333 0
+ 495              		str	r2, [ip, #36]
+ 496              		b	.L56
+ 497 0230 30402DE9 	.L57:
+ 498              		.loc 1 337 0
+ 325:../Bootloader/LPCUSB/usbhw_lpc.c **** 	int idx;
+ 326:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 327:../Bootloader/LPCUSB/usbhw_lpc.c **** 	idx = EP2IDX(bEP);
+ 499              	3, [lr, #-2]	@ zero_extendqisi2
+ 500 0234 0F4000E2 		ldrb	r2, [lr, #-1]	@ zero_extendqisi2
+ 328:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 329:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// set write enable for specific endpoint
+ 330:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBCtrl = WR_EN | ((bEP & 0xF) << 2);
+ 501              	VL34:
+ 502 0238 74C09FE5 		ldrb	r1, [lr, #-4]	@ zero_extendqisi2
+ 503 023c 0431A0E1 	.LVL35:
+ 504 0240 023083E3 		mov	r3, r3, asl #16
+ 505              		orr	r3, r3, r2, asl #24
+ 506 0244 0250A0E1 		ldrb	r2, [lr, #-3]	@ zero_extendqisi2
+ 331:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 332:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// set packet length
+ 333:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBTxPLen = iLen;
+ 507              	3, r3, r1
+ 508 0248 01E0A0E1 		orr	r3, r3, r2, asl #8
+ 509              		str	r3, [ip, #28]
+ 510 024c FF0000E2 	.LVL36:
+ 511              	.L56:
+ 512              		.loc 1 336 0
+ 513 0250 28308CE5 		ldr	ip, .L60
+ 514              		ldr	r3, [ip, #40]
+ 515 0254 24208CE5 		tst	r3, #2
+ 516 0258 080000EA 		add	lr, lr, #4
+ 517              		bne	.L57
+ 334:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 335:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// write data
+ 336:../Bootloader/LPCUSB/usbhw_lpc.c **** 	while (USBCtrl & WR_EN) {
+ 337:../Bootloader/LPCUSB/usbhw_lpc.c **** 		USBTxData = (pbBuf[3] << 24) | (pbBuf[2] << 16) | (pbBuf[1] << 8) | pbBuf[0];
+ 518              	oc 1 342 0
+ 519 025c 02305EE5 		mov	r0, r0, lsr #7
+ 520 0260 01205EE5 		orr	r0, r0, r4, asl #1
+ 521              		bl	USBHwCmd
+ 522 0264 04105EE5 	.LVL38:
+ 523              		.loc 1 343 0
+ 524 0268 0338A0E1 		mov	r0, #250
+ 525 026c 023C83E1 		bl	USBHwCmd
+ 526 0270 03205EE5 		.loc 1 346 0
+ 527 0274 013083E1 		mov	r0, r5
+ 528 0278 023483E1 		ldmfd	sp!, {r4, r5, lr}
+ 529 027c 1C308CE5 		bx	lr
+ 530              	.L61:
+ 531              		.align	2
+ 532              	.L60:
+ 533 0280 2CC09FE5 		.word	-536281088
+ 534 0284 28309CE5 	.LFE17:
+ 536 028c 04E08EE2 		.align	2
+ 537 0290 F1FFFF1A 		.global	USBHwEPRead
+ 338:../Bootloader/LPCUSB/usbhw_lpc.c **** 		pbBuf += 4;
+ 339:../Bootloader/LPCUSB/usbhw_lpc.c **** 	}
+ 340:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 341:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// select endpoint and validate buffer
+ 342:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmd(CMD_EP_SELECT | idx);
+ 539              		.loc 1 360 0
+ 540 0294 A003A0E1 		@ Function supports interworking.
+ 541 0298 840080E1 		@ args = 0, pretend = 0, frame = 0
+ 542 029c 57FFFFEB 		@ frame_needed = 0, uses_anonymous_args = 0
+ 543              	.LVL39:
+ 343:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmd(CMD_EP_VALIDATE_BUFFER);
+ 544              	d	sp!, {r4, lr}
+ 545 02a0 FA00A0E3 	.LCFI5:
+ 546 02a4 55FFFFEB 		.loc 1 364 0
+ 344:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 345:../Bootloader/LPCUSB/usbhw_lpc.c **** 	return iLen;
+ 346:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 547              	d	lr, r0, #15
+ 548 02a8 0500A0E1 		.loc 1 367 0
+ 549 02ac 3040BDE8 		mov	r3, lr, asl #2
+ 550 02b0 1EFF2FE1 		ldr	ip, .L78
+ 551              		orr	r3, r3, #1
+ 552              		str	r3, [ip, #40]
+ 553              		.loc 1 360 0
+ 554 02b4 000009E0 		and	r0, r0, #255
+ 555              	.LVL40:
+ 556              	.L63:
+ 557              		.loc 1 371 0
+ 558              		ldr	r3, .L78
+ 559              		ldr	r3, [r3, #32]
+ 560              	.LVL41:
+ 561              		.loc 1 372 0
+ 347:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 348:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 349:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 350:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Reads data from an endpoint buffer
+ 351:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 352:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	bEP		Endpoint number
+ 353:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	pbBuf	Endpoint data
+ 354:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	iMaxLen	Maximum number of bytes to read
+ 355:../Bootloader/LPCUSB/usbhw_lpc.c **** 			
+ 356:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@return the number of bytes available in the EP (possibly more than iMaxLen),
+ 357:../Bootloader/LPCUSB/usbhw_lpc.c **** 	or <0 in case of error.
+ 358:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 359:../Bootloader/LPCUSB/usbhw_lpc.c **** int USBHwEPRead(U8 bEP, U8 *pbBuf, int iMaxLen)
+ 360:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 562              		beq	.L63
+ 563              		.loc 1 375 0
+ 564              		tst	r3, #1024
+ 565              		mvneq	r4, #0
+ 566              	.LVL42:
+ 567 02b8 10402DE9 		beq	.L67
+ 568              		.loc 1 380 0
+ 361:../Bootloader/LPCUSB/usbhw_lpc.c **** 	int i, idx;
+ 362:../Bootloader/LPCUSB/usbhw_lpc.c **** 	U32	dwData, dwLen;
+ 363:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 364:../Bootloader/LPCUSB/usbhw_lpc.c **** 	idx = EP2IDX(bEP);
+ 569              	, r3, asl #22
+ 570 02bc 0FE000E2 	.LVL43:
+ 365:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 366:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// set read enable bit for specific endpoint
+ 367:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBCtrl = RD_EN | ((bEP & 0xF) << 2);
+ 571              	ov	r4, #0
+ 572 02c0 0E31A0E1 		mov	ip, ip, lsr #22
+ 573 02c4 8CC09FE5 		mov	r3, r4
+ 574 02c8 013083E3 	.LVL44:
+ 575 02cc 28308CE5 		b	.L68
+ 576              	.L69:
+ 577 02d0 FF0000E2 		.loc 1 385 0
+ 578              		tst	r4, #3
+ 579              		.loc 1 386 0
+ 368:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 369:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// wait for PKT_RDY
+ 370:../Bootloader/LPCUSB/usbhw_lpc.c **** 	do {
+ 371:../Bootloader/LPCUSB/usbhw_lpc.c **** 		dwLen = USBRxPLen;
+ 580              	, .L78
+ 581 02d4 7C309FE5 	.LVL45:
+ 582 02d8 203093E5 		ldreq	r3, [r3, #24]
+ 583              	.LVL46:
+ 372:../Bootloader/LPCUSB/usbhw_lpc.c **** 	} while ((dwLen & PKT_RDY) == 0);
+ 584              	c 1 388 0
+ 585 02dc 020B13E3 		cmp	r1, #0
+ 586 02e0 FBFFFF0A 		cmpne	r4, r2
+ 373:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 374:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// packet valid?
+ 375:../Bootloader/LPCUSB/usbhw_lpc.c **** 	if ((dwLen & DV) == 0) {
+ 587              	oc 1 389 0
+ 588 02e4 010B13E3 		strltb	r3, [r4, r1]
+ 589 02e8 0040E003 		.loc 1 391 0
+ 590              		mov	r3, r3, lsr #8
+ 591 02ec 1600000A 		.loc 1 384 0
+ 376:../Bootloader/LPCUSB/usbhw_lpc.c **** 		return -1;
+ 377:../Bootloader/LPCUSB/usbhw_lpc.c **** 	}
+ 378:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 379:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// get length
+ 380:../Bootloader/LPCUSB/usbhw_lpc.c **** 	dwLen &= PKT_LNGTH_MASK;
+ 592              	r4, r4, #1
+ 593 02f0 03CBA0E1 	.L68:
+ 594              		cmp	r4, ip
+ 595 02f4 0040A0E3 		bne	.L69
+ 596 02f8 2CCBA0E1 		.loc 1 395 0
+ 597 02fc 0430A0E1 		ldr	r3, .L78
+ 598              	.LVL47:
+ 599 0300 070000EA 		mov	r2, #0
+ 600              	.LVL48:
+ 381:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 382:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// get data
+ 383:../Bootloader/LPCUSB/usbhw_lpc.c **** 	dwData = 0;
+ 384:../Bootloader/LPCUSB/usbhw_lpc.c **** 	for (i = 0; i < dwLen; i++) {
+ 385:../Bootloader/LPCUSB/usbhw_lpc.c **** 		if ((i % 4) == 0) {
+ 601              	98 0
+ 602 0304 030014E3 		mov	r0, r0, lsr #7
+ 386:../Bootloader/LPCUSB/usbhw_lpc.c **** 			dwData = USBRxData;
+ 603              	rr	r0, r0, lr, asl #1
+ 604 0308 48309F05 		.loc 1 395 0
+ 605              		str	r2, [r3, #40]
+ 606 030c 18309305 		.loc 1 398 0
+ 607              		bl	USBHwCmd
+ 387:../Bootloader/LPCUSB/usbhw_lpc.c **** 		}
+ 388:../Bootloader/LPCUSB/usbhw_lpc.c **** 		if ((pbBuf != NULL) && (i < iMaxLen)) {
+ 608              	9:
+ 609 0310 000051E3 		.loc 1 399 0
+ 610 0314 02005411 		mov	r0, #242
+ 389:../Bootloader/LPCUSB/usbhw_lpc.c **** 			pbBuf[i] = dwData & 0xFF;
+ 611              		USBHwCmd
+ 612 0318 0130C4B7 	.LVL50:
+ 390:../Bootloader/LPCUSB/usbhw_lpc.c **** 		}
+ 391:../Bootloader/LPCUSB/usbhw_lpc.c **** 		dwData >>= 8;
+ 613              	67:
+ 614 031c 2334A0E1 		.loc 1 402 0
+ 615              		mov	r0, r4
+ 616 0320 014084E2 		ldmfd	sp!, {r4, lr}
+ 617              		bx	lr
+ 618 0324 0C0054E1 	.L79:
+ 619 0328 F5FFFF1A 		.align	2
+ 392:../Bootloader/LPCUSB/usbhw_lpc.c **** 	}
+ 393:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 394:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// make sure RD_EN is clear
+ 395:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBCtrl = 0;
+ 620              	.word	-536281088
+ 621 032c 24309FE5 	.LFE18:
+ 623 0330 0020A0E3 		.align	2
+ 624              		.global	USBHwConfigDevice
+ 396:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 397:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// select endpoint and clear buffer
+ 398:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmd(CMD_EP_SELECT | idx);
+ 625              	e	USBHwConfigDevice, %function
+ 626 0334 A003A0E1 	USBHwConfigDevice:
+ 627 0338 8E0080E1 	.LFB19:
+ 628              		.loc 1 414 0
+ 629 033c 282083E5 		@ Function supports interworking.
+ 630              		@ args = 0, pretend = 0, frame = 0
+ 631 0340 2EFFFFEB 		@ frame_needed = 0, uses_anonymous_args = 0
+ 632              		@ link register save eliminated.
+ 399:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmd(CMD_EP_CLEAR_BUFFER);
+ 633              		.loc 1 416 0
+ 634 0344 F200A0E3 		subs	r1, r0, #0
+ 635 0348 2CFFFFEB 		movne	r1, #1
+ 636              		mov	r0, #216
+ 637              	.LVL52:
+ 400:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 401:../Bootloader/LPCUSB/usbhw_lpc.c **** 	return dwLen;
+ 402:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 638              	 1 414 0
+ 639 034c 0400A0E1 		@ lr needed for prologue
+ 640 0350 1040BDE8 		.loc 1 417 0
+ 641 0354 1EFF2FE1 		.loc 1 416 0
+ 642              		b	USBHwCmdWrite
+ 643              	.LFE19:
+ 645 0358 000009E0 		.align	2
+ 646              		.global	USBHwISR
+ 648              	USBHwISR:
+ 649              	.LFB20:
+ 650              		.loc 1 428 0
+ 651              		@ Function supports interworking.
+ 652              		@ args = 0, pretend = 0, frame = 0
+ 403:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 404:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 405:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 406:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Sets the 'configured' state.
+ 407:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 408:../Bootloader/LPCUSB/usbhw_lpc.c **** 	All registered endpoints are 'realised' and enabled, and the
+ 409:../Bootloader/LPCUSB/usbhw_lpc.c **** 	'configured' bit is set in the device status register.
+ 410:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 411:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@param [in]	fConfigured	If TRUE, configure device, else unconfigure
+ 412:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 413:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwConfigDevice(BOOL fConfigured)
+ 414:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 653              	 = 0, uses_anonymous_args = 0
+ 654              		.loc 1 439 0
+ 655              		ldr	r2, .L102
+ 656              		.loc 1 428 0
+ 657              		stmfd	sp!, {r4, r5, lr}
+ 658              	.LCFI6:
+ 415:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// set configured bit
+ 416:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwCmdWrite(CMD_DEV_CONFIG, fConfigured ? CONF_DEVICE : 0);
+ 659              	1 439 0
+ 660 035c 001050E2 		ldr	r5, [r2, #0]
+ 661 0360 0110A013 	.LVL53:
+ 662 0364 D800A0E3 		.loc 1 442 0
+ 663              		tst	r5, #1
+ 664              		beq	.L83
+ 665              		.loc 1 446 0
+ 417:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 666              	, .L102+4
+ 667              		ldr	r4, [r3, #0]
+ 668 0368 33FFFFEA 		.loc 1 444 0
+ 669              		mov	r3, #1
+ 670              		.loc 1 446 0
+ 671              		cmp	r4, #0
+ 672              		.loc 1 444 0
+ 673              		str	r3, [r2, #8]
+ 674              		.loc 1 446 0
+ 675              		beq	.L83
+ 418:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 419:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 420:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 421:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USB interrupt handler
+ 422:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 423:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@todo Get all 11 bits of frame number instead of just 8
+ 424:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 425:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Endpoint interrupts are mapped to the slow interrupt
+ 426:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 427:../Bootloader/LPCUSB/usbhw_lpc.c **** void USBHwISR(void)
+ 428:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 676              	7 0
+ 677              		mov	r0, #245
+ 678              		bl	USBHwCmdRead
+ 679              		.loc 1 448 0
+ 429:../Bootloader/LPCUSB/usbhw_lpc.c **** 	U32	dwStatus;
+ 430:../Bootloader/LPCUSB/usbhw_lpc.c **** 	U32 dwIntBit;
+ 431:../Bootloader/LPCUSB/usbhw_lpc.c **** 	U8	bEPStat, bDevStat, bStat;
+ 432:../Bootloader/LPCUSB/usbhw_lpc.c **** 	int i;
+ 433:../Bootloader/LPCUSB/usbhw_lpc.c **** 	U16	wFrame;
+ 434:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 435:../Bootloader/LPCUSB/usbhw_lpc.c **** // LED9 monitors total time in interrupt routine
+ 436:../Bootloader/LPCUSB/usbhw_lpc.c **** DEBUG_LED_ON(9);
+ 437:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 438:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// handle device interrupts
+ 439:../Bootloader/LPCUSB/usbhw_lpc.c **** 	dwStatus = USBDevIntSt;
+ 680              		r0, r0, asl #16
+ 681 036c 10219FE5 		mov	r0, r0, lsr #16
+ 682              		mov	lr, pc
+ 683 0370 30402DE9 		bx	r4
+ 684              	.L83:
+ 685              		.loc 1 453 0
+ 686 0374 005092E5 		tst	r5, #8
+ 687              		beq	.L86
+ 440:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 441:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// frame interrupt
+ 442:../Bootloader/LPCUSB/usbhw_lpc.c **** 	if (dwStatus & FRAME) {
+ 688              	458 0
+ 689 0378 010015E3 		ldr	r3, .L102
+ 690 037c 0B00000A 		mov	r2, #8
+ 443:../Bootloader/LPCUSB/usbhw_lpc.c **** 		// clear int
+ 444:../Bootloader/LPCUSB/usbhw_lpc.c **** 		USBDevIntClr = FRAME;
+ 445:../Bootloader/LPCUSB/usbhw_lpc.c **** 		// call handler
+ 446:../Bootloader/LPCUSB/usbhw_lpc.c **** 		if (_pfnFrameHandler != NULL) {
+ 691              	oc 1 459 0
+ 692 0380 00319FE5 		mov	r0, #254
+ 693 0384 004093E5 		.loc 1 458 0
+ 694              		str	r2, [r3, #8]
+ 695 0388 0130A0E3 		.loc 1 459 0
+ 696              		bl	USBHwCmdRead
+ 697 038c 000054E3 		.loc 1 460 0
+ 698              		tst	r0, #26
+ 699 0390 083082E5 		beq	.L86
+ 700              		.loc 1 466 0
+ 701 0394 0500000A 		ldr	r3, .L102+8
+ 447:../Bootloader/LPCUSB/usbhw_lpc.c **** 			wFrame = USBHwCmdRead(CMD_DEV_READ_CUR_FRAME_NR);
+ 702              	3, #0]
+ 703 0398 F500A0E3 		cmp	r3, #0
+ 704 039c 38FFFFEB 		.loc 1 468 0
+ 448:../Bootloader/LPCUSB/usbhw_lpc.c **** 			_pfnFrameHandler(wFrame);
+ 705              	dne	r0, r0, #21
+ 706 03a0 0008A0E1 		movne	lr, pc
+ 707 03a4 2008A0E1 		bxne	r3
+ 708 03a8 0FE0A0E1 	.L86:
+ 709 03ac 14FF2FE1 		.loc 1 475 0
+ 710              		tst	r5, #4
+ 449:../Bootloader/LPCUSB/usbhw_lpc.c **** 		}
+ 450:../Bootloader/LPCUSB/usbhw_lpc.c **** 	}
+ 451:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 452:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// device status interrupt
+ 453:../Bootloader/LPCUSB/usbhw_lpc.c **** 	if (dwStatus & DEV_STAT) {
+ 711              	L98
+ 712 03b0 080015E3 		.loc 1 477 0
+ 713 03b4 0C00000A 		ldr	r3, .L102
+ 454:../Bootloader/LPCUSB/usbhw_lpc.c **** 		/*	Clear DEV_STAT interrupt before reading DEV_STAT register.
+ 455:../Bootloader/LPCUSB/usbhw_lpc.c **** 			This prevents corrupted device status reads, see
+ 456:../Bootloader/LPCUSB/usbhw_lpc.c **** 			LPC2148 User manual revision 2, 25 july 2006.
+ 457:../Bootloader/LPCUSB/usbhw_lpc.c **** 		*/
+ 458:../Bootloader/LPCUSB/usbhw_lpc.c **** 		USBDevIntClr = DEV_STAT;
+ 714              	v	r2, #4
+ 715 03b8 C4309FE5 		str	r2, [r3, #8]
+ 716 03bc 0820A0E3 		mov	r4, #0
+ 459:../Bootloader/LPCUSB/usbhw_lpc.c **** 		bDevStat = USBHwCmdRead(CMD_DEV_STATUS);
+ 717              	L54:
+ 718 03c0 FE00A0E3 	.LVL55:
+ 719              	.L92:
+ 720 03c4 082083E5 		.loc 1 480 0
+ 721              		mov	r3, #1
+ 722 03c8 2DFFFFEB 		mov	r2, r3, asl r4
+ 460:../Bootloader/LPCUSB/usbhw_lpc.c **** 		if (bDevStat & (CON_CH | SUS_CH | RST)) {
+ 723              	1 481 0
+ 724 03cc 1A0010E3 		ldr	r1, .L102
+ 725 03d0 0500000A 		ldr	r3, [r1, #48]
+ 461:../Bootloader/LPCUSB/usbhw_lpc.c **** 			// convert device status into something HW independent
+ 462:../Bootloader/LPCUSB/usbhw_lpc.c **** 			bStat = ((bDevStat & CON) ? DEV_STATUS_CONNECT : 0) |
+ 463:../Bootloader/LPCUSB/usbhw_lpc.c **** 					((bDevStat & SUS) ? DEV_STATUS_SUSPEND : 0) |
+ 464:../Bootloader/LPCUSB/usbhw_lpc.c **** 					((bDevStat & RST) ? DEV_STATUS_RESET : 0);
+ 465:../Bootloader/LPCUSB/usbhw_lpc.c **** 			// call handler
+ 466:../Bootloader/LPCUSB/usbhw_lpc.c **** 			if (_pfnDevIntHandler != NULL) {
+ 726              	t	r3, r2
+ 727 03d4 B0309FE5 		beq	.L93
+ 728 03d8 003093E5 		.loc 1 483 0
+ 729 03dc 000053E3 		str	r2, [r1, #56]
+ 467:../Bootloader/LPCUSB/usbhw_lpc.c **** DEBUG_LED_ON(8);		
+ 468:../Bootloader/LPCUSB/usbhw_lpc.c **** 				_pfnDevIntHandler(bStat);
+ 730              	:
+ 731 03e0 15000012 	.LBB42:
+ 732 03e4 0FE0A011 	.LBB43:
+ 733 03e8 13FF2F11 		.loc 1 78 0
+ 734              		ldr	r1, .L102
+ 469:../Bootloader/LPCUSB/usbhw_lpc.c **** DEBUG_LED_OFF(8);		
+ 470:../Bootloader/LPCUSB/usbhw_lpc.c **** 			}
+ 471:../Bootloader/LPCUSB/usbhw_lpc.c **** 		}
+ 472:../Bootloader/LPCUSB/usbhw_lpc.c **** 	}
+ 473:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 474:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// endpoint interrupt
+ 475:../Bootloader/LPCUSB/usbhw_lpc.c **** 	if (dwStatus & EP_SLOW) {
+ 735              	r3, [r1, #0]
+ 736 03ec 040015E3 		and	r0, r3, #32
+ 737 03f0 2100000A 		cmp	r0, #32
+ 476:../Bootloader/LPCUSB/usbhw_lpc.c **** 		// clear EP_SLOW
+ 477:../Bootloader/LPCUSB/usbhw_lpc.c **** 		USBDevIntClr = EP_SLOW;
+ 738              	e	.L95
+ 739 03f4 88309FE5 	.LBE43:
+ 740 03f8 0420A0E3 	.LBE42:
+ 741 03fc 082083E5 		.loc 1 493 0
+ 742 0400 0040A0E3 		add	r3, r4, r4, lsr #31
+ 743              		ldr	r2, .L102+12
+ 744              	.LVL56:
+ 745              		mov	r3, r3, asr #1
+ 478:../Bootloader/LPCUSB/usbhw_lpc.c **** 		// check all endpoints
+ 479:../Bootloader/LPCUSB/usbhw_lpc.c **** 		for (i = 0; i < 32; i++) {
+ 480:../Bootloader/LPCUSB/usbhw_lpc.c **** 			dwIntBit = (1 << i);
+ 746              	 [r2, r3, asl #2]
+ 747 0404 0130A0E3 	.LBB44:
+ 748 0408 1324A0E1 	.LBB45:
+ 481:../Bootloader/LPCUSB/usbhw_lpc.c **** 			if (USBEpIntSt & dwIntBit) {
+ 749              	oc 1 80 0
+ 750 040c 70109FE5 		str	r0, [r1, #8]
+ 751 0410 303091E5 	.LBE45:
+ 752 0414 020013E1 	.LBE44:
+ 753 0418 1400000A 		.loc 1 493 0
+ 482:../Bootloader/LPCUSB/usbhw_lpc.c **** 				// clear int (and retrieve status)
+ 483:../Bootloader/LPCUSB/usbhw_lpc.c **** 				USBEpIntClr = dwIntBit;
+ 754              	r3, #0
+ 755 041c 382081E5 		.loc 1 485 0
+ 756              		ldr	r1, [r1, #20]
+ 757              		.loc 1 493 0
+ 758              		beq	.L93
+ 759              		.loc 1 495 0
+ 760 0420 5C109FE5 		mov	r0, r4, asr #1
+ 761 0424 003091E5 		and	r0, r0, #15
+ 762 0428 200003E2 		orr	r0, r0, r4, asl #7
+ 763 042c 200050E3 		and	r0, r0, #143
+ 764 0430 FAFFFF1A 		and	r1, r1, #31
+ 765              		mov	lr, pc
+ 766              		bx	r3
+ 484:../Bootloader/LPCUSB/usbhw_lpc.c **** 				Wait4DevInt(CDFULL);
+ 485:../Bootloader/LPCUSB/usbhw_lpc.c **** 				bEPStat = USBCmdData;
+ 486:../Bootloader/LPCUSB/usbhw_lpc.c **** 				// convert EP pipe stat into something HW independent
+ 487:../Bootloader/LPCUSB/usbhw_lpc.c **** 				bStat = ((bEPStat & EPSTAT_FE) ? EP_STATUS_DATA : 0) |
+ 488:../Bootloader/LPCUSB/usbhw_lpc.c **** 						((bEPStat & EPSTAT_ST) ? EP_STATUS_STALLED : 0) |
+ 489:../Bootloader/LPCUSB/usbhw_lpc.c **** 						((bEPStat & EPSTAT_STP) ? EP_STATUS_SETUP : 0) |
+ 490:../Bootloader/LPCUSB/usbhw_lpc.c **** 						((bEPStat & EPSTAT_EPN) ? EP_STATUS_NACKED : 0) |
+ 491:../Bootloader/LPCUSB/usbhw_lpc.c **** 						((bEPStat & EPSTAT_PO) ? EP_STATUS_ERROR : 0);
+ 492:../Bootloader/LPCUSB/usbhw_lpc.c **** 				// call handler
+ 493:../Bootloader/LPCUSB/usbhw_lpc.c **** 				if (_apfnEPIntHandlers[i / 2] != NULL) {
+ 767              	
+ 768 0434 A43F84E0 		.loc 1 479 0
+ 769 0438 50209FE5 		add	r4, r4, #1
+ 770              		cmp	r4, #32
+ 771 043c C330A0E1 		bne	.L92
+ 772 0440 033192E7 	.L98:
+ 773              		.loc 1 503 0
+ 774              		ldmfd	sp!, {r4, r5, lr}
+ 775              		bx	lr
+ 776 0444 080081E5 	.L103:
+ 777              		.align	2
+ 778              	.L102:
+ 779              		.word	-536281088
+ 780 0448 000053E3 		.word	_pfnFrameHandler
+ 781              		.word	_pfnDevIntHandler
+ 782 044c 141091E5 		.word	_apfnEPIntHandlers
+ 783              	.LFE20:
+ 494:../Bootloader/LPCUSB/usbhw_lpc.c **** DEBUG_LED_ON(10);		
+ 495:../Bootloader/LPCUSB/usbhw_lpc.c **** 					_apfnEPIntHandlers[i / 2](IDX2EP(i), bStat);
+ 785              	l	USBHwInit
+ 787 0458 0F0000E2 	USBHwInit:
+ 788 045c 840380E1 	.LFB21:
+ 789 0460 8F0000E2 		.loc 1 521 0
+ 790 0464 1F1001E2 		@ Function supports interworking.
+ 791 0468 0FE0A0E1 		@ args = 0, pretend = 0, frame = 0
+ 792 046c 13FF2FE1 		@ frame_needed = 0, uses_anonymous_args = 0
+ 793              		.loc 1 523 0
+ 794              		ldr	r2, .L110
+ 795              		ldr	r3, [r2, #4]
+ 796 0470 014084E2 		bic	r3, r3, #49152
+ 797 0474 200054E3 		orr	r3, r3, #16384
+ 798 0478 E1FFFF1A 		str	r3, [r2, #4]
+ 799              		.loc 1 525 0
+ 496:../Bootloader/LPCUSB/usbhw_lpc.c **** DEBUG_LED_OFF(10);
+ 497:../Bootloader/LPCUSB/usbhw_lpc.c **** 				}
+ 498:../Bootloader/LPCUSB/usbhw_lpc.c **** 			}
+ 499:../Bootloader/LPCUSB/usbhw_lpc.c **** 		}
+ 500:../Bootloader/LPCUSB/usbhw_lpc.c **** 	}
+ 501:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 502:../Bootloader/LPCUSB/usbhw_lpc.c **** DEBUG_LED_OFF(9);		
+ 503:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 800              	4]
+ 801 047c 3040BDE8 		bic	r3, r3, #-1073741824
+ 802 0480 1EFF2FE1 		orr	r3, r3, #-2147483648
+ 803              		str	r3, [r2, #4]
+ 804              		.loc 1 528 0
+ 805              		add	r2, r2, #1900544
+ 806 0484 000009E0 		ldr	r3, [r2, #196]
+ 807 0488 00000000 		orr	r3, r3, #-2147483648
+ 808 048c 04000000 		str	r3, [r2, #196]
+ 809 0490 08000000 		.loc 1 531 0
+ 810              		mov	r3, #1
+ 811              		str	r3, [r2, #160]
+ 812              		.loc 1 521 0
+ 813              		str	lr, [sp, #-4]!
+ 814              	.LCFI7:
+ 815              		.loc 1 532 0
+ 816              		add	r3, r3, #34
+ 504:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 505:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 506:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 507:../Bootloader/LPCUSB/usbhw_lpc.c **** /**
+ 508:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Initialises the USB hardware
+ 509:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 510:../Bootloader/LPCUSB/usbhw_lpc.c **** 	This function assumes that the hardware is connected as shown in
+ 511:../Bootloader/LPCUSB/usbhw_lpc.c **** 	section 10.1 of the LPC2148 data sheet:
+ 512:../Bootloader/LPCUSB/usbhw_lpc.c **** 	* P0.31 controls a switch to connect a 1.5k pull-up to D+ if low.
+ 513:../Bootloader/LPCUSB/usbhw_lpc.c **** 	* P0.23 is connected to USB VCC.
+ 514:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 515:../Bootloader/LPCUSB/usbhw_lpc.c **** 	Embedded artists board: make sure to disconnect P0.23 LED as it
+ 516:../Bootloader/LPCUSB/usbhw_lpc.c **** 	acts as a pull-up and so prevents detection of USB disconnect.
+ 517:../Bootloader/LPCUSB/usbhw_lpc.c **** 		
+ 518:../Bootloader/LPCUSB/usbhw_lpc.c **** 	@return TRUE if the hardware was successfully initialised
+ 519:../Bootloader/LPCUSB/usbhw_lpc.c ****  */
+ 520:../Bootloader/LPCUSB/usbhw_lpc.c **** BOOL USBHwInit(void)
+ 521:../Bootloader/LPCUSB/usbhw_lpc.c **** {
+ 817              	4]
+ 818              		.loc 1 533 0
+ 819              		add	r3, r3, #135
+ 820              		str	r3, [r2, #172]
+ 522:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// configure P0.23 for Vbus sense
+ 523:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PINSEL1 = (PINSEL1 & ~(3 << 14)) | (1 << 14);	// P0.23
+ 821              	c 1 534 0
+ 822 0494 B0209FE5 		mov	r3, #85
+ 823 0498 043092E5 		str	r3, [r2, #172]
+ 824 049c 0339C3E3 	.L105:
+ 825 04a0 013983E3 		.loc 1 535 0
+ 826 04a4 043082E5 		ldr	lr, .L110+4
+ 524:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// configure P0.31 for CONNECT
+ 525:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PINSEL1 = (PINSEL1 & ~(3 << 30)) | (2 << 30);	// P0.31
+ 827              	3, [lr, #168]
+ 828 04a8 043092E5 		tst	r3, #1024
+ 829 04ac 0331C3E3 		beq	.L105
+ 830 04b0 023183E3 		.loc 1 537 0
+ 831 04b4 043082E5 		mov	r3, #3
+ 526:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 527:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// enable PUSB
+ 528:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PCONP |= (1 << 31);		
+ 832              	r3, [lr, #160]
+ 833 04b8 1D2882E2 		.loc 1 542 0
+ 834 04bc C43092E5 		ldr	r2, .L110+8
+ 835 04c0 023183E3 		.loc 1 538 0
+ 836 04c4 C43082E5 		add	r3, r3, #167
+ 529:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 530:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// initialise PLL
+ 531:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PLL1CON = 1;			// enable PLL
+ 837              	r3, [lr, #172]
+ 838 04c8 0130A0E3 		.loc 1 542 0
+ 839 04cc A03082E5 		mov	r1, #0
+ 840              		.loc 1 543 0
+ 841 04d0 04E02DE5 		mvn	ip, #0
+ 842              		.loc 1 539 0
+ 532:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PLL1CFG = (1 << 5) | 3; // P = 2, M = 4
+ 843              	3, #85
+ 844 04d4 223083E2 		str	r3, [lr, #172]
+ 845 04d8 A43082E5 		.loc 1 551 0
+ 533:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PLL1FEED = 0xAA;
+ 846              	v	r0, r1
+ 847 04dc 873083E2 		.loc 1 542 0
+ 848 04e0 AC3082E5 		str	r1, [r2, #4]
+ 534:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PLL1FEED = 0x55;
+ 849              	oc 1 543 0
+ 850 04e4 5530A0E3 		str	ip, [r2, #8]
+ 851 04e8 AC3082E5 		.loc 1 544 0
+ 852              		str	r1, [r2, #44]
+ 535:../Bootloader/LPCUSB/usbhw_lpc.c **** 	while ((PLL1STAT & (1 << 10)) == 0);
+ 853              	c 1 546 0
+ 854 04ec 5CE09FE5 		str	r1, [r2, #52]
+ 855 04f0 A8309EE5 		.loc 1 547 0
+ 856 04f4 010B13E3 		str	ip, [r2, #56]
+ 857 04f8 FBFFFF0A 		.loc 1 548 0
+ 536:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 537:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PLL1CON = 3;			// enable and connect
+ 858              	r1, [r2, #64]
+ 859 04fc 0330A0E3 		.loc 1 551 0
+ 860 0500 A0308EE5 		bl	USBHwNakIntEnable
+ 538:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PLL1FEED = 0xAA;
+ 539:../Bootloader/LPCUSB/usbhw_lpc.c **** 	PLL1FEED = 0x55;
+ 540:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 541:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// disable/clear all interrupts for now
+ 542:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBDevIntEn = 0;
+ 861              	oc 1 559 0
+ 862 0504 48209FE5 		mov	r0, #1
+ 863              		ldr	lr, [sp], #4
+ 864 0508 A73083E2 		bx	lr
+ 865 050c AC308EE5 	.L111:
+ 866              		.align	2
+ 867 0510 0010A0E3 	.L110:
+ 543:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBDevIntClr = 0xFFFFFFFF;
+ 868              	-536690688
+ 869 0514 00C0E0E3 		.word	-534790144
+ 870              		.word	-536281088
+ 871 0518 5530A0E3 	.LFE21:
+ 544:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBDevIntPri = 0;
+ 545:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 546:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBEpIntEn = 0;
+ 547:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBEpIntClr = 0xFFFFFFFF;
+ 548:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBEpIntPri = 0;
+ 549:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 550:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// by default, only ACKs generate interrupts
+ 551:../Bootloader/LPCUSB/usbhw_lpc.c **** 	USBHwNakIntEnable(0);
+ 873              	
+ 874 0520 0100A0E1 		.align	2
+ 875              	_pfnFrameHandler:
+ 876 0524 041082E5 		.space	4
+ 877              		.align	2
+ 878 0528 08C082E5 	_pfnDevIntHandler:
+ 879              		.space	4
+ 880 052c 2C1082E5 		.align	2
+ 881              	_apfnEPIntHandlers:
+ 882 0530 341082E5 		.space	64
+ 883              		.section	.debug_frame,"",%progbits
+ 884 0534 38C082E5 	.Lframe0:
+ 885              		.4byte	.LECIE0-.LSCIE0
+ 886 0538 401082E5 	.LSCIE0:
+ 887              		.4byte	0xffffffff
+ 888 053c FEFFFFEB 		.byte	0x1
+ 552:../Bootloader/LPCUSB/usbhw_lpc.c **** 	
+ 553:../Bootloader/LPCUSB/usbhw_lpc.c **** 	// init debug leds
+ 554:../Bootloader/LPCUSB/usbhw_lpc.c **** 	DEBUG_LED_INIT(8);
+ 555:../Bootloader/LPCUSB/usbhw_lpc.c **** 	DEBUG_LED_INIT(9);
+ 556:../Bootloader/LPCUSB/usbhw_lpc.c **** 	DEBUG_LED_INIT(10);
+ 557:../Bootloader/LPCUSB/usbhw_lpc.c **** 
+ 558:../Bootloader/LPCUSB/usbhw_lpc.c **** 	return TRUE;
+ 559:../Bootloader/LPCUSB/usbhw_lpc.c **** }
+ 889              		.uleb128 0x1
+ 890 0540 0100A0E3 		.sleb128 -4
+ 891 0544 04E09DE4 		.byte	0xe
+ 892 0548 1EFF2FE1 		.byte	0xc
+ 893              		.uleb128 0xd
+ 894              		.uleb128 0x0
+ 895              		.align	2
+ 896 054c 00C002E0 	.LECIE0:
+ 897 0550 00C01FE0 	.LSFDE0:
+ 898 0554 000009E0 		.4byte	.LEFDE0-.LASFDE0
+ 899              	.LASFDE0:
+ 900              		.4byte	.Lframe0
+ 901              		.4byte	.LFB3
+ 902              		.4byte	.LFE3-.LFB3
+ 903              		.align	2
+ 904 0000 00000000 	.LEFDE0:
+ 905              	.LSFDE2:
+ 906              		.4byte	.LEFDE2-.LASFDE2
+ 907 0004 00000000 	.LASFDE2:
+ 908              		.4byte	.Lframe0
+ 909              		.4byte	.LFB4
+ 910 0008 00000000 		.4byte	.LFE4-.LFB4
+ 910      00000000 
+ 910      00000000 
+ 910      00000000 
+ 910      00000000 
+ 1127              	.LLST4:
+DEFINED SYMBOLS
+                            *ABS*:00000000 usbhw_lpc.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:12     .text:00000000 USBHwCmd
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:21     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:53     .text:00000038 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:58     .text:0000003c USBHwCmdWrite
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:65     .text:0000003c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:99     .text:00000080 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:104    .text:00000084 USBHwCmdRead
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:111    .text:00000084 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:147    .text:000000cc $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:153    .text:000000d0 USBHwEPConfig
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:164    .text:000000d0 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:241    .text:00000128 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:249    .text:0000012c USBHwRegisterEPIntHandler
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:256    .text:0000012c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:292    .text:00000170 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:909    .bss:00000008 _apfnEPIntHandlers
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:299    .text:00000178 USBHwRegisterDevIntHandler
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:308    .text:00000178 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:325    .text:00000194 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:906    .bss:00000004 _pfnDevIntHandler
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:332    .text:0000019c USBHwRegisterFrameHandler
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:341    .text:0000019c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:358    .text:000001b8 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:903    .bss:00000000 _pfnFrameHandler
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:365    .text:000001c0 USBHwSetAddress
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:373    .text:000001c0 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:388    .text:000001d0 USBHwConnect
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:411    .text:000001e0 USBHwNakIntEnable
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:434    .text:000001ec USBHwEPGetStatus
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:462    .text:00000210 USBHwEPStall
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:490    .text:00000230 USBHwEPWrite
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:554    .text:000002b4 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:560    .text:000002b8 USBHwEPRead
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:567    .text:000002b8 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:645    .text:00000358 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:651    .text:0000035c USBHwConfigDevice
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:660    .text:0000035c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:674    .text:0000036c USBHwISR
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:806    .text:00000484 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:815    .text:00000494 USBHwInit
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:822    .text:00000494 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccM3aaaa.s:896    .text:0000054c $d
+
+NO UNDEFINED SYMBOLS

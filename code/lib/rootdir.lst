@@ -1,0 +1,976 @@
+   1              		.file	"rootdir.c"
+   9              	.Ltext0:
+  10              		.align	2
+  11              		.global	root_file_exists
+  13              	root_file_exists:
+  14              	.LFB3:
+  15              		.file 1 "../lib/rootdir.c"
+   1:../lib/rootdir.c **** #include <stdio.h>
+   2:../lib/rootdir.c **** #include "rootdir.h"
+   3:../lib/rootdir.c **** #include "fat16.h"
+   4:../lib/rootdir.c **** #include "partition.h"
+   5:../lib/rootdir.c **** #include "sd_raw.h"
+   6:../lib/rootdir.c **** #include "rprintf.h"
+   7:../lib/rootdir.c **** 
+   8:../lib/rootdir.c **** struct fat16_dir_entry_struct dir_entry;
+   9:../lib/rootdir.c **** struct fat16_fs_struct* fs;
+  10:../lib/rootdir.c **** struct partition_struct* partition;
+  11:../lib/rootdir.c **** struct fat16_dir_struct* dd;
+  12:../lib/rootdir.c **** struct fat16_file_struct * fd;
+  13:../lib/rootdir.c **** 
+  14:../lib/rootdir.c **** int openroot(void)
+  15:../lib/rootdir.c **** {
+  16:../lib/rootdir.c ****     /* open first partition */
+  17:../lib/rootdir.c ****     partition = partition_open((device_read_t) sd_raw_read,
+  18:../lib/rootdir.c ****                                (device_read_interval_t) sd_raw_read_interval,
+  19:../lib/rootdir.c ****                                (device_write_t) sd_raw_write,
+  20:../lib/rootdir.c ****                                0);
+  21:../lib/rootdir.c **** 
+  22:../lib/rootdir.c ****     if(!partition)
+  23:../lib/rootdir.c ****     {
+  24:../lib/rootdir.c ****         /* If the partition did not open, assume the storage device
+  25:../lib/rootdir.c ****              *      * is a "superfloppy", i.e. has no MBR.
+  26:../lib/rootdir.c ****              *           */
+  27:../lib/rootdir.c ****         partition = partition_open((device_read_t) sd_raw_read,
+  28:../lib/rootdir.c ****                                    (device_read_interval_t) sd_raw_read_interval,
+  29:../lib/rootdir.c ****                                    (device_write_t) sd_raw_write,
+  30:../lib/rootdir.c ****                                    -1);
+  31:../lib/rootdir.c ****         if(!partition)
+  32:../lib/rootdir.c ****         {
+  33:../lib/rootdir.c ****             rprintf("opening partition failed\n\r");
+  34:../lib/rootdir.c ****             return 1;
+  35:../lib/rootdir.c ****         }
+  36:../lib/rootdir.c ****     }
+  37:../lib/rootdir.c **** 
+  38:../lib/rootdir.c ****     /* open file system */
+  39:../lib/rootdir.c ****     fs = fat16_open(partition);
+  40:../lib/rootdir.c ****     if(!fs)
+  41:../lib/rootdir.c ****     {
+  42:../lib/rootdir.c ****         rprintf("opening filesystem failed\n\r");
+  43:../lib/rootdir.c ****         return 1;
+  44:../lib/rootdir.c ****     }
+  45:../lib/rootdir.c **** 
+  46:../lib/rootdir.c ****     /* open root directory */
+  47:../lib/rootdir.c ****     fat16_get_dir_entry_of_path(fs, "/", &dir_entry);
+  48:../lib/rootdir.c **** 
+  49:../lib/rootdir.c ****     dd = fat16_open_dir(fs, &dir_entry);
+  50:../lib/rootdir.c ****     if(!dd)
+  51:../lib/rootdir.c ****     {
+  52:../lib/rootdir.c ****         rprintf("opening root directory failed\n\r");
+  53:../lib/rootdir.c ****         return 1;
+  54:../lib/rootdir.c ****     }
+  55:../lib/rootdir.c ****     return 0;
+  56:../lib/rootdir.c **** }
+  57:../lib/rootdir.c **** 
+  58:../lib/rootdir.c **** /* returns 1 if file exists, 0 else */
+  59:../lib/rootdir.c **** int root_file_exists(char* name)
+  60:../lib/rootdir.c **** {
+  16              	 Function supports interworking.
+  17              		@ args = 0, pretend = 0, frame = 0
+  18              		@ frame_needed = 0, uses_anonymous_args = 0
+  19              	.LVL0:
+  20              		.loc 1 61 0
+  61:../lib/rootdir.c **** eturns NULL if error, pointer if file opened */
+  21              	r3, .L3
+  22 0000 20309FE5 		ldr	r1, [r3, #0]
+  23 0004 001093E5 		ldr	r3, .L3+4
+  24 0008 1C309FE5 		.loc 1 60 0
+  25              		mov	r2, r0
+  26 000c 0020A0E1 		str	lr, [sp, #-4]!
+  27 0010 04E02DE5 	.LCFI0:
+  28              		.loc 1 61 0
+  29              		ldr	r0, [r3, #0]
+  30 0014 000093E5 	.LVL1:
+  31              		ldr	r3, .L3+8
+  32 0018 10309FE5 		bl	find_file_in_dir
+  33 001c FEFFFFEB 	.LVL2:
+  34              		.loc 1 62 0
+  62:../lib/rootdir.c **** ts, 0 else */
+  35              	 #4
+  36 0020 04E09DE4 		bx	lr
+  37 0024 1EFF2FE1 	.L4:
+  38              		.align	2
+  39              	.L3:
+  40              		.word	dd
+  41 0028 00000000 		.word	fs
+  42 002c 00000000 		.word	dir_entry
+  43 0030 00000000 	.LFE3:
+  45              		.align	2
+  46              		.global	root_delete
+  48              	root_delete:
+  49              	.LFB11:
+  50              		.loc 1 214 0
+  63:../lib/rootdir.c **** ir_entry);
+  64:../lib/rootdir.c ****     if(!dd)
+  65:../lib/rootdir.c ****     {
+  66:../lib/rootdir.c ****         rprintf("opening root directory failed\n\r");
+  67:../lib/rootdir.c ****         return 1;
+  68:../lib/rootdir.c ****     }
+  69:../lib/rootdir.c ****     return 0;
+  70:../lib/rootdir.c **** }
+  71:../lib/rootdir.c **** 
+  72:../lib/rootdir.c **** /* returns 1 if file exists, 0 else */
+  73:../lib/rootdir.c **** int root_file_exists(char* name)
+  74:../lib/rootdir.c **** {
+  75:../lib/rootdir.c ****     return(find_file_in_dir(fs,dd,name,&dir_entry));
+  76:../lib/rootdir.c **** }
+  77:../lib/rootdir.c **** 
+  78:../lib/rootdir.c **** /* returns NULL if error, pointer if file opened */
+  79:../lib/rootdir.c **** struct fat16_file_struct * root_open_new(char* name)
+  80:../lib/rootdir.c **** {
+  81:../lib/rootdir.c ****     if(fat16_create_file(dd,name,&dir_entry))
+  82:../lib/rootdir.c ****     {
+  83:../lib/rootdir.c ****         return(open_file_in_dir(fs,dd,name));
+  84:../lib/rootdir.c ****     }
+  85:../lib/rootdir.c ****     else
+  86:../lib/rootdir.c ****     {
+  87:../lib/rootdir.c ****         return NULL;
+  88:../lib/rootdir.c ****     }
+  89:../lib/rootdir.c **** }
+  90:../lib/rootdir.c **** 
+  91:../lib/rootdir.c **** struct fat16_file_struct * root_open(char* name)
+  92:../lib/rootdir.c **** {
+  93:../lib/rootdir.c ****     return(open_file_in_dir(fs,dd,name));
+  94:../lib/rootdir.c **** }
+  95:../lib/rootdir.c **** 
+  96:../lib/rootdir.c **** uint8_t print_disk_info(const struct fat16_fs_struct* disk_fs)
+  97:../lib/rootdir.c **** {
+  98:../lib/rootdir.c ****     if(!disk_fs)
+  99:../lib/rootdir.c ****         return 0;
+ 100:../lib/rootdir.c **** 
+ 101:../lib/rootdir.c ****     struct sd_raw_info disk_info;
+ 102:../lib/rootdir.c ****     if(!sd_raw_get_info(&disk_info))
+ 103:../lib/rootdir.c ****         return 0;
+ 104:../lib/rootdir.c **** 
+ 105:../lib/rootdir.c **** //    int temp = get_output();
+ 106:../lib/rootdir.c **** //    set_output(UART_ONLY);
+ 107:../lib/rootdir.c ****     rprintf("manuf:  0x%02x\n\r", disk_info.manufacturer);
+ 108:../lib/rootdir.c ****     rprintf("oem:    %s\n\r", disk_info.oem);
+ 109:../lib/rootdir.c ****     rprintf("prod:   %s\n\r", disk_info.product);
+ 110:../lib/rootdir.c ****     rprintf("rev:    %02x\n\r", disk_info.revision);
+ 111:../lib/rootdir.c ****     rprintf("serial: 0x%08lx\n\r", disk_info.serial);
+ 112:../lib/rootdir.c ****     rprintf("date:   %02d/%02d\n\r", disk_info.manufacturing_month, disk_info.manufacturing_year);
+ 113:../lib/rootdir.c ****     rprintf("size:   %ld\n\r", disk_info.capacity);
+ 114:../lib/rootdir.c ****     rprintf("copy:   %d\n\r", disk_info.flag_copy);
+ 115:../lib/rootdir.c ****     rprintf("wr.pr.: %d/%d\n\r", disk_info.flag_write_protect_temp, disk_info.flag_write_protect);
+ 116:../lib/rootdir.c ****     rprintf("format: %d\n\r", disk_info.format);
+ 117:../lib/rootdir.c ****     rprintf("free:   %ld/%ld\n\r", fat16_get_fs_free(disk_fs), fat16_get_fs_size(disk_fs));
+ 118:../lib/rootdir.c **** //    set_output(temp);
+ 119:../lib/rootdir.c ****     return 1;
+ 120:../lib/rootdir.c **** }
+ 121:../lib/rootdir.c **** 
+ 122:../lib/rootdir.c **** void root_disk_info(void)
+ 123:../lib/rootdir.c **** {
+ 124:../lib/rootdir.c ****     print_disk_info(fs);
+ 125:../lib/rootdir.c **** }
+ 126:../lib/rootdir.c **** 
+ 127:../lib/rootdir.c **** /* sequential calls return sequential characters
+ 128:../lib/rootdir.c ****  * of the sequence of file names in the rootdir
+ 129:../lib/rootdir.c ****  * in place of '\0' it returns ',' only
+ 130:../lib/rootdir.c ****  * returning a zero when the end of all files
+ 131:../lib/rootdir.c ****  * has been reached.
+ 132:../lib/rootdir.c ****  *
+ 133:../lib/rootdir.c ****  * Assert (1) reset whenever you want to re-start
+ 134:../lib/rootdir.c ****  */
+ 135:../lib/rootdir.c **** char rootDirectory_files_stream(int reset)
+ 136:../lib/rootdir.c **** {
+ 137:../lib/rootdir.c **** 
+ 138:../lib/rootdir.c ****     static int idx = 0;
+ 139:../lib/rootdir.c **** 
+ 140:../lib/rootdir.c ****     /* If reset, we need to reset the dir */
+ 141:../lib/rootdir.c ****     if(reset)
+ 142:../lib/rootdir.c ****     {
+ 143:../lib/rootdir.c ****         fat16_reset_dir(dd);
+ 144:../lib/rootdir.c ****         return 0;
+ 145:../lib/rootdir.c ****     }
+ 146:../lib/rootdir.c **** 
+ 147:../lib/rootdir.c ****     /* Whenever IDX is zero, we're gonna start a new file,
+ 148:../lib/rootdir.c ****        * so read a new one.
+ 149:../lib/rootdir.c ****        * if there's no new file,
+ 150:../lib/rootdir.c ****        * return 0, because it's over
+ 151:../lib/rootdir.c ****        */
+ 152:../lib/rootdir.c ****     if(idx == 0)
+ 153:../lib/rootdir.c ****     {
+ 154:../lib/rootdir.c ****         if(fat16_read_dir(dd,&dir_entry)==0)
+ 155:../lib/rootdir.c ****         {
+ 156:../lib/rootdir.c ****             return '\0';
+ 157:../lib/rootdir.c ****         }
+ 158:../lib/rootdir.c ****     }
+ 159:../lib/rootdir.c **** 
+ 160:../lib/rootdir.c ****     /* If we've reached the end of a string,
+ 161:../lib/rootdir.c ****        * return comma instead of \0,
+ 162:../lib/rootdir.c ****        * so the list is comma delimited,
+ 163:../lib/rootdir.c ****        * and terminated with a zero
+ 164:../lib/rootdir.c ****        */
+ 165:../lib/rootdir.c ****     if(dir_entry.long_name[idx]=='\0')
+ 166:../lib/rootdir.c ****     {
+ 167:../lib/rootdir.c ****         idx = 0;
+ 168:../lib/rootdir.c ****         return ',';
+ 169:../lib/rootdir.c ****     }
+ 170:../lib/rootdir.c **** 
+ 171:../lib/rootdir.c **** 
+ 172:../lib/rootdir.c ****     return dir_entry.long_name[idx++];
+ 173:../lib/rootdir.c **** 
+ 174:../lib/rootdir.c **** }
+ 175:../lib/rootdir.c **** //Description: Fills buf with len number of chars.  Returns the number of files
+ 176:../lib/rootdir.c **** //				that were cycled through during the read
+ 177:../lib/rootdir.c **** //Pre: buf is an array of characters at least as big as len
+ 178:../lib/rootdir.c **** //		len is the size of the array to read
+ 179:../lib/rootdir.c **** //Post: buf contains the characters of the filenames in Root, starting at the first file
+ 180:../lib/rootdir.c **** //		and ending after len characters
+ 181:../lib/rootdir.c **** int rootDirectory_files(char* buf, int len)
+ 182:../lib/rootdir.c **** {
+ 183:../lib/rootdir.c ****     int i;
+ 184:../lib/rootdir.c ****     int num=0;
+ 185:../lib/rootdir.c ****     /* Loop will walk through every file in directory dd */
+ 186:../lib/rootdir.c ****     fat16_reset_dir(dd);
+ 187:../lib/rootdir.c ****     while(fat16_read_dir(dd,&dir_entry))
+ 188:../lib/rootdir.c ****     {
+ 189:../lib/rootdir.c ****         i = 0;
+ 190:../lib/rootdir.c ****         /* Spin through the filename */
+ 191:../lib/rootdir.c ****         while(dir_entry.long_name[i]!='\0')
+ 192:../lib/rootdir.c ****         {
+ 193:../lib/rootdir.c ****             /* And copy each character into buf */
+ 194:../lib/rootdir.c ****             *buf++=dir_entry.long_name[i++];
+ 195:../lib/rootdir.c ****             len--;
+ 196:../lib/rootdir.c ****             if(len==1)
+ 197:../lib/rootdir.c ****             {
+ 198:../lib/rootdir.c ****                 /* Buf if we ever get to the end of buf, quit */
+ 199:../lib/rootdir.c ****                 *buf='\0';
+ 200:../lib/rootdir.c ****                 return 1;
+ 201:../lib/rootdir.c ****             }
+ 202:../lib/rootdir.c ****         }
+ 203:../lib/rootdir.c ****         *buf++=',';
+ 204:../lib/rootdir.c ****         num++;
+ 205:../lib/rootdir.c ****         len--;
+ 206:../lib/rootdir.c ****         if(len==1)
+ 207:../lib/rootdir.c ****         {
+ 208:../lib/rootdir.c ****             /* Buf if we ever get to the end of buf, quit */
+ 209:../lib/rootdir.c ****             *buf='\0';
+ 210:../lib/rootdir.c ****             return 1;
+ 211:../lib/rootdir.c ****         }
+ 212:../lib/rootdir.c ****     }
+ 213:../lib/rootdir.c ****     *buf='\0';
+ 214:../lib/rootdir.c ****     return num;
+  51              	orts interworking.
+  52              		@ args = 0, pretend = 0, frame = 0
+  53              		@ frame_needed = 0, uses_anonymous_args = 0
+  54              	.LVL3:
+  55              		stmfd	sp!, {r4, lr}
+  56 0034 10402DE9 	.LCFI1:
+  57              		.loc 1 215 0
+ 215:../lib/rootdir.c **** t16_reset_dir(dd);
+  58              	, .L10
+  59 0038 38309FE5 		ldr	r4, .L10+4
+  60 003c 38409FE5 		ldr	r1, [r3, #0]
+  61 0040 001093E5 		.loc 1 214 0
+  62              		mov	r2, r0
+  63 0044 0020A0E1 		.loc 1 215 0
+  64              		ldr	r3, .L10+8
+  65 0048 30309FE5 		ldr	r0, [r4, #0]
+  66 004c 000094E5 	.LVL4:
+  67              		bl	find_file_in_dir
+  68 0050 FEFFFFEB 	.LVL5:
+  69              		cmp	r0, #0
+  70 0054 000050E3 		.loc 1 217 0
+ 216:../lib/rootdir.c **** et_dir(dd);
+ 217:../lib/rootdir.c ****     }
+  71              	+8
+  72 0058 20109FE5 		.loc 1 215 0
+  73              		mov	r0, #1
+  74 005c 0100A0E3 		beq	.L8
+  75 0060 0200000A 		.loc 1 217 0
+  76              		ldr	r0, [r4, #0]
+  77 0064 000094E5 		bl	fat16_delete_file
+  78 0068 FEFFFFEB 		mov	r0, #0
+  79 006c 0000A0E3 	.L8:
+  80              		.loc 1 221 0
+ 218:../lib/rootdir.c **** dd);
+ 219:../lib/rootdir.c ****     }
+ 220:../lib/rootdir.c **** }
+ 221:../lib/rootdir.c **** 
+  81              	, {r4, lr}
+  82 0070 1040BDE8 		bx	lr
+  83 0074 1EFF2FE1 	.L11:
+  84              		.align	2
+  85              	.L10:
+  86              		.word	dd
+  87 0078 00000000 		.word	fs
+  88 007c 00000000 		.word	dir_entry
+  89 0080 00000000 	.LFE11:
+  91              		.align	2
+  92              		.global	root_format
+  94              	root_format:
+  95              	.LFB10:
+  96              		.loc 1 204 0
+  97              		@ Function supports interworking.
+  98              		@ args = 0, pretend = 0, frame = 0
+  99              		@ frame_needed = 0, uses_anonymous_args = 0
+ 100              		stmfd	sp!, {r4, lr}
+ 101 0084 10402DE9 	.LCFI2:
+ 102              		.loc 1 205 0
+ 103              		ldr	r3, .L18
+ 104 0088 3C309FE5 		ldr	r0, [r3, #0]
+ 105 008c 000093E5 		b	.L17
+ 106 0090 030000EA 	.L14:
+ 107              		.loc 1 208 0
+ 108              		ldr	r3, .L18+4
+ 109 0094 34309FE5 		ldr	r0, [r3, #0]
+ 110 0098 000093E5 		bl	fat16_delete_file
+ 111 009c FEFFFFEB 		.loc 1 209 0
+ 112              		ldr	r0, [r4, #0]
+ 113 00a0 000094E5 	.L17:
+ 114              		.loc 1 206 0
+ 115              		ldr	r4, .L18
+ 116 00a4 20409FE5 		.loc 1 209 0
+ 117              		bl	fat16_reset_dir
+ 118 00a8 FEFFFFEB 		.loc 1 206 0
+ 119              		ldr	r1, .L18+8
+ 120 00ac 20109FE5 		ldr	r0, [r4, #0]
+ 121 00b0 000094E5 		bl	fat16_read_dir
+ 122 00b4 FEFFFFEB 		cmp	r0, #0
+ 123 00b8 000050E3 		.loc 1 208 0
+ 124              		ldr	r1, .L18+8
+ 125 00bc 10109FE5 		.loc 1 206 0
+ 126              		bne	.L14
+ 127 00c0 F3FFFF1A 		.loc 1 211 0
+ 128              		ldmfd	sp!, {r4, lr}
+ 129 00c4 1040BDE8 		bx	lr
+ 130 00c8 1EFF2FE1 	.L19:
+ 131              		.align	2
+ 132              	.L18:
+ 133              		.word	dd
+ 134 00cc 00000000 		.word	fs
+ 135 00d0 00000000 		.word	dir_entry
+ 136 00d4 00000000 	.LFE10:
+ 138              		.align	2
+ 139              		.global	rootDirectory_files
+ 141              	rootDirectory_files:
+ 142              	.LFB9:
+ 143              		.loc 1 168 0
+ 144              		@ Function supports interworking.
+ 145              		@ args = 0, pretend = 0, frame = 0
+ 146              		@ frame_needed = 0, uses_anonymous_args = 0
+ 147              	.LVL6:
+ 148              		.loc 1 172 0
+ 149              		ldr	r3, .L34
+ 150 00d8 A0309FE5 		.loc 1 168 0
+ 151              		stmfd	sp!, {r4, r5, r6, lr}
+ 152 00dc 70402DE9 	.LCFI3:
+ 153              		.loc 1 168 0
+ 154              		mov	r4, r0
+ 155 00e0 0040A0E1 		.loc 1 172 0
+ 156              		ldr	r0, [r3, #0]
+ 157 00e4 000093E5 	.LVL7:
+ 158              		.loc 1 168 0
+ 159              		mov	r5, r1
+ 160 00e8 0150A0E1 		.loc 1 172 0
+ 161              		bl	fat16_reset_dir
+ 162 00ec FEFFFFEB 	.LVL8:
+ 163              		mov	r6, #0
+ 164 00f0 0060A0E3 	.LVL9:
+ 165              		b	.L21
+ 166 00f4 170000EA 	.L22:
+ 167              		.loc 1 182 0
+ 168              		cmp	r2, #1
+ 169 00f8 010052E3 		.loc 1 180 0
+ 170              		strb	r1, [r4, #0]
+ 171 00fc 0010C4E5 		mov	r4, r0
+ 172 0100 0040A0E1 		.loc 1 182 0
+ 173              		bne	.L23
+ 174 0104 0400001A 		.loc 1 185 0
+ 175              		mov	r3, #0
+ 176 0108 0030A0E3 		mov	r6, r2
+ 177 010c 0260A0E1 		strb	r3, [r0, #0]
+ 178 0110 0030C0E5 		b	.L25
+ 179 0114 160000EA 	.LVL10:
+ 180              	.L26:
+ 181              		.loc 1 186 0
+ 182              		ldr	r3, .L34+4
+ 183 0118 64309FE5 	.L23:
+ 184              		.loc 1 177 0
+ 185              		ldrb	r1, [r3, #0]	@ zero_extendqisi2
+ 186 011c 0010D3E5 		sub	r2, r5, #1
+ 187 0120 012045E2 		cmp	r1, #0
+ 188 0124 000051E3 		.loc 1 181 0
+ 189              		add	r3, r3, #1
+ 190 0128 013083E2 		mov	r5, r2
+ 191 012c 0250A0E1 		add	r0, r4, #1
+ 192 0130 010084E2 		.loc 1 177 0
+ 193              		bne	.L22
+ 194 0134 EFFFFF1A 		.loc 1 189 0
+ 195              		mov	r3, #44
+ 196 0138 2C30A0E3 		.loc 1 192 0
+ 197              		cmp	r2, #1
+ 198 013c 010052E3 		.loc 1 189 0
+ 199              		strb	r3, [r4, #0]
+ 200 0140 0030C4E5 		mov	r4, r0
+ 201 0144 0040A0E1 		.loc 1 192 0
+ 202              		.loc 1 195 0
+ 203              		moveq	r6, r2
+ 204 0148 0260A001 		streqb	r1, [r0, #0]
+ 205 014c 0010C005 		beq	.L25
+ 206 0150 0700000A 	.LVL11:
+ 207              	.L28:
+ 208              		.loc 1 190 0
+ 209              		add	r6, r6, #1
+ 210 0154 016086E2 	.L21:
+ 211              		.loc 1 173 0
+ 212              		ldr	r3, .L34
+ 213 0158 20309FE5 		ldr	r1, .L34+4
+ 214 015c 20109FE5 		ldr	r0, [r3, #0]
+ 215 0160 000093E5 		bl	fat16_read_dir
+ 216 0164 FEFFFFEB 		cmp	r0, #0
+ 217 0168 000050E3 		bne	.L26
+ 218 016c E9FFFF1A 		.loc 1 199 0
+ 219              		strb	r0, [r4, #0]
+ 220 0170 0000C4E5 	.LVL12:
+ 221              	.L25:
+ 222              		.loc 1 201 0
+ 223              		mov	r0, r6
+ 224 0174 0600A0E1 		ldmfd	sp!, {r4, r5, r6, lr}
+ 225 0178 7040BDE8 		bx	lr
+ 226 017c 1EFF2FE1 	.L35:
+ 227              		.align	2
+ 228              	.L34:
+ 229              		.word	dd
+ 230 0180 00000000 		.word	dir_entry
+ 231 0184 00000000 	.LFE9:
+ 233              		.align	2
+ 234              		.global	rootDirectory_files_stream
+ 236              	rootDirectory_files_stream:
+ 237              	.LFB8:
+ 238              		.loc 1 122 0
+ 239              		@ Function supports interworking.
+ 240              		@ args = 0, pretend = 0, frame = 0
+ 241              		@ frame_needed = 0, uses_anonymous_args = 0
+ 242              	.LVL13:
+ 243              		.loc 1 127 0
+ 244              		cmp	r0, #0
+ 245 0188 000050E3 		.loc 1 122 0
+ 246              		str	lr, [sp, #-4]!
+ 247 018c 04E02DE5 	.LCFI4:
+ 248              		.loc 1 127 0
+ 249              		beq	.L37
+ 250 0190 0400000A 		.loc 1 129 0
+ 251              		ldr	r3, .L46
+ 252 0194 64309FE5 		ldr	r0, [r3, #0]
+ 253 0198 000093E5 	.LVL14:
+ 254              		bl	fat16_reset_dir
+ 255 019c FEFFFFEB 		mov	r0, #0
+ 256 01a0 0000A0E3 		b	.L39
+ 257 01a4 130000EA 	.LVL15:
+ 258              	.L37:
+ 259              		.loc 1 138 0
+ 260              		ldr	r3, .L46+4
+ 261 01a8 54309FE5 		ldr	r3, [r3, #0]
+ 262 01ac 003093E5 		cmp	r3, #0
+ 263 01b0 000053E3 		.loc 1 140 0
+ 264              		ldr	r1, .L46+8
+ 265 01b4 4C109FE5 		.loc 1 138 0
+ 266              		bne	.L40
+ 267 01b8 0400001A 		.loc 1 140 0
+ 268              		ldr	r3, .L46
+ 269 01bc 3C309FE5 		ldr	r0, [r3, #0]
+ 270 01c0 000093E5 	.LVL16:
+ 271              		bl	fat16_read_dir
+ 272 01c4 FEFFFFEB 		cmp	r0, #0
+ 273 01c8 000050E3 		beq	.L39
+ 274 01cc 0900000A 	.LVL17:
+ 275              	.L40:
+ 276              		.loc 1 151 0
+ 277              		ldr	r1, .L46+4
+ 278 01d0 2C109FE5 		ldr	r3, .L46+8
+ 279 01d4 2C309FE5 		ldr	r2, [r1, #0]
+ 280 01d8 002091E5 		ldrb	r3, [r3, r2]	@ zero_extendqisi2
+ 281 01dc 0230D3E7 		.loc 1 158 0
+ 282              		add	r2, r2, #1
+ 283 01e0 012082E2 		.loc 1 151 0
+ 284              		cmp	r3, #0
+ 285 01e4 000053E3 		.loc 1 153 0
+ 286              		streq	r3, [r1, #0]
+ 287 01e8 00308105 		.loc 1 158 0
+ 288              		strne	r2, [r1, #0]
+ 289 01ec 00208115 		.loc 1 153 0
+ 290              		mov	r0, #44
+ 291 01f0 2C00A0E3 	.LVL18:
+ 292              		.loc 1 158 0
+ 293              		movne	r0, r3
+ 294 01f4 0300A011 	.L39:
+ 295              		.loc 1 160 0
+ 296              		ldr	lr, [sp], #4
+ 297 01f8 04E09DE4 		bx	lr
+ 298 01fc 1EFF2FE1 	.L47:
+ 299              		.align	2
+ 300              	.L46:
+ 301              		.word	dd
+ 302 0200 00000000 		.word	idx.2185
+ 303 0204 00000000 		.word	dir_entry
+ 304 0208 00000000 	.LFE8:
+ 306              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 307              		.align	2
+ 308              	.LC0:
+ 309              		.ascii	"manuf:  0x%02x\012\015\000"
+ 310 0000 6D616E75 		.align	2
+ 310      663A2020 
+ 310      30782530 
+ 310      32780A0D 
+ 310      00
+ 311 0011 000000   	.LC1:
+ 312              		.ascii	"oem:    %s\012\015\000"
+ 313 0014 6F656D3A 		.align	2
+ 313      20202020 
+ 313      25730A0D 
+ 313      00
+ 314 0021 000000   	.LC2:
+ 315              		.ascii	"prod:   %s\012\015\000"
+ 316 0024 70726F64 		.align	2
+ 316      3A202020 
+ 316      25730A0D 
+ 316      00
+ 317 0031 000000   	.LC3:
+ 318              		.ascii	"rev:    %02x\012\015\000"
+ 319 0034 7265763A 		.align	2
+ 319      20202020 
+ 319      25303278 
+ 319      0A0D00
+ 320 0043 00       	.LC4:
+ 321              		.ascii	"serial: 0x%08lx\012\015\000"
+ 322 0044 73657269 		.align	2
+ 322      616C3A20 
+ 322      30782530 
+ 322      386C780A 
+ 322      0D00
+ 323 0056 0000     	.LC5:
+ 324              		.ascii	"date:   %02d/%02d\012\015\000"
+ 325 0058 64617465 		.align	2
+ 325      3A202020 
+ 325      25303264 
+ 325      2F253032 
+ 325      640A0D00 
+ 326              	.LC6:
+ 327              		.ascii	"size:   %ld\012\015\000"
+ 328 006c 73697A65 		.align	2
+ 328      3A202020 
+ 328      256C640A 
+ 328      0D00
+ 329 007a 0000     	.LC7:
+ 330              		.ascii	"copy:   %d\012\015\000"
+ 331 007c 636F7079 		.align	2
+ 331      3A202020 
+ 331      25640A0D 
+ 331      00
+ 332 0089 000000   	.LC8:
+ 333              		.ascii	"wr.pr.: %d/%d\012\015\000"
+ 334 008c 77722E70 		.align	2
+ 334      722E3A20 
+ 334      25642F25 
+ 334      640A0D00 
+ 335              	.LC9:
+ 336              		.ascii	"format: %d\012\015\000"
+ 337 009c 666F726D 		.align	2
+ 337      61743A20 
+ 337      25640A0D 
+ 337      00
+ 338 00a9 000000   	.LC10:
+ 339              		.ascii	"free:   %ld/%ld\012\015\000"
+ 340 00ac 66726565 		.text
+ 340      3A202020 
+ 340      256C642F 
+ 340      256C640A 
+ 340      0D00
+ 341              		.align	2
+ 342              		.global	print_disk_info
+ 344              	print_disk_info:
+ 345              	.LFB6:
+ 346              		.loc 1 83 0
+ 347              		@ Function supports interworking.
+ 348              		@ args = 0, pretend = 0, frame = 28
+ 349              		@ frame_needed = 0, uses_anonymous_args = 0
+ 350              	.LVL19:
+ 351              		stmfd	sp!, {r4, r5, lr}
+ 352 020c 30402DE9 	.LCFI5:
+ 353              		.loc 1 84 0
+ 354              		subs	r5, r0, #0
+ 355 0210 005050E2 		.loc 1 83 0
+ 356              		sub	sp, sp, #28
+ 357 0214 1CD04DE2 	.LCFI6:
+ 358              		.loc 1 88 0
+ 359              		mov	r4, sp
+ 360 0218 0D40A0E1 		mov	r0, sp
+ 361 021c 0D00A0E1 	.LVL20:
+ 362              		.loc 1 84 0
+ 363              		beq	.L49
+ 364 0220 2D00000A 		.loc 1 88 0
+ 365              		bl	sd_raw_get_info
+ 366 0224 FEFFFFEB 		cmp	r0, #0
+ 367 0228 000050E3 		.loc 1 93 0
+ 368              		ldr	r0, .L54
+ 369 022c B8009FE5 		.loc 1 88 0
+ 370              		beq	.L49
+ 371 0230 2900000A 		.loc 1 93 0
+ 372              		ldrb	r1, [sp, #0]	@ zero_extendqisi2
+ 373 0234 0010DDE5 		bl	rprintf
+ 374 0238 FEFFFFEB 		.loc 1 94 0
+ 375              		ldr	r0, .L54+4
+ 376 023c AC009FE5 		add	r1, sp, #1
+ 377 0240 01108DE2 		bl	rprintf
+ 378 0244 FEFFFFEB 		.loc 1 95 0
+ 379              		add	r1, sp, #4
+ 380 0248 04108DE2 		ldr	r0, .L54+8
+ 381 024c A0009FE5 		bl	rprintf
+ 382 0250 FEFFFFEB 		.loc 1 96 0
+ 383              		ldr	r0, .L54+12
+ 384 0254 9C009FE5 		ldrb	r1, [sp, #10]	@ zero_extendqisi2
+ 385 0258 0A10DDE5 		bl	rprintf
+ 386 025c FEFFFFEB 		.loc 1 97 0
+ 387              		ldr	r0, .L54+16
+ 388 0260 94009FE5 		ldr	r1, [sp, #12]
+ 389 0264 0C109DE5 		bl	rprintf
+ 390 0268 FEFFFFEB 		.loc 1 98 0
+ 391              		ldrb	r2, [sp, #16]	@ zero_extendqisi2
+ 392 026c 1020DDE5 		ldr	r0, .L54+20
+ 393 0270 88009FE5 		ldrb	r1, [sp, #17]	@ zero_extendqisi2
+ 394 0274 1110DDE5 		bl	rprintf
+ 395 0278 FEFFFFEB 		.loc 1 99 0
+ 396              		ldr	r0, .L54+24
+ 397 027c 80009FE5 		ldr	r1, [sp, #20]
+ 398 0280 14109DE5 		bl	rprintf
+ 399 0284 FEFFFFEB 		.loc 1 100 0
+ 400              		ldr	r0, .L54+28
+ 401 0288 78009FE5 		ldrb	r1, [sp, #24]	@ zero_extendqisi2
+ 402 028c 1810DDE5 		bl	rprintf
+ 403 0290 FEFFFFEB 		.loc 1 101 0
+ 404              		ldrb	r2, [sp, #25]	@ zero_extendqisi2
+ 405 0294 1920DDE5 		ldr	r0, .L54+32
+ 406 0298 6C009FE5 		ldrb	r1, [sp, #26]	@ zero_extendqisi2
+ 407 029c 1A10DDE5 		bl	rprintf
+ 408 02a0 FEFFFFEB 		.loc 1 102 0
+ 409              		ldrb	r1, [sp, #27]	@ zero_extendqisi2
+ 410 02a4 1B10DDE5 		ldr	r0, .L54+36
+ 411 02a8 60009FE5 		bl	rprintf
+ 412 02ac FEFFFFEB 		.loc 1 103 0
+ 413              		mov	r0, r5
+ 414 02b0 0500A0E1 		bl	fat16_get_fs_free
+ 415 02b4 FEFFFFEB 		mov	r4, r0
+ 416 02b8 0040A0E1 		mov	r0, r5
+ 417 02bc 0500A0E1 		bl	fat16_get_fs_size
+ 418 02c0 FEFFFFEB 		mov	r1, r4
+ 419 02c4 0410A0E1 		mov	r2, r0
+ 420 02c8 0020A0E1 		ldr	r0, .L54+40
+ 421 02cc 40009FE5 		bl	rprintf
+ 422 02d0 FEFFFFEB 		mov	r0, #1
+ 423 02d4 0100A0E3 		b	.L52
+ 424 02d8 000000EA 	.L49:
+ 425              		.loc 1 105 0
+ 426              		mov	r0, #0
+ 427 02dc 0000A0E3 	.L52:
+ 428              		.loc 1 106 0
+ 429              		add	sp, sp, #28
+ 430 02e0 1CD08DE2 		ldmfd	sp!, {r4, r5, lr}
+ 431 02e4 3040BDE8 		bx	lr
+ 432 02e8 1EFF2FE1 	.L55:
+ 433              		.align	2
+ 434              	.L54:
+ 435              		.word	.LC0
+ 436 02ec 00000000 		.word	.LC1
+ 437 02f0 14000000 		.word	.LC2
+ 438 02f4 24000000 		.word	.LC3
+ 439 02f8 34000000 		.word	.LC4
+ 440 02fc 44000000 		.word	.LC5
+ 441 0300 58000000 		.word	.LC6
+ 442 0304 6C000000 		.word	.LC7
+ 443 0308 7C000000 		.word	.LC8
+ 444 030c 8C000000 		.word	.LC9
+ 445 0310 9C000000 		.word	.LC10
+ 446 0314 AC000000 	.LFE6:
+ 448              		.align	2
+ 449              		.global	root_disk_info
+ 451              	root_disk_info:
+ 452              	.LFB7:
+ 453              		.loc 1 109 0
+ 454              		@ Function supports interworking.
+ 455              		@ args = 0, pretend = 0, frame = 0
+ 456              		@ frame_needed = 0, uses_anonymous_args = 0
+ 457              		@ link register save eliminated.
+ 458              		.loc 1 110 0
+ 459              		ldr	r3, .L58
+ 460 0318 04309FE5 		ldr	r0, [r3, #0]
+ 461 031c 000093E5 		.loc 1 109 0
+ 462              		@ lr needed for prologue
+ 463              		.loc 1 111 0
+ 464              		.loc 1 110 0
+ 465              		b	print_disk_info
+ 466 0320 FEFFFFEA 	.L59:
+ 467              		.align	2
+ 468              	.L58:
+ 469              		.word	fs
+ 470 0324 00000000 	.LFE7:
+ 472              		.align	2
+ 473              		.global	root_open
+ 475              	root_open:
+ 476              	.LFB5:
+ 477              		.loc 1 78 0
+ 478              		@ Function supports interworking.
+ 479              		@ args = 0, pretend = 0, frame = 0
+ 480              		@ frame_needed = 0, uses_anonymous_args = 0
+ 481              	.LVL21:
+ 482              		.loc 1 79 0
+ 483              		ldr	r3, .L62
+ 484 0328 1C309FE5 		ldr	r1, [r3, #0]
+ 485 032c 001093E5 		ldr	r3, .L62+4
+ 486 0330 18309FE5 		.loc 1 78 0
+ 487              		mov	r2, r0
+ 488 0334 0020A0E1 		str	lr, [sp, #-4]!
+ 489 0338 04E02DE5 	.LCFI7:
+ 490              		.loc 1 79 0
+ 491              		ldr	r0, [r3, #0]
+ 492 033c 000093E5 	.LVL22:
+ 493              		bl	open_file_in_dir
+ 494 0340 FEFFFFEB 	.LVL23:
+ 495              		.loc 1 80 0
+ 496              		ldr	lr, [sp], #4
+ 497 0344 04E09DE4 		bx	lr
+ 498 0348 1EFF2FE1 	.L63:
+ 499              		.align	2
+ 500              	.L62:
+ 501              		.word	dd
+ 502 034c 00000000 		.word	fs
+ 503 0350 00000000 	.LFE5:
+ 505              		.align	2
+ 506              		.global	root_open_new
+ 508              	root_open_new:
+ 509              	.LFB4:
+ 510              		.loc 1 66 0
+ 511              		@ Function supports interworking.
+ 512              		@ args = 0, pretend = 0, frame = 0
+ 513              		@ frame_needed = 0, uses_anonymous_args = 0
+ 514              	.LVL24:
+ 515              		stmfd	sp!, {r4, r5, lr}
+ 516 0354 30402DE9 	.LCFI8:
+ 517              		.loc 1 67 0
+ 518              		ldr	r5, .L69
+ 519 0358 30509FE5 		.loc 1 66 0
+ 520              		mov	r4, r0
+ 521 035c 0040A0E1 		.loc 1 67 0
+ 522              		mov	r1, r0
+ 523 0360 0010A0E1 		ldr	r2, .L69+4
+ 524 0364 28209FE5 		ldr	r0, [r5, #0]
+ 525 0368 000095E5 	.LVL25:
+ 526              		bl	fat16_create_file
+ 527 036c FEFFFFEB 	.LVL26:
+ 528              		cmp	r0, #0
+ 529 0370 000050E3 		.loc 1 69 0
+ 530              		mov	r2, r4
+ 531 0374 0420A0E1 		.loc 1 67 0
+ 532              	.LVL27:
+ 533              		.loc 1 69 0
+ 534              		ldrne	r3, .L69+8
+ 535 0378 18309F15 		ldrne	r1, [r5, #0]
+ 536 037c 00109515 		ldrne	r0, [r3, #0]
+ 537 0380 00009315 		blne	open_file_in_dir
+ 538 0384 FEFFFF1B 	.LVL28:
+ 539              	.L67:
+ 540              		.loc 1 75 0
+ 541              		ldmfd	sp!, {r4, r5, lr}
+ 542 0388 3040BDE8 		bx	lr
+ 543 038c 1EFF2FE1 	.L70:
+ 544              		.align	2
+ 545              	.L69:
+ 546              		.word	dd
+ 547 0390 00000000 		.word	dir_entry
+ 548 0394 00000000 		.word	fs
+ 549 0398 00000000 	.LFE4:
+ 551              		.section	.rodata.str1.4
+ 552              		.align	2
+ 553 00be 0000     	.LC11:
+ 554              		.ascii	"opening partition failed\012\015\000"
+ 555 00c0 6F70656E 		.align	2
+ 555      696E6720 
+ 555      70617274 
+ 555      6974696F 
+ 555      6E206661 
+ 556 00db 00       	.LC12:
+ 557              		.ascii	"opening filesystem failed\012\015\000"
+ 558 00dc 6F70656E 		.align	2
+ 558      696E6720 
+ 558      66696C65 
+ 558      73797374 
+ 558      656D2066 
+ 559              	.LC13:
+ 560              		.ascii	"/\000"
+ 561 00f8 2F00     		.align	2
+ 562 00fa 0000     	.LC14:
+ 563              		.ascii	"opening root directory failed\012\015\000"
+ 564 00fc 6F70656E 		.text
+ 564      696E6720 
+ 564      726F6F74 
+ 564      20646972 
+ 564      6563746F 
+ 565              		.align	2
+ 566              		.global	openroot
+ 568              	openroot:
+ 569              	.LFB2:
+ 570              		.loc 1 15 0
+ 571              		@ Function supports interworking.
+ 572              		@ args = 0, pretend = 0, frame = 0
+ 573              		@ frame_needed = 0, uses_anonymous_args = 0
+ 574              		stmfd	sp!, {r4, r5, lr}
+ 575 039c 30402DE9 	.LCFI9:
+ 576              		.loc 1 17 0
+ 577              		mov	r3, #0
+ 578 03a0 0030A0E3 		ldr	r1, .L82
+ 579 03a4 AC109FE5 		ldr	r2, .L82+4
+ 580 03a8 AC209FE5 		ldr	r0, .L82+8
+ 581 03ac AC009FE5 		bl	partition_open
+ 582 03b0 FEFFFFEB 		ldr	r4, .L82+12
+ 583 03b4 A8409FE5 		mov	ip, r0
+ 584 03b8 00C0A0E1 		.loc 1 22 0
+ 585              		cmp	ip, #0
+ 586 03bc 00005CE3 		.loc 1 27 0
+ 587              		mvn	r3, #0
+ 588 03c0 0030E0E3 		ldr	r1, .L82
+ 589 03c4 8C109FE5 		ldr	r2, .L82+4
+ 590 03c8 8C209FE5 		ldr	r0, .L82+8
+ 591 03cc 8C009FE5 		.loc 1 39 0
+ 592              		ldr	r5, .L82+16
+ 593 03d0 90509FE5 		.loc 1 17 0
+ 594              		str	ip, [r4, #0]
+ 595 03d4 00C084E5 		.loc 1 22 0
+ 596              		bne	.L72
+ 597 03d8 0500001A 		.loc 1 27 0
+ 598              		bl	partition_open
+ 599 03dc FEFFFFEB 		mov	r3, r0
+ 600 03e0 0030A0E1 		.loc 1 31 0
+ 601              		cmp	r3, #0
+ 602 03e4 000053E3 		.loc 1 33 0
+ 603              		ldr	r0, .L82+20
+ 604 03e8 7C009FE5 		.loc 1 27 0
+ 605              		str	r3, [r4, #0]
+ 606 03ec 003084E5 		.loc 1 31 0
+ 607              		beq	.L81
+ 608 03f0 1300000A 	.L72:
+ 609              		.loc 1 39 0
+ 610              		ldr	r3, .L82+12
+ 611 03f4 68309FE5 		ldr	r0, [r3, #0]
+ 612 03f8 000093E5 		bl	fat16_open
+ 613 03fc FEFFFFEB 		.loc 1 40 0
+ 614              		cmp	r0, #0
+ 615 0400 000050E3 		.loc 1 39 0
+ 616              		str	r0, [r5, #0]
+ 617 0404 000085E5 		.loc 1 47 0
+ 618              		ldr	r2, .L82+24
+ 619 0408 60209FE5 		ldr	r1, .L82+28
+ 620 040c 60109FE5 		.loc 1 42 0
+ 621              		ldreq	r0, .L82+32
+ 622 0410 60009F05 		.loc 1 40 0
+ 623              		beq	.L81
+ 624 0414 0A00000A 		.loc 1 47 0
+ 625              		bl	fat16_get_dir_entry_of_path
+ 626 0418 FEFFFFEB 		.loc 1 49 0
+ 627              		ldr	r1, .L82+24
+ 628 041c 4C109FE5 		ldr	r0, [r5, #0]
+ 629 0420 000095E5 		bl	fat16_open_dir
+ 630 0424 FEFFFFEB 		ldr	r3, .L82+36
+ 631 0428 4C309FE5 		mov	r2, r0
+ 632 042c 0020A0E1 		.loc 1 50 0
+ 633              		cmp	r0, #0
+ 634 0430 000050E3 		mov	r1, #0
+ 635 0434 0010A0E3 		.loc 1 52 0
+ 636              		ldr	r0, .L82+40
+ 637 0438 40009FE5 		.loc 1 49 0
+ 638              		str	r2, [r3, #0]
+ 639 043c 002083E5 		.loc 1 50 0
+ 640              		bne	.L75
+ 641 0440 0100001A 	.L81:
+ 642              		.loc 1 52 0
+ 643              		bl	rprintf
+ 644 0444 FEFFFFEB 		mov	r1, #1
+ 645 0448 0110A0E3 	.L75:
+ 646              		.loc 1 56 0
+ 647              		mov	r0, r1
+ 648 044c 0100A0E1 		ldmfd	sp!, {r4, r5, lr}
+ 649 0450 3040BDE8 		bx	lr
+ 650 0454 1EFF2FE1 	.L83:
+ 651              		.align	2
+ 652              	.L82:
+ 653              		.word	sd_raw_read_interval
+ 654 0458 00000000 		.word	sd_raw_write
+ 655 045c 00000000 		.word	sd_raw_read
+ 656 0460 00000000 		.word	partition
+ 657 0464 00000000 		.word	fs
+ 658 0468 00000000 		.word	.LC11
+ 659 046c C0000000 		.word	dir_entry
+ 660 0470 00000000 		.word	.LC13
+ 661 0474 F8000000 		.word	.LC12
+ 662 0478 DC000000 		.word	dd
+ 663 047c 00000000 		.word	.LC14
+ 664 0480 FC000000 	.LFE2:
+ 666              		.bss
+ 667              		.align	2
+ 668              	idx.2185:
+ 669              		.space	4
+ 670 0000 00000000 		.comm	dir_entry,44,4
+ 671              		.comm	fs,4,4
+ 672              		.comm	partition,4,4
+ 673              		.comm	dd,4,4
+ 674              		.comm	fd,4,4
+ 675              		.section	.debug_frame,"",%progbits
+ 856              		.section	.debug_loc,"",%progbits
+DEFINED SYMBOLS
+                            *ABS*:00000000 rootdir.c
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:13     .text:00000000 root_file_exists
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:22     .text:00000000 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:41     .text:00000028 $d
+                            *COM*:00000004 dd
+                            *COM*:00000004 fs
+                            *COM*:0000002c dir_entry
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:49     .text:00000034 root_delete
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:56     .text:00000034 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:87     .text:00000078 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:95     .text:00000084 root_format
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:101    .text:00000084 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:134    .text:000000cc $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:142    .text:000000d8 rootDirectory_files
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:150    .text:000000d8 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:230    .text:00000180 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:237    .text:00000188 rootDirectory_files_stream
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:245    .text:00000188 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:302    .text:00000200 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:669    .bss:00000000 idx.2185
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:345    .text:0000020c print_disk_info
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:352    .text:0000020c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:436    .text:000002ec $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:452    .text:00000318 root_disk_info
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:460    .text:00000318 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:470    .text:00000324 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:476    .text:00000328 root_open
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:484    .text:00000328 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:502    .text:0000034c $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:509    .text:00000354 root_open_new
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:516    .text:00000354 $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:547    .text:00000390 $d
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:569    .text:0000039c openroot
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:575    .text:0000039c $a
+C:\DOCUME~1\Ryan\LOCALS~1\Temp/ccWWaaaa.s:654    .text:00000458 $d
+                            *COM*:00000004 partition
+                            *COM*:00000004 fd
+
+UNDEFINED SYMBOLS
+find_file_in_dir
+fat16_delete_file
+fat16_reset_dir
+fat16_read_dir
+sd_raw_get_info
+rprintf
+fat16_get_fs_free
+fat16_get_fs_size
+open_file_in_dir
+fat16_create_file
+partition_open
+fat16_open
+fat16_get_dir_entry_of_path
+fat16_open_dir
+sd_raw_read_interval
+sd_raw_write
+sd_raw_read
