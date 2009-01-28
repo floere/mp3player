@@ -11,7 +11,6 @@
  *    Frequency? 103.6 MHz? some band where nothing is on.
  *    Let's also send intermittent radio info to let the people
  *    around me know where the good/bad music comes from.
- *
  */
 
 //*******************************************************
@@ -175,10 +174,12 @@ unsigned long int numberOfChars=0;
 	printMenu(current_display);
 	
 	while(1){
+	  // USB connected!
 		if(IOPIN0 & (1<<23))
 		{
 			LCDClear(white);
 			LCDPrintString(USB, 0, black, 7,4,current_display->orientation);
+      delay_ms(1000);
 			VICIntEnClr = 0x30;		//Stop all interrupts to allow USB communication
 			main_msc();
 			reset();
@@ -328,14 +329,14 @@ void bootUp(void)
 	//Configure Timer0
 	T0PR = 300;										//Divide Clock by 300 for 40kHz PS
 	T0TCR |=0X01;									//Enable the clock
-	T0CTCR=0;										//Timer Mode
+	T0CTCR=0;										  //Timer Mode
 	T0MCR=0x0003;									//Interrupt and Reset Timer on Match
 	T0MR0=1000;										//Interrupt on 40Hz
 	
 	//Configure Timer1
-	T1PR = 200;										//Divide Clock by 300 for 40kHz PS
+	T1PR = 200;										//Divide Clock by 200 for ??kHz PS
 	T1TCR |=0X01;									//Enable the clock
-	T1CTCR=0;										//Timer Mode
+	T1CTCR=0;									  	//Timer Mode
 	T1CCR=0x0A00;									//Capture and interrupt on the rising edge of DREQ
 	
 	//Setup the SPI Port
@@ -359,7 +360,7 @@ static void timer1ISR(void)
 	}	
 	vs1002Finish();												//Disable MP3 Comm. Lines
 	T1IR = 0xFF; 												//Clear the timer 0 interrupt
-	VICVectAddr = 0; 											//Update VIC priorities	
+	VICVectAddr = 0; 											//Update VIC priorities
 }
 
 //Usage: None (Automatically Called by FW)
