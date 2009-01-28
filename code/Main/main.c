@@ -116,7 +116,7 @@ unsigned long int numberOfChars=0;
   LCDPrintLogo();			//Print the Sparkfun Logo
   
   // Initialize the FM Transmitter to 97.3
-  initializeFMTransmitter(973);
+  initializeRadio(973);
 
   // Find Out how many files are on the SD card
   PINSEL0 |= (SCLK_PINSEL | MISO_PINSEL | MOSI_PINSEL);	//Make sure SPI is selected for reading the card
@@ -565,83 +565,43 @@ void handleMiddleButton(void){
 	VICIntEnClr = 0x10;
 	delay_ms(250);
 	
-	//If the File Menu is being displayed, middle button acts like play/stop
-	if(current_display == &file_manager){
-		if(!file_is_open){				//If a file isn't already playing then this acts like a play button
-			file_is_open=loadSongInfo(&current_song, &file_manager);	//Get the current song info.
-			if(!file_is_open){			//Make sure this is a valid file
-				LCDClear(white);
-				LCDPrintString(NotFound, 0, black, 1,0,current_display->orientation);
-				delay_ms(1000);
-				LCDClear(black);
-				printMenu(&file_manager);
-			}	
-			else{
-				vs1002Config();							//Enable the MP3 Comm. Lines
-				vs1002SCIWrite(SCI_MODE, SM_SDINEW);	//Make sure the MP3 player is in the right mode.
-				vs1002Finish();							//Disable the MP3 Comm. Lines
-				ledBlueOn();
-				//Send first song data
-				vs1002Config();										//Enable MP3 Comm. Lines
-				while((IOPIN0 & MP3_DREQ) != 0){
-					vs1002SendMusic(current_song.data, MAXBUFFERSIZE);	//Send the buffered song data
-					if(fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0)song_is_over=1;	//Buffer more data if available
-					else song_is_over=0;									//if there's no more data available, set the flag, else leave it alone
-				}
-				vs1002Finish();
-				PINSEL1 |= 0x00000C00;						
-				VICIntEnable |= 0x20;		//Enable Timer 1 Interrupts(This is the "Song Sending" interrupt).
-				IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES);		//Assign LCD pins as Outputs
-			}
-		}	
-		else{							//If a file is already open then this acts like a stop button
-			VICIntEnClr = 0x20;											//Disable Time 0 Interrupts(Stop the "Song Sending" interrupt)
-			ledBlueOff();
-			vs1002Config();												//Enable the MP3 Comm Lines
-			vs1002SCIWrite(SCI_MODE, SM_OUTOFWAV);						//Tell the MP3 Player to jump out of WAV decoding
-			for(int i=0; i<150; i++)vs1002SCIWrite(SCI_MODE, 0x00);	//Send 150 zeroes to the player to clear it's FIFO.
-			vs1002Finish();												//Disable the MP3 Comm. Lines
-			IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES);			//Assign LCD pins as Outputs
-			closeSong(&current_song);									//Close the current song
-			file_is_open=0;												//Clear the global flag
-			VICIntEnable = 0x10;
-		}
-	}
-	
-	//Else we are on the Settings menu, and we need to handle the settins options
-	else{
-		if(file_is_open)quickClear(current_display);
-		else LCDClear(settings_menu.back_color);
-		LCDPrintString(current_display->list[current_display->current_index].file_name,0,current_display->text_color,1,0,current_display->orientation);
+  // If the File Menu is being displayed, middle button acts like play/stop
+  if (current_display == &file_manager) {
+    if (!file_is_open) { // If a file isn't already playing then this acts like a play button
+      file_is_open = loadSongInfo(&current_song, &file_manager); // Get the current song info.
+      if (!file_is_open) { //Make sure this is a valid file
+        LCDClear(white);
+        LCDPrintString(NotFound, 0, black, 1,0,current_display->orientation);
+        delay_ms(1000);
+        LCDClear(black);
+        printMenu(&file_manager);
+      } else {
+        startMP3Player();
+      }
+    } else { // If a file is already open then this acts like a stop button
+      stopMP3Player();
+    }
+  } else { // Else we are on the Settings menu, and we need to handle the settins options
+    if (file_is_open) {
+      quickClear(current_display);
+    } else {
+      LCDClear(settings_menu.back_color);
+    }
+    LCDPrintString(current_display->list[current_display->current_index].file_name,0,current_display->text_color,1,0,current_display->orientation);
 		VICIntEnable|=0x10;
 		if(current_display->current_row==VOLUMEMENU){
 			VICIntEnable |= 0x10;
 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
 			LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
 			while(button_pressed < MID_BUT){
-				VICIntEnClr = 0x10;				//Stop Interrupts to
-				delay_ms(150);					//	debounce the switch					
-				if(button_pressed==UP_BUT){
-					if(volume_setting < 32){
-						volume_setting+=1;
-						vs1002Config();				//Enable the MP3 Comm. Lines
-						vs1002SetVolume(INCREASE);	//Lower the volume
-						vs1002Finish();				//Disable MP3 Comm. Lines
-					}	
-					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
-					LCDPrintString("%d", volume_setting, current_display->text_color, 2, 0, current_display->orientation);
-				}
-				else if(button_pressed==DWN_BUT){
-					if(volume_setting >= 0){
-						volume_setting--;
-						vs1002Config();			//Enable the MP3 Comm. Lines
-						vs1002SetVolume(DECREASE);	//Lower the volume
-						vs1002Finish();			//Disable MP3 Comm. Lines
-					}
-					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
-					LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
-				}
-				VICIntEnable |= 0x10;
+        VICIntEnClr = 0x10;                     // Stop Interrupts to
+        delay_ms(150);                          // debounce the switch
+        if (button_pressed==UP_BUT) {
+          raiseVolume();
+        } else if (button_pressed==DWN_BUT) {
+          lowerVolume();
+        }
+        VICIntEnable |= 0x10;
 			}
 		}	
 		else if(current_display->current_row==RADIOCMENU){
@@ -729,6 +689,23 @@ void reset(void) {
     WDFEED = 0x00;
 }
 
+// Flöre refactors here!
+
+// initializes the FM transmitter to a given frequency.
+// Frequency is given in tenths of a MHz. So 973 means 97.3 MHz.
+//
+void initializeRadio(int frequency) {
+  IOCLR1 |= FM_CS;      //Select SPI for FM Transmitter
+  delay_ms(900);
+  
+  ns73Config();         //Configigure the FM Trans. I/O
+  ns73Init();           //Setup the Default Register Values
+  ns73SetChannel(frequency);  //Transmit to 97.3 FM
+  
+  IOSET1 |= FM_CS;      //Remove FM Transmitter from SPI bus
+  delay_ms(100);
+}
+
 // Enables the radio.
 //
 void enableRadio(void) {
@@ -763,29 +740,69 @@ void disableRadio(void) {
   IOSET1 |= FM_CS;      //Unselect the FM transmitter
 }
 
+// Start playing.
+//
+void startMP3Player(void) {
+  vs1002Config();                       // Enable the MP3 Comm. Lines
+  vs1002SCIWrite(SCI_MODE, SM_SDINEW);  // Make sure the MP3 player is in the right mode.
+  vs1002Finish();                       // Disable the MP3 Comm. Lines
+  ledBlueOn();
+  sendMP3Data();                        // Send first song data
+  PINSEL1 |= 0x00000C00;
+  VICIntEnable |= 0x20;                 // Enable Timer 1 Interrupts(This is the "Song Sending" interrupt).
+  IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES); // Assign LCD pins as Outputs
+}
+
 // Sends a piece of mp3 data from the current song.
 //
 void sendMP3Data(void) {
   vs1002Config();                                         // Enable MP3 Comm. Lines
   while (IOPIN0 & MP3_DREQ) {
     vs1002SendMusic(current_song.data, MAXBUFFERSIZE);    //Send 32 Bytes of buffered song data
-    if (fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0) { song_is_over = 1; }  // Buffer more data if available
+    // Buffer more data if available
+    if (fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0) { song_is_over = 1; }
     else song_is_over = 0;                                // If there's no more data available, set the flag, else leave it alone
   }
   vs1002Finish();                                         // Disable MP3 Comm. Lines
 }
 
-// initializes the FM transmitter to a given frequency.
-// Frequency is given in tenths of a MHz. So 973 means 97.3 MHz.
+// Stop playing.
 //
-void initializeFMTransmitter(int frequency) {
-  IOCLR1 |= FM_CS;      //Select SPI for FM Transmitter
-  delay_ms(900);
-  
-  ns73Config();         //Configigure the FM Trans. I/O
-  ns73Init();           //Setup the Default Register Values
-  ns73SetChannel(frequency);  //Transmit to 97.3 FM
-  
-  IOSET1 |= FM_CS;      //Remove FM Transmitter from SPI bus
-  delay_ms(100);
+void stopMP3Player(void) {
+  VICIntEnClr = 0x20;                                     // Disable Time 0 Interrupts(Stop the "Song Sending" interrupt)
+  ledBlueOff();
+  vs1002Config();                                         // Enable the MP3 Comm Lines
+  vs1002SCIWrite(SCI_MODE, SM_OUTOFWAV);                  // Tell the MP3 Player to jump out of WAV decoding
+  for(int i=0; i<150; i++) { vs1002SCIWrite(SCI_MODE, 0x00); } // Send 150 zeroes to the player to clear it's FIFO.
+  vs1002Finish();                                         // Disable the MP3 Comm. Lines
+  IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES);       // Assign LCD pins as Outputs
+  closeSong(&current_song);                               // Close the current song
+  file_is_open = 0;                                       // Clear the global flag
+  VICIntEnable = 0x10;
+}
+
+// Raises the Volume by 1.
+//
+void raiseVolume(void) {
+  if(volume_setting < 32){
+    volume_setting += 1;
+    vs1002Config();             // Enable the MP3 Comm. Lines
+    vs1002SetVolume(INCREASE);  // Raise the volume
+    vs1002Finish();             // Disable MP3 Comm. Lines
+  }
+  LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+  LCDPrintString("%d", volume_setting, current_display->text_color, 2, 0, current_display->orientation);
+}
+
+// Lowers the volume by 1.
+//
+void lowerVolume(void) {
+  if(volume_setting >= 0){
+    volume_setting--;
+    vs1002Config();             // Enable the MP3 Comm. Lines
+    vs1002SetVolume(DECREASE);  // Lower the volume
+    vs1002Finish();             // Disable MP3 Comm. Lines
+  }
+  LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+  LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
 }

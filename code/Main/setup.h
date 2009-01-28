@@ -60,9 +60,17 @@ void handleDownButton(DisplayStruct *display, FileStruct *Files);
 void quickClear(DisplayStruct *display);
 // void reset(void);
 
-// Flöre meddling
-void initializeFMTransmitter(int);
+// Flöre meddling...
+// Radio handling
+void initializeRadio(int);
 void enableRadio(void);
 void disableRadio(void);
 
+// MP3 handling
+void startMP3Player(void);
 void sendMP3Data(void);
+void stopMP3Player(void);
+
+// Volume handling
+void raiseVolume(void);
+void lowerVolume(void);
