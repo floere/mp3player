@@ -75,7 +75,7 @@ static DisplayStruct *current_display;	//
 static int NUMBEROFFILES=0;
 
 int volume_setting=16, radio_channel=973;
-char radio_enable=OFF;
+char radio_enable = OFF;
 
 //*******************************************************
 //					Display Strings
@@ -115,9 +115,9 @@ unsigned long int numberOfChars=0;
   LCDClear(white);		//Clear the screen with white
   LCDPrintLogo();			//Print the Sparkfun Logo
   
-  // Initialize the FM Transmitter to 97.3
-  initializeRadio(973);
-
+  // Initialize the FM Transmitter to 100.0
+  initializeRadio(1000);
+  
   // Find Out how many files are on the SD card
   PINSEL0 |= (SCLK_PINSEL | MISO_PINSEL | MOSI_PINSEL);	//Make sure SPI is selected for reading the card
   do{
@@ -257,9 +257,9 @@ unsigned long int numberOfChars=0;
 // The function will cause the firmware to delay for "count" milleseconds.
 void delay_ms(int count)
 {
-    int i;
-    count *= 10000;
-    for (i = 0; i < count; i++) { asm volatile ("nop"); }
+  int i;
+  count *= 10000;
+  for (i = 0; i < count; i++) { asm volatile ("nop"); }
 }
 
 // Usage: bootUp();
@@ -634,9 +634,12 @@ void handleMiddleButton(void){
 			IOSET1 |= FM_CS;				//Unselect the FM transmitter
 		}
 		else if(current_display->current_row==RADIOPMENU){
-			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
-			if(radio_enable)LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
-			else LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
+      LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+      if (radio_enable) {
+        LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
+      } else {
+        LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
+      }
 			button_pressed=NO_BUT;
 			VICIntEnable |= 0x10;
 			while(button_pressed < MID_BUT){
@@ -682,11 +685,11 @@ void quickClear(DisplayStruct *display){
 // Intentionally faults Watchdog to trigger a reset condition
 //
 void reset(void) {
-    WDMOD |= 3;
-    WDFEED = 0xAA;
-    WDFEED = 0x55;
-    WDFEED = 0xAA;
-    WDFEED = 0x00;
+  WDMOD |= 3;
+  WDFEED = 0xAA;
+  WDFEED = 0x55;
+  WDFEED = 0xAA;
+  WDFEED = 0x00;
 }
 
 // Flöre refactors here!
@@ -730,7 +733,7 @@ void enableRadio(void) {
 // Disables the radio.
 //
 void disableRadio(void) {
-  radio_enable=OFF;
+  radio_enable = OFF;
   
   // graphics
   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
