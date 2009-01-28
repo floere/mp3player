@@ -58,5 +58,11 @@ void handleMiddleButton(void);
 void handleUpButton(DisplayStruct *display, FileStruct *Files);
 void handleDownButton(DisplayStruct *display, FileStruct *Files);
 void quickClear(DisplayStruct *display);
-void reset(void);
+// void reset(void);
 
+// Flöre meddling
+void initializeFMTransmitter(int);
+void enableRadio(void);
+void disableRadio(void);
+
+void sendMP3Data(void);

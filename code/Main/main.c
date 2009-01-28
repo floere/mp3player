@@ -100,54 +100,48 @@ unsigned long int numberOfChars=0;
 //*******************************************************
 //					Main Code
 //*******************************************************
-	//Initialize ARM I/O
-	bootUp();
-	
-	//Initialize the MP3 player with double clock speed and lower volume
-	vs1002Config();			//Configure MP3 I/O
-	vs1002Reset();			//Reset MP3 Player
-	vs1002Init();			//Double the clock speed and set to "New" mode
-	for(char i=0; i<2; i++)vs1002SetVolume(DECREASE);		//Lower the Volume!!
-	vs1002Finish();			//Restore the SPI I/O lines
-	
-	//Show the splash-screen (Sparkfun Logo)
-	LCDInit();				//Initialize the LCD
-	LCDClear(white);		//Clear the screen with white
-	LCDPrintLogo();			//Print the Sparkfun Logo
-	
-	//Initialize the FM Transmitter to 97.3
-	IOCLR1 |= FM_CS;			//Select SPI for FM Transmitter
-	delay_ms(900);				//
-	ns73Config();				//Configigure the FM Trans. I/O
-	ns73Init();					//Setup the Default Register Values
-	ns73SetChannel(973);		//Transmit to 97.3 FM	
-	IOSET1 |= FM_CS;			//Remove FM Transmitter from SPI bus
-	delay_ms(100);				//
+  //Initialize ARM I/O
+  bootUp();
+  
+  //Initialize the MP3 player with double clock speed and lower volume
+  vs1002Config();			//Configure MP3 I/O
+  vs1002Reset();			//Reset MP3 Player
+  vs1002Init();			//Double the clock speed and set to "New" mode
+  for(char i=0; i<5; i++)vs1002SetVolume(DECREASE);		//Lower the Volume!!
+  vs1002Finish();			//Restore the SPI I/O lines
+  
+  //Show the splash-screen (Sparkfun Logo)
+  LCDInit();				//Initialize the LCD
+  LCDClear(white);		//Clear the screen with white
+  LCDPrintLogo();			//Print the Sparkfun Logo
+  
+  // Initialize the FM Transmitter to 97.3
+  initializeFMTransmitter(973);
 
-	//Find Out how many files are on the SD card
-	PINSEL0 |= (SCLK_PINSEL | MISO_PINSEL | MOSI_PINSEL);	//Make sure SPI is selected for reading the card
-	do{
-		numberOfChars++;
-	}while(rootDirectory_files_stream(0)!='\0');			//Get the total number of characters in the filenames on the SD card
-	char tempNames[numberOfChars];	//This is one array that contains all of the filenames in the SD card, seperated by '\0'
-	NUMBEROFFILES=rootDirectory_files(tempNames, numberOfChars+1);
-	FileStruct Files[NUMBEROFFILES];						//Dynamically create an array for all of the filenames
-	
-	//Get all of the filenames into a Global Array
-	int chartracker=0;	
-	for(int j=0; j<NUMBEROFFILES; j++){
-		for(int i=0; i<=MAXFILENAMELEN+1; i++){
-			if(chartracker <= numberOfChars){
-				if(tempNames[chartracker]==','){
-					Files[j].file_name[i] = '\0';
-					i=MAXFILENAMELEN+1;
-				}
-				else Files[j].file_name[i] = tempNames[chartracker];
-				chartracker++;
-			}
-			else Files[j].file_name[i] ='\0';
-		}	
-	}
+  // Find Out how many files are on the SD card
+  PINSEL0 |= (SCLK_PINSEL | MISO_PINSEL | MOSI_PINSEL);	//Make sure SPI is selected for reading the card
+  do{
+  	numberOfChars++;
+  }while(rootDirectory_files_stream(0)!='\0');			//Get the total number of characters in the filenames on the SD card
+  char tempNames[numberOfChars];	//This is one array that contains all of the filenames in the SD card, seperated by '\0'
+  NUMBEROFFILES=rootDirectory_files(tempNames, numberOfChars+1);
+  FileStruct Files[NUMBEROFFILES];						//Dynamically create an array for all of the filenames
+  
+  //Get all of the filenames into a Global Array
+  int chartracker=0;	
+  for(int j=0; j<NUMBEROFFILES; j++){
+  	for(int i=0; i<=MAXFILENAMELEN+1; i++){
+  		if(chartracker <= numberOfChars){
+  			if(tempNames[chartracker]==','){
+  				Files[j].file_name[i] = '\0';
+  				i=MAXFILENAMELEN+1;
+  			}
+  			else Files[j].file_name[i] = tempNames[chartracker];
+  			chartracker++;
+  		}
+  		else Files[j].file_name[i] ='\0';
+  	}	
+  }
 	
 	
 	//Load the file manager with the songs/files on the SD card and set this as the current display
@@ -172,6 +166,9 @@ unsigned long int numberOfChars=0;
 	PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
 	LCDClear(current_display->back_color);
 	printMenu(current_display);
+	
+	// TODO Floere remove
+	LCDPrintString("GO GO MP3!", 0, current_display->text_color, 2, 0, current_display->orientation);
 	
 	while(1){
 	  // USB connected!
@@ -255,20 +252,19 @@ unsigned long int numberOfChars=0;
 }
 
 
-//Usage: delay_ms(1000);
-//Inputs: int count: Number of milliseconds to delay
-//The function will cause the firmware to delay for "count" milleseconds.
+// Usage: delay_ms(1000);
+// Inputs: int count: Number of milliseconds to delay
+// The function will cause the firmware to delay for "count" milleseconds.
 void delay_ms(int count)
 {
     int i;
     count *= 10000;
-    for (i = 0; i < count; i++)
-        asm volatile ("nop");
+    for (i = 0; i < count; i++) { asm volatile ("nop"); }
 }
 
-//Usage: bootUp();
-//Inputs: None
-//This function initializes the serial port, the SD card, the I/O pins and the interrupts
+// Usage: bootUp();
+// Inputs: None
+// This function initializes the serial port, the SD card, the I/O pins and the interrupts
 void bootUp(void)
 {
     rprintf_devopen(putc_serial0); //Init rprintf
@@ -284,83 +280,77 @@ void bootUp(void)
         rprintf("SD OpenRoot Error\n");
     }
      
-	//Initialize I/O Ports and Peripherals
-	//Setup the MP3 I/O Lines
-	IODIR0 |= MP3_XCS;
-	IODIR0 &= ~MP3_DREQ;
-	PINSEL1 |= 0x00000C00;	//Set the MP3_DREQ Pin to be a capture pin
-	IODIR1 |= MP3_XDCS | MP3_GPIO0 | MP3_XRES;	
-	
-	//Setupt the FM Trans. Lines
-	IODIR1 |= FM_LA; 												//FM Trans Outputs (Leave SPI pins unconfigured for now)
-	IODIR1 |= FM_CS;
-	
-	//Setup the SD Card I/O Lines
-	IODIR0 |= SD_CS;												//SD Card Outputs
-	
-	//Setup the Accelerometer I/O Lines
-	IODIR0 |= (GS1 | GS2);											//Accelerometer Outputs
-	PINSEL0 |= (MMA_X_PINSEL | MMA_Y_PINSEL | MMA_Z_PINSEL);		//Make sure that ADC pins have ADC Functions selected
-	IOCLR0 = (GS1 | GS2);											//Init. Accel. to 1.5G Mode
-	
-	//Setup the LCD I/O Lines
-	IODIR0 |= (LCD_RES | LCD_CS);									//LCD Outputs
-	
-	//Setup the LED Lines										
-	IODIR0 |= (LED_BLU | LED_RED | LED_GRN);						//Led's
-	ledBlueOff();
-	ledRedOff();
-	ledGrnOff();
-	
-	//Setup the Buttons
-	IODIR1 &= (~SW_UP & ~SW_DWN & ~SW_MID);		//Button Inputs
-
-	IODIR0 &= ~(1<<23);							//Set the Vbus line as an input
-
+  //Initialize I/O Ports and Peripherals
+  //Setup the MP3 I/O Lines
+  IODIR0 |= MP3_XCS;
+  IODIR0 &= ~MP3_DREQ;
+  PINSEL1 |= 0x00000C00;	//Set the MP3_DREQ Pin to be a capture pin
+  IODIR1 |= MP3_XDCS | MP3_GPIO0 | MP3_XRES;	
+  
+  //Setupt the FM Trans. Lines
+  IODIR1 |= FM_LA; 												//FM Trans Outputs (Leave SPI pins unconfigured for now)
+  IODIR1 |= FM_CS;
+  
+  //Setup the SD Card I/O Lines
+  IODIR0 |= SD_CS;												//SD Card Outputs
+  
+  //Setup the Accelerometer I/O Lines
+  IODIR0 |= (GS1 | GS2);											//Accelerometer Outputs
+  PINSEL0 |= (MMA_X_PINSEL | MMA_Y_PINSEL | MMA_Z_PINSEL);		//Make sure that ADC pins have ADC Functions selected
+  IOCLR0 = (GS1 | GS2);											//Init. Accel. to 1.5G Mode
+  
+  //Setup the LCD I/O Lines
+  IODIR0 |= (LCD_RES | LCD_CS);									//LCD Outputs
+  
+  //Setup the LED Lines										
+  IODIR0 |= (LED_BLU | LED_RED | LED_GRN);						//Led's
+  ledBlueOff();
+  ledRedOff();
+  ledGrnOff();
+  
+  //Setup the Buttons
+  IODIR1 &= (~SW_UP & ~SW_DWN & ~SW_MID);		//Button Inputs
+  
+  IODIR0 &= ~(1<<23);							//Set the Vbus line as an input
+  
     //Setupt the Interrupts
-	VPBDIV=1;										// Set PCLK equal to the System Clock	
-	VICIntSelect = ~0x30; 							// Timer 0 AND TIMER 1 interrupt is an IRQ interrupt
+  VPBDIV=1;										// Set PCLK equal to the System Clock	
+  VICIntSelect = ~0x30; 							// Timer 0 AND TIMER 1 interrupt is an IRQ interrupt
     VICIntEnable = 0x10; 							// Enable Timer 0 Interrupts (Don't start sending song data with Timer 1)
     VICVectCntl0= 0x25; 							// Use slot 0 for timer 1 interrupt
     VICVectAddr0 = (unsigned int)timer1ISR; 		// Set the address of ISR for slot 1		
     VICVectCntl1 = 0x24; 							// Use slot 1 for timer 0 interrupt
     VICVectAddr1 = (unsigned int)timer0ISR; 		// Set the address of ISR for slot 1
-	
-	//Configure Timer0
-	T0PR = 300;										//Divide Clock by 300 for 40kHz PS
-	T0TCR |=0X01;									//Enable the clock
-	T0CTCR=0;										  //Timer Mode
-	T0MCR=0x0003;									//Interrupt and Reset Timer on Match
-	T0MR0=1000;										//Interrupt on 40Hz
-	
-	//Configure Timer1
-	T1PR = 200;										//Divide Clock by 200 for ??kHz PS
-	T1TCR |=0X01;									//Enable the clock
-	T1CTCR=0;									  	//Timer Mode
-	T1CCR=0x0A00;									//Capture and interrupt on the rising edge of DREQ
-	
-	//Setup the SPI Port
-    S0SPCCR = 64;              											// SCK = 1 MHz, counter > 8 and even
-    S0SPCR  = 0x20;                										// Master, no interrupt enable, 8 bits	
+  
+  //Configure Timer0
+  T0PR = 300;										//Divide Clock by 300 for 40kHz PS
+  T0TCR |=0X01;									//Enable the clock
+  T0CTCR=0;										  //Timer Mode
+  T0MCR=0x0003;									//Interrupt and Reset Timer on Match
+  T0MR0=1000;										//Interrupt on 40Hz
+  
+  //Configure Timer1
+  T1PR = 200;										//Divide Clock by 200 for ??kHz PS
+  T1TCR |=0X01;									//Enable the clock
+  T1CTCR=0;									  	//Timer Mode
+  T1CCR=0x0A00;									//Capture and interrupt on the rising edge of DREQ
+  
+  //Setup the SPI Port
+  S0SPCCR = 64;                 // SCK = 1 MHz, counter > 8 and even
+  S0SPCR  = 0x20;               // Master, no interrupt enable, 8 bits	
 }
 
-//Usage: None (Automatically Called by FW)
-//Inputs: None
-//This function is a global interrupt called by a match on the Timer 0 match.  This interrupt
-//	is responsible for sending music to the MP3 player when it is needed. 
-//WARNING: Altering the Timer 0 Prescale register or Timer 0 Match value will put proper MP3 playing at risk.
-//			Adding superfluous code to this interrupt section may also contribute to improper MP3 playback.
-static void timer1ISR(void)
-{
-	vs1002Config();												//Enable MP3 Comm. Lines
-	while(IOPIN0 & MP3_DREQ){
-		vs1002SendMusic(current_song.data, MAXBUFFERSIZE);		//Send the buffered song data
-		if(fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0)song_is_over=1;	//Buffer more data if available
-		else song_is_over=0;									//if there's no more data available, set the flag, else leave it alone
-	}	
-	vs1002Finish();												//Disable MP3 Comm. Lines
-	T1IR = 0xFF; 												//Clear the timer 0 interrupt
-	VICVectAddr = 0; 											//Update VIC priorities
+//  Usage: None (Automatically Called by FW)
+//  Inputs: None
+//  This function is a global interrupt called by a match on the Timer 0 match.
+//  This interrupt is responsible for sending music to the MP3 player when it is needed. 
+//  WARNING: Altering the Timer 0 Prescale register or Timer 0 Match value will put proper MP3 playing at risk.
+//           Adding superfluous code to this interrupt section may also contribute to improper MP3 playback.
+//
+static void timer1ISR(void) {
+  sendMP3Data();
+  T1IR = 0xFF;      // Clear the timer 0 interrupt
+  VICVectAddr = 0;  // Update VIC priorities
 }
 
 //Usage: None (Automatically Called by FW)
@@ -385,29 +375,29 @@ static void timer0ISR(void)
 //Function returns the value of the button that is currently being pressed.
 // UP_BUT, DWN_BUT, and MID_BUT values can be viewed in MP3Dev.h
 char getButton(void){
-	if(!(IOPIN1 & SW_UP)) return UP_BUT;
-	else if(!(IOPIN1 & SW_DWN)) return DWN_BUT;
-	else if(!(IOPIN1 & SW_MID)) return MID_BUT;
-	return NO_BUT;
+  if(!(IOPIN1 & SW_UP)) return UP_BUT;
+  else if(!(IOPIN1 & SW_DWN)) return DWN_BUT;
+  else if(!(IOPIN1 & SW_MID)) return MID_BUT;
+  return NO_BUT;
 }
 
 
 void getNewFiles(DisplayStruct *files, FileStruct *file_list){
-	if(files->current_page < files->total_pages){
-		for(int i =0; i<NUMROWS; i++){
-			for(int j=0; j<MAXFILENAMELEN; j++){
-				files->list[i].file_name[j] = file_list[files->current_page*NUMROWS+i].file_name[j];
-			}
-		}
-	}
-	else{
-		for(int i=0; i<(NUMBEROFFILES-files->total_pages*NUMROWS); i++){
-			for(int j=0; j<MAXFILENAMELEN; j++){
-				files->list[i].file_name[j] = file_list[files->current_page*NUMROWS+i].file_name[j];
-			}
-		}
-		for(int i=(NUMBEROFFILES-files->total_pages*NUMROWS); i<NUMROWS; i++)files->list[i].file_name[0]='\0';
-	}
+  if(files->current_page < files->total_pages){
+    for(int i =0; i<NUMROWS; i++){
+      for(int j=0; j<MAXFILENAMELEN; j++){
+        files->list[i].file_name[j] = file_list[files->current_page*NUMROWS+i].file_name[j];
+      }
+    }
+  }
+  else{
+    for(int i=0; i<(NUMBEROFFILES-files->total_pages*NUMROWS); i++){
+      for(int j=0; j<MAXFILENAMELEN; j++){
+        files->list[i].file_name[j] = file_list[files->current_page*NUMROWS+i].file_name[j];
+      }
+    }
+    for(int i=(NUMBEROFFILES-files->total_pages*NUMROWS); i<NUMROWS; i++)files->list[i].file_name[0]='\0';
+  }
 }
 
 //Usage: file_is_open = loadSongInfo(&current_song, &file_manager);
@@ -693,30 +683,10 @@ void handleMiddleButton(void){
 				VICIntEnClr = 0x10;	//Stop Interrupts to
 				delay_ms(100);		//	debounce the switch					
 				if(button_pressed==UP_BUT){
-					//Enable Radio
-					radio_enable=ON;
-					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
-					LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
-					
-					IOCLR1 |= FM_CS;			//Select the FM transmitter
-					delay_ms(100);
-					ns73Config();				//Configigure the FM Trans. I/O
-					ns73Send(R0, PE | AG);		//Power up the radio	
-					IOSET1 |= FM_CS;			//Unselect the FM transmitter
-
+          enableRadio();
 				}
 				else if(button_pressed==DWN_BUT){
-					//Disable Radio
-					radio_enable=OFF;
-					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
-					LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
-
-					IOCLR1 |= FM_CS;			//Select the FM transmitter
-					delay_ms(100);
-					ns73Config();				//Configigure the FM Trans. I/O
-					ns73Send(R0, MUTE);		//Power up the radio	
-					IOSET1 |= FM_CS;			//Unselect the FM transmitter	
-
+          disableRadio();
 				}
 				VICIntEnable |= 0x10;
 			}
@@ -728,34 +698,94 @@ void handleMiddleButton(void){
 	VICIntEnable |= 0x10;
 }
 
-
-//Usage: quickClear(currentDisplay);
-//Inputs: DisplayStruct *display - pointer to the display that contains the current display
-//Outputs: None
-//Description: Rather than painting every pixel a specific color (like LCDClear does) this routine
-//			   will simply color all of the text the same color as the background, giving the illusion
-//			   of a clear screen.  Only works with the background color.  Much faster than LCDClear, and is
-//			   good to use while an MP3 is playing.
+//  Usage: quickClear(currentDisplay);
+//  Inputs: DisplayStruct *display - pointer to the display that contains the current display
+//  Outputs: None
+//  Description: Rather than painting every pixel a specific color (like LCDClear does) this routine
+//               will simply color all of the text the same color as the background, giving the illusion
+//               of a clear screen.  Only works with the background color.  Much faster than LCDClear, and is
+//               good to use while an MP3 is playing.
+//
 void quickClear(DisplayStruct *display){
-	PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
-	//If we're on the first page of the menu, we also need to clear the title.
-	if(display->current_page==0){
-		LCDPrintString(display->title,0, display->back_color, 0,0,display->orientation);
-		
-	}
-	LCDSetRowColor(display->current_row, 0, display->back_color, display->orientation);
-	for(int j=0; j<NUMROWS; j++){
-		LCDPrintString(display->list[j].file_name,0, display->back_color, j+1,0,display->orientation);
-		LCDPrintString(newline,0, black, j+1,0,0);
-	}
+  PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
+  //If we're on the first page of the menu, we also need to clear the title.
+  if (display->current_page==0) {
+    LCDPrintString(display->title, 0, display->back_color, 0, 0, display->orientation);
+  }
+  LCDSetRowColor(display->current_row, 0, display->back_color, display->orientation);
+  for (int j=0; j<NUMROWS; j++) {
+    LCDPrintString(display->list[j].file_name, 0, display->back_color, j+1, 0, display->orientation);
+    LCDPrintString(newline, 0, black, j+1, 0, 0);
+  }
 }
 
-void reset(void)
-{
-    // Intentionally fault Watchdog to trigger a reset condition
+// Intentionally faults Watchdog to trigger a reset condition
+//
+void reset(void) {
     WDMOD |= 3;
     WDFEED = 0xAA;
     WDFEED = 0x55;
     WDFEED = 0xAA;
     WDFEED = 0x00;
+}
+
+// Enables the radio.
+//
+void enableRadio(void) {
+  radio_enable = ON;
+  
+  // graphics
+  LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+  LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
+  
+  // send data
+  IOCLR1 |= FM_CS;        //Select the FM transmitter
+  delay_ms(100);
+  ns73Config();           //Configure the FM Trans. I/O
+  ns73Send(R0, PE | AG);  //Power up the radio
+  IOSET1 |= FM_CS;        //Unselect the FM transmitter
+}
+
+// Disables the radio.
+//
+void disableRadio(void) {
+  radio_enable=OFF;
+  
+  // graphics
+  LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+  LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
+  
+  // send data
+  IOCLR1 |= FM_CS;      //Select the FM transmitter
+  delay_ms(100);
+  ns73Config();         //Configure the FM Trans. I/O
+  ns73Send(R0, MUTE);   // Mute the radio	
+  IOSET1 |= FM_CS;      //Unselect the FM transmitter
+}
+
+// Sends a piece of mp3 data from the current song.
+//
+void sendMP3Data(void) {
+  vs1002Config();                                         // Enable MP3 Comm. Lines
+  while (IOPIN0 & MP3_DREQ) {
+    vs1002SendMusic(current_song.data, MAXBUFFERSIZE);    //Send 32 Bytes of buffered song data
+    if (fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0) { song_is_over = 1; }  // Buffer more data if available
+    else song_is_over = 0;                                // If there's no more data available, set the flag, else leave it alone
+  }
+  vs1002Finish();                                         // Disable MP3 Comm. Lines
+}
+
+// initializes the FM transmitter to a given frequency.
+// Frequency is given in tenths of a MHz. So 973 means 97.3 MHz.
+//
+void initializeFMTransmitter(int frequency) {
+  IOCLR1 |= FM_CS;      //Select SPI for FM Transmitter
+  delay_ms(900);
+  
+  ns73Config();         //Configigure the FM Trans. I/O
+  ns73Init();           //Setup the Default Register Values
+  ns73SetChannel(frequency);  //Transmit to 97.3 FM
+  
+  IOSET1 |= FM_CS;      //Remove FM Transmitter from SPI bus
+  delay_ms(100);
 }
