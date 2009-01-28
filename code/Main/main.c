@@ -589,7 +589,7 @@ void handleMiddleButton(void){
     }
     LCDPrintString(current_display->list[current_display->current_index].file_name,0,current_display->text_color,1,0,current_display->orientation);
 		VICIntEnable|=0x10;
-		if(current_display->current_row==VOLUMEMENU){
+		if (current_display->current_row == VOLUMEMENU) {
 			VICIntEnable |= 0x10;
 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
 			LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
@@ -691,6 +691,10 @@ void reset(void) {
 
 // Flöre refactors here!
 
+//
+// RADIO
+//
+
 // initializes the FM transmitter to a given frequency.
 // Frequency is given in tenths of a MHz. So 973 means 97.3 MHz.
 //
@@ -740,6 +744,10 @@ void disableRadio(void) {
   IOSET1 |= FM_CS;      //Unselect the FM transmitter
 }
 
+//
+// MP3
+//
+
 // Start playing.
 //
 void startMP3Player(void) {
@@ -780,6 +788,10 @@ void stopMP3Player(void) {
   file_is_open = 0;                                       // Clear the global flag
   VICIntEnable = 0x10;
 }
+
+//
+// VOLUME
+//
 
 // Raises the Volume by 1.
 //
