@@ -360,13 +360,17 @@ static void timer1ISR(void) {
 // and setting the appropriate global flag if either has occured.
 static void timer0ISR(void)
 {
-	button_pressed=getButton();			//Find out if a button has been pressed, and which one
-	cur_position=MMA_get_y();			//Get the current position of the screen
-	if((prev_position<700 && cur_position>700)||(prev_position>700 && cur_position<700))update_screen=1; 
-	else update_screen=0;				//Determine if the accelerometer has been rotated
-	prev_position=cur_position;			//Save the position value for later reference
-	T0IR = 0xFF;						//Clear the timer interrupt
-	VICVectAddr =0;						//Update the VIC priorities
+  button_pressed = getButton(); // Find out if a button has been pressed, and which one
+  cur_position = MMA_get_y();   // Get the current position of the screen
+  if((prev_position<700 && cur_position>700) || (prev_position>700 && cur_position<700)) {
+    update_screen = 1;
+  } else {
+    update_screen = 0; // Determine if the accelerometer has been rotated
+  }
+  prev_position = cur_position; // Save the position value for later reference
+  
+  T0IR = 0xFF;                  // Clear the timer interrupt
+  VICVectAddr =0;               // Update the VIC priorities
 }
 
 //Usage: button_value=getButton();

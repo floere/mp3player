@@ -58,7 +58,6 @@ void handleMiddleButton(void);
 void handleUpButton(DisplayStruct *display, FileStruct *Files);
 void handleDownButton(DisplayStruct *display, FileStruct *Files);
 void quickClear(DisplayStruct *display);
-// void reset(void);
 
 // Flöre meddling...
 // Radio handling

@@ -82,7 +82,7 @@
   75:main.c        **** static int NUMBEROFFILES=0;
   76:main.c        **** 
   77:main.c        **** int volume_setting=16, radio_channel=973;
-  78:main.c        **** char radio_enable=OFF;
+  78:main.c        **** char radio_enable = OFF;
   79:main.c        **** 
   80:main.c        **** //*******************************************************
   81:main.c        **** //					Display Strings
@@ -122,9 +122,9 @@
  115:main.c        ****   LCDClear(white);		//Clear the screen with white
  116:main.c        ****   LCDPrintLogo();			//Print the Sparkfun Logo
  117:main.c        ****   
- 118:main.c        ****   // Initialize the FM Transmitter to 97.3
- 119:main.c        ****   initializeRadio(973);
- 120:main.c        **** 
+ 118:main.c        ****   // Initialize the FM Transmitter to 100.0
+ 119:main.c        ****   initializeRadio(1000);
+ 120:main.c        ****   
  121:main.c        ****   // Find Out how many files are on the SD card
  122:main.c        ****   PINSEL0 |= (SCLK_PINSEL | MISO_PINSEL | MOSI_PINSEL);	//Make sure SPI is selected for reading the
  123:main.c        ****   do{
@@ -270,8 +270,8 @@
   19              		@ frame_needed = 0, uses_anonymous_args = 0
   20              		@ link register save eliminated.
   21              	.LVL0:
- 260:main.c        ****     int i;
- 261:main.c        ****     count *= 10000;
+ 260:main.c        ****   int i;
+ 261:main.c        ****   count *= 10000;
   22              		.loc 1 261 0
   23 0000 1C309FE5 		ldr	r3, .L5
   24 0004 930002E0 		mul	r2, r3, r0
@@ -280,7 +280,7 @@
   27              	.LVL2:
   28 000c 010000EA 		b	.L2
   29              	.L3:
- 262:main.c        ****     for (i = 0; i < count; i++) { asm volatile ("nop"); }
+ 262:main.c        ****   for (i = 0; i < count; i++) { asm volatile ("nop"); }
   30              		.loc 1 262 0
   31              	@ 262 "main.c" 1
   32 0010 0000A0E1 		nop
@@ -949,85 +949,88 @@
  634:main.c        **** 			IOSET1 |= FM_CS;				//Unselect the FM transmitter
  635:main.c        **** 		}
  636:main.c        **** 		else if(current_display->current_row==RADIOPMENU){
- 637:main.c        **** 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
- 638:main.c        **** 			if(radio_enable)LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orient
- 639:main.c        **** 			else LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
- 640:main.c        **** 			button_pressed=NO_BUT;
- 641:main.c        **** 			VICIntEnable |= 0x10;
- 642:main.c        **** 			while(button_pressed < MID_BUT){
- 643:main.c        **** 				VICIntEnClr = 0x10;	//Stop Interrupts to
- 644:main.c        **** 				delay_ms(100);		//	debounce the switch					
- 645:main.c        **** 				if(button_pressed==UP_BUT){
- 646:main.c        ****           enableRadio();
- 647:main.c        **** 				}
- 648:main.c        **** 				else if(button_pressed==DWN_BUT){
- 649:main.c        ****           disableRadio();
+ 637:main.c        ****       LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 638:main.c        ****       if (radio_enable) {
+ 639:main.c        ****         LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
+ 640:main.c        ****       } else {
+ 641:main.c        ****         LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
+ 642:main.c        ****       }
+ 643:main.c        **** 			button_pressed=NO_BUT;
+ 644:main.c        **** 			VICIntEnable |= 0x10;
+ 645:main.c        **** 			while(button_pressed < MID_BUT){
+ 646:main.c        **** 				VICIntEnClr = 0x10;	//Stop Interrupts to
+ 647:main.c        **** 				delay_ms(100);		//	debounce the switch					
+ 648:main.c        **** 				if(button_pressed==UP_BUT){
+ 649:main.c        ****           enableRadio();
  650:main.c        **** 				}
- 651:main.c        **** 				VICIntEnable |= 0x10;
- 652:main.c        **** 			}
- 653:main.c        **** 		}
- 654:main.c        **** 		if(file_is_open)quickClear(current_display);
- 655:main.c        **** 		else LCDClear(current_display->back_color);
- 656:main.c        **** 		printMenu(current_display);
- 657:main.c        **** 	}
- 658:main.c        **** 	VICIntEnable |= 0x10;
- 659:main.c        **** }
- 660:main.c        **** 
- 661:main.c        **** //  Usage: quickClear(currentDisplay);
- 662:main.c        **** //  Inputs: DisplayStruct *display - pointer to the display that contains the current display
- 663:main.c        **** //  Outputs: None
- 664:main.c        **** //  Description: Rather than painting every pixel a specific color (like LCDClear does) this routin
- 665:main.c        **** //               will simply color all of the text the same color as the background, giving the ill
- 666:main.c        **** //               of a clear screen.  Only works with the background color.  Much faster than LCDCle
- 667:main.c        **** //               good to use while an MP3 is playing.
- 668:main.c        **** //
- 669:main.c        **** void quickClear(DisplayStruct *display){
- 670:main.c        ****   PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
- 671:main.c        ****   //If we're on the first page of the menu, we also need to clear the title.
- 672:main.c        ****   if (display->current_page==0) {
- 673:main.c        ****     LCDPrintString(display->title, 0, display->back_color, 0, 0, display->orientation);
- 674:main.c        ****   }
- 675:main.c        ****   LCDSetRowColor(display->current_row, 0, display->back_color, display->orientation);
- 676:main.c        ****   for (int j=0; j<NUMROWS; j++) {
- 677:main.c        ****     LCDPrintString(display->list[j].file_name, 0, display->back_color, j+1, 0, display->orientation
- 678:main.c        ****     LCDPrintString(newline, 0, black, j+1, 0, 0);
- 679:main.c        ****   }
- 680:main.c        **** }
- 681:main.c        **** 
- 682:main.c        **** // Intentionally faults Watchdog to trigger a reset condition
- 683:main.c        **** //
- 684:main.c        **** void reset(void) {
- 332              		.loc 1 684 0
+ 651:main.c        **** 				else if(button_pressed==DWN_BUT){
+ 652:main.c        ****           disableRadio();
+ 653:main.c        **** 				}
+ 654:main.c        **** 				VICIntEnable |= 0x10;
+ 655:main.c        **** 			}
+ 656:main.c        **** 		}
+ 657:main.c        **** 		if(file_is_open)quickClear(current_display);
+ 658:main.c        **** 		else LCDClear(current_display->back_color);
+ 659:main.c        **** 		printMenu(current_display);
+ 660:main.c        **** 	}
+ 661:main.c        **** 	VICIntEnable |= 0x10;
+ 662:main.c        **** }
+ 663:main.c        **** 
+ 664:main.c        **** //  Usage: quickClear(currentDisplay);
+ 665:main.c        **** //  Inputs: DisplayStruct *display - pointer to the display that contains the current display
+ 666:main.c        **** //  Outputs: None
+ 667:main.c        **** //  Description: Rather than painting every pixel a specific color (like LCDClear does) this routin
+ 668:main.c        **** //               will simply color all of the text the same color as the background, giving the ill
+ 669:main.c        **** //               of a clear screen.  Only works with the background color.  Much faster than LCDCle
+ 670:main.c        **** //               good to use while an MP3 is playing.
+ 671:main.c        **** //
+ 672:main.c        **** void quickClear(DisplayStruct *display){
+ 673:main.c        ****   PINSEL0 &= 0xFFFFC00F;		//Hand over SPI lines to LCD talk
+ 674:main.c        ****   //If we're on the first page of the menu, we also need to clear the title.
+ 675:main.c        ****   if (display->current_page==0) {
+ 676:main.c        ****     LCDPrintString(display->title, 0, display->back_color, 0, 0, display->orientation);
+ 677:main.c        ****   }
+ 678:main.c        ****   LCDSetRowColor(display->current_row, 0, display->back_color, display->orientation);
+ 679:main.c        ****   for (int j=0; j<NUMROWS; j++) {
+ 680:main.c        ****     LCDPrintString(display->list[j].file_name, 0, display->back_color, j+1, 0, display->orientation
+ 681:main.c        ****     LCDPrintString(newline, 0, black, j+1, 0, 0);
+ 682:main.c        ****   }
+ 683:main.c        **** }
+ 684:main.c        **** 
+ 685:main.c        **** // Intentionally faults Watchdog to trigger a reset condition
+ 686:main.c        **** //
+ 687:main.c        **** void reset(void) {
+ 332              		.loc 1 687 0
  333              		@ Function supports interworking.
  334              		@ args = 0, pretend = 0, frame = 0
  335              		@ frame_needed = 0, uses_anonymous_args = 0
  336              		@ link register save eliminated.
- 685:main.c        ****     WDMOD |= 3;
- 337              		.loc 1 685 0
+ 688:main.c        ****   WDMOD |= 3;
+ 337              		.loc 1 688 0
  338 0210 0E22A0E3 		mov	r2, #-536870912
  339 0214 003092E5 		ldr	r3, [r2, #0]
  340 0218 033083E3 		orr	r3, r3, #3
  341 021c 003082E5 		str	r3, [r2, #0]
- 686:main.c        ****     WDFEED = 0xAA;
- 342              		.loc 1 686 0
+ 689:main.c        ****   WDFEED = 0xAA;
+ 342              		.loc 1 689 0
  343 0220 AA10A0E3 		mov	r1, #170
- 687:main.c        ****     WDFEED = 0x55;
- 344              		.loc 1 687 0
+ 690:main.c        ****   WDFEED = 0x55;
+ 344              		.loc 1 690 0
  345 0224 5530A0E3 		mov	r3, #85
- 346              		.loc 1 686 0
+ 346              		.loc 1 689 0
  347 0228 081082E5 		str	r1, [r2, #8]
- 348              		.loc 1 687 0
+ 348              		.loc 1 690 0
  349 022c 083082E5 		str	r3, [r2, #8]
- 688:main.c        ****     WDFEED = 0xAA;
- 689:main.c        ****     WDFEED = 0x00;
- 350              		.loc 1 689 0
+ 691:main.c        ****   WDFEED = 0xAA;
+ 692:main.c        ****   WDFEED = 0x00;
+ 350              		.loc 1 692 0
  351 0230 0030A0E3 		mov	r3, #0
- 352              		.loc 1 688 0
+ 352              		.loc 1 691 0
  353 0234 081082E5 		str	r1, [r2, #8]
- 354              		.loc 1 689 0
+ 354              		.loc 1 692 0
  355 0238 083082E5 		str	r3, [r2, #8]
- 690:main.c        **** }
- 356              		.loc 1 690 0
+ 693:main.c        **** }
+ 356              		.loc 1 693 0
  357 023c 1EFF2FE1 		bx	lr
  358              	.LFE18:
  360              		.section	.rodata.str1.1,"aMS",%progbits,1
@@ -1038,161 +1041,161 @@
  365              		.global	lowerVolume
  367              	lowerVolume:
  368              	.LFB26:
- 691:main.c        **** 
- 692:main.c        **** // Flöre refactors here!
- 693:main.c        **** 
- 694:main.c        **** //
- 695:main.c        **** // RADIO
- 696:main.c        **** //
- 697:main.c        **** 
- 698:main.c        **** // initializes the FM transmitter to a given frequency.
- 699:main.c        **** // Frequency is given in tenths of a MHz. So 973 means 97.3 MHz.
- 700:main.c        **** //
- 701:main.c        **** void initializeRadio(int frequency) {
- 702:main.c        ****   IOCLR1 |= FM_CS;      //Select SPI for FM Transmitter
- 703:main.c        ****   delay_ms(900);
- 704:main.c        ****   
- 705:main.c        ****   ns73Config();         //Configigure the FM Trans. I/O
- 706:main.c        ****   ns73Init();           //Setup the Default Register Values
- 707:main.c        ****   ns73SetChannel(frequency);  //Transmit to 97.3 FM
- 708:main.c        ****   
- 709:main.c        ****   IOSET1 |= FM_CS;      //Remove FM Transmitter from SPI bus
- 710:main.c        ****   delay_ms(100);
- 711:main.c        **** }
- 712:main.c        **** 
- 713:main.c        **** // Enables the radio.
- 714:main.c        **** //
- 715:main.c        **** void enableRadio(void) {
- 716:main.c        ****   radio_enable = ON;
- 717:main.c        ****   
- 718:main.c        ****   // graphics
- 719:main.c        ****   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
- 720:main.c        ****   LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
- 721:main.c        ****   
- 722:main.c        ****   // send data
- 723:main.c        ****   IOCLR1 |= FM_CS;        //Select the FM transmitter
- 724:main.c        ****   delay_ms(100);
- 725:main.c        ****   ns73Config();           //Configure the FM Trans. I/O
- 726:main.c        ****   ns73Send(R0, PE | AG);  //Power up the radio
- 727:main.c        ****   IOSET1 |= FM_CS;        //Unselect the FM transmitter
- 728:main.c        **** }
- 729:main.c        **** 
- 730:main.c        **** // Disables the radio.
- 731:main.c        **** //
- 732:main.c        **** void disableRadio(void) {
- 733:main.c        ****   radio_enable=OFF;
- 734:main.c        ****   
- 735:main.c        ****   // graphics
- 736:main.c        ****   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
- 737:main.c        ****   LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
- 738:main.c        ****   
- 739:main.c        ****   // send data
- 740:main.c        ****   IOCLR1 |= FM_CS;      //Select the FM transmitter
- 741:main.c        ****   delay_ms(100);
- 742:main.c        ****   ns73Config();         //Configure the FM Trans. I/O
- 743:main.c        ****   ns73Send(R0, MUTE);   // Mute the radio	
- 744:main.c        ****   IOSET1 |= FM_CS;      //Unselect the FM transmitter
- 745:main.c        **** }
- 746:main.c        **** 
- 747:main.c        **** //
- 748:main.c        **** // MP3
- 749:main.c        **** //
- 750:main.c        **** 
- 751:main.c        **** // Start playing.
+ 694:main.c        **** 
+ 695:main.c        **** // Flöre refactors here!
+ 696:main.c        **** 
+ 697:main.c        **** //
+ 698:main.c        **** // RADIO
+ 699:main.c        **** //
+ 700:main.c        **** 
+ 701:main.c        **** // initializes the FM transmitter to a given frequency.
+ 702:main.c        **** // Frequency is given in tenths of a MHz. So 973 means 97.3 MHz.
+ 703:main.c        **** //
+ 704:main.c        **** void initializeRadio(int frequency) {
+ 705:main.c        ****   IOCLR1 |= FM_CS;      //Select SPI for FM Transmitter
+ 706:main.c        ****   delay_ms(900);
+ 707:main.c        ****   
+ 708:main.c        ****   ns73Config();         //Configigure the FM Trans. I/O
+ 709:main.c        ****   ns73Init();           //Setup the Default Register Values
+ 710:main.c        ****   ns73SetChannel(frequency);  //Transmit to 97.3 FM
+ 711:main.c        ****   
+ 712:main.c        ****   IOSET1 |= FM_CS;      //Remove FM Transmitter from SPI bus
+ 713:main.c        ****   delay_ms(100);
+ 714:main.c        **** }
+ 715:main.c        **** 
+ 716:main.c        **** // Enables the radio.
+ 717:main.c        **** //
+ 718:main.c        **** void enableRadio(void) {
+ 719:main.c        ****   radio_enable = ON;
+ 720:main.c        ****   
+ 721:main.c        ****   // graphics
+ 722:main.c        ****   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 723:main.c        ****   LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
+ 724:main.c        ****   
+ 725:main.c        ****   // send data
+ 726:main.c        ****   IOCLR1 |= FM_CS;        //Select the FM transmitter
+ 727:main.c        ****   delay_ms(100);
+ 728:main.c        ****   ns73Config();           //Configure the FM Trans. I/O
+ 729:main.c        ****   ns73Send(R0, PE | AG);  //Power up the radio
+ 730:main.c        ****   IOSET1 |= FM_CS;        //Unselect the FM transmitter
+ 731:main.c        **** }
+ 732:main.c        **** 
+ 733:main.c        **** // Disables the radio.
+ 734:main.c        **** //
+ 735:main.c        **** void disableRadio(void) {
+ 736:main.c        ****   radio_enable = OFF;
+ 737:main.c        ****   
+ 738:main.c        ****   // graphics
+ 739:main.c        ****   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 740:main.c        ****   LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
+ 741:main.c        ****   
+ 742:main.c        ****   // send data
+ 743:main.c        ****   IOCLR1 |= FM_CS;      //Select the FM transmitter
+ 744:main.c        ****   delay_ms(100);
+ 745:main.c        ****   ns73Config();         //Configure the FM Trans. I/O
+ 746:main.c        ****   ns73Send(R0, MUTE);   // Mute the radio	
+ 747:main.c        ****   IOSET1 |= FM_CS;      //Unselect the FM transmitter
+ 748:main.c        **** }
+ 749:main.c        **** 
+ 750:main.c        **** //
+ 751:main.c        **** // MP3
  752:main.c        **** //
- 753:main.c        **** void startMP3Player(void) {
- 754:main.c        ****   vs1002Config();                       // Enable the MP3 Comm. Lines
- 755:main.c        ****   vs1002SCIWrite(SCI_MODE, SM_SDINEW);  // Make sure the MP3 player is in the right mode.
- 756:main.c        ****   vs1002Finish();                       // Disable the MP3 Comm. Lines
- 757:main.c        ****   ledBlueOn();
- 758:main.c        ****   sendMP3Data();                        // Send first song data
- 759:main.c        ****   PINSEL1 |= 0x00000C00;
- 760:main.c        ****   VICIntEnable |= 0x20;                 // Enable Timer 1 Interrupts(This is the "Song Sending" int
- 761:main.c        ****   IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES); // Assign LCD pins as Outputs
- 762:main.c        **** }
- 763:main.c        **** 
- 764:main.c        **** // Sends a piece of mp3 data from the current song.
- 765:main.c        **** //
- 766:main.c        **** void sendMP3Data(void) {
- 767:main.c        ****   vs1002Config();                                         // Enable MP3 Comm. Lines
- 768:main.c        ****   while (IOPIN0 & MP3_DREQ) {
- 769:main.c        ****     vs1002SendMusic(current_song.data, MAXBUFFERSIZE);    //Send 32 Bytes of buffered song data
- 770:main.c        ****     // Buffer more data if available
- 771:main.c        ****     if (fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0) { song_is_over
- 772:main.c        ****     else song_is_over = 0;                                // If there's no more data available, set
- 773:main.c        ****   }
- 774:main.c        ****   vs1002Finish();                                         // Disable MP3 Comm. Lines
- 775:main.c        **** }
- 776:main.c        **** 
- 777:main.c        **** // Stop playing.
- 778:main.c        **** //
- 779:main.c        **** void stopMP3Player(void) {
- 780:main.c        ****   VICIntEnClr = 0x20;                                     // Disable Time 0 Interrupts(Stop the "So
- 781:main.c        ****   ledBlueOff();
- 782:main.c        ****   vs1002Config();                                         // Enable the MP3 Comm Lines
- 783:main.c        ****   vs1002SCIWrite(SCI_MODE, SM_OUTOFWAV);                  // Tell the MP3 Player to jump out of WAV
- 784:main.c        ****   for(int i=0; i<150; i++) { vs1002SCIWrite(SCI_MODE, 0x00); } // Send 150 zeroes to the player to 
- 785:main.c        ****   vs1002Finish();                                         // Disable the MP3 Comm. Lines
- 786:main.c        ****   IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES);       // Assign LCD pins as Outputs
- 787:main.c        ****   closeSong(&current_song);                               // Close the current song
- 788:main.c        ****   file_is_open = 0;                                       // Clear the global flag
- 789:main.c        ****   VICIntEnable = 0x10;
- 790:main.c        **** }
- 791:main.c        **** 
- 792:main.c        **** //
- 793:main.c        **** // VOLUME
- 794:main.c        **** //
- 795:main.c        **** 
- 796:main.c        **** // Raises the Volume by 1.
+ 753:main.c        **** 
+ 754:main.c        **** // Start playing.
+ 755:main.c        **** //
+ 756:main.c        **** void startMP3Player(void) {
+ 757:main.c        ****   vs1002Config();                       // Enable the MP3 Comm. Lines
+ 758:main.c        ****   vs1002SCIWrite(SCI_MODE, SM_SDINEW);  // Make sure the MP3 player is in the right mode.
+ 759:main.c        ****   vs1002Finish();                       // Disable the MP3 Comm. Lines
+ 760:main.c        ****   ledBlueOn();
+ 761:main.c        ****   sendMP3Data();                        // Send first song data
+ 762:main.c        ****   PINSEL1 |= 0x00000C00;
+ 763:main.c        ****   VICIntEnable |= 0x20;                 // Enable Timer 1 Interrupts(This is the "Song Sending" int
+ 764:main.c        ****   IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES); // Assign LCD pins as Outputs
+ 765:main.c        **** }
+ 766:main.c        **** 
+ 767:main.c        **** // Sends a piece of mp3 data from the current song.
+ 768:main.c        **** //
+ 769:main.c        **** void sendMP3Data(void) {
+ 770:main.c        ****   vs1002Config();                                         // Enable MP3 Comm. Lines
+ 771:main.c        ****   while (IOPIN0 & MP3_DREQ) {
+ 772:main.c        ****     vs1002SendMusic(current_song.data, MAXBUFFERSIZE);    //Send 32 Bytes of buffered song data
+ 773:main.c        ****     // Buffer more data if available
+ 774:main.c        ****     if (fat16_read_file(current_song.handle, current_song.data, MAXBUFFERSIZE) <= 0) { song_is_over
+ 775:main.c        ****     else song_is_over = 0;                                // If there's no more data available, set
+ 776:main.c        ****   }
+ 777:main.c        ****   vs1002Finish();                                         // Disable MP3 Comm. Lines
+ 778:main.c        **** }
+ 779:main.c        **** 
+ 780:main.c        **** // Stop playing.
+ 781:main.c        **** //
+ 782:main.c        **** void stopMP3Player(void) {
+ 783:main.c        ****   VICIntEnClr = 0x20;                                     // Disable Time 0 Interrupts(Stop the "So
+ 784:main.c        ****   ledBlueOff();
+ 785:main.c        ****   vs1002Config();                                         // Enable the MP3 Comm Lines
+ 786:main.c        ****   vs1002SCIWrite(SCI_MODE, SM_OUTOFWAV);                  // Tell the MP3 Player to jump out of WAV
+ 787:main.c        ****   for(int i=0; i<150; i++) { vs1002SCIWrite(SCI_MODE, 0x00); } // Send 150 zeroes to the player to 
+ 788:main.c        ****   vs1002Finish();                                         // Disable the MP3 Comm. Lines
+ 789:main.c        ****   IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES);       // Assign LCD pins as Outputs
+ 790:main.c        ****   closeSong(&current_song);                               // Close the current song
+ 791:main.c        ****   file_is_open = 0;                                       // Clear the global flag
+ 792:main.c        ****   VICIntEnable = 0x10;
+ 793:main.c        **** }
+ 794:main.c        **** 
+ 795:main.c        **** //
+ 796:main.c        **** // VOLUME
  797:main.c        **** //
- 798:main.c        **** void raiseVolume(void) {
- 799:main.c        ****   if(volume_setting < 32){
- 800:main.c        ****     volume_setting += 1;
- 801:main.c        ****     vs1002Config();             // Enable the MP3 Comm. Lines
- 802:main.c        ****     vs1002SetVolume(INCREASE);  // Raise the volume
- 803:main.c        ****     vs1002Finish();             // Disable MP3 Comm. Lines
- 804:main.c        ****   }
- 805:main.c        ****   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
- 806:main.c        ****   LCDPrintString("%d", volume_setting, current_display->text_color, 2, 0, current_display->orientat
- 807:main.c        **** }
- 808:main.c        **** 
- 809:main.c        **** // Lowers the volume by 1.
- 810:main.c        **** //
- 811:main.c        **** void lowerVolume(void) {
- 369              		.loc 1 811 0
+ 798:main.c        **** 
+ 799:main.c        **** // Raises the Volume by 1.
+ 800:main.c        **** //
+ 801:main.c        **** void raiseVolume(void) {
+ 802:main.c        ****   if(volume_setting < 32){
+ 803:main.c        ****     volume_setting += 1;
+ 804:main.c        ****     vs1002Config();             // Enable the MP3 Comm. Lines
+ 805:main.c        ****     vs1002SetVolume(INCREASE);  // Raise the volume
+ 806:main.c        ****     vs1002Finish();             // Disable MP3 Comm. Lines
+ 807:main.c        ****   }
+ 808:main.c        ****   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 809:main.c        ****   LCDPrintString("%d", volume_setting, current_display->text_color, 2, 0, current_display->orientat
+ 810:main.c        **** }
+ 811:main.c        **** 
+ 812:main.c        **** // Lowers the volume by 1.
+ 813:main.c        **** //
+ 814:main.c        **** void lowerVolume(void) {
+ 369              		.loc 1 814 0
  370              		@ Function supports interworking.
  371              		@ args = 0, pretend = 0, frame = 0
  372              		@ frame_needed = 0, uses_anonymous_args = 0
  373 0240 10402DE9 		stmfd	sp!, {r4, lr}
  374              	.LCFI2:
- 812:main.c        ****   if(volume_setting >= 0){
- 375              		.loc 1 812 0
+ 815:main.c        ****   if(volume_setting >= 0){
+ 375              		.loc 1 815 0
  376 0244 7C209FE5 		ldr	r2, .L43
  377 0248 003092E5 		ldr	r3, [r2, #0]
  378 024c 000053E3 		cmp	r3, #0
- 379              		.loc 1 811 0
+ 379              		.loc 1 814 0
  380 0250 08D04DE2 		sub	sp, sp, #8
  381              	.LCFI3:
- 382              		.loc 1 812 0
+ 382              		.loc 1 815 0
  383 0254 050000BA 		blt	.L41
- 813:main.c        ****     volume_setting--;
- 384              		.loc 1 813 0
+ 816:main.c        ****     volume_setting--;
+ 384              		.loc 1 816 0
  385 0258 013043E2 		sub	r3, r3, #1
  386 025c 003082E5 		str	r3, [r2, #0]
- 814:main.c        ****     vs1002Config();             // Enable the MP3 Comm. Lines
- 387              		.loc 1 814 0
+ 817:main.c        ****     vs1002Config();             // Enable the MP3 Comm. Lines
+ 387              		.loc 1 817 0
  388 0260 FEFFFFEB 		bl	vs1002Config
- 815:main.c        ****     vs1002SetVolume(DECREASE);  // Lower the volume
- 389              		.loc 1 815 0
+ 818:main.c        ****     vs1002SetVolume(DECREASE);  // Lower the volume
+ 389              		.loc 1 818 0
  390 0264 3000A0E3 		mov	r0, #48
  391 0268 FEFFFFEB 		bl	vs1002SetVolume
- 816:main.c        ****     vs1002Finish();             // Disable MP3 Comm. Lines
- 392              		.loc 1 816 0
+ 819:main.c        ****     vs1002Finish();             // Disable MP3 Comm. Lines
+ 392              		.loc 1 819 0
  393 026c FEFFFFEB 		bl	vs1002Finish
  394              	.L41:
- 817:main.c        ****   }
- 818:main.c        ****   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
- 395              		.loc 1 818 0
+ 820:main.c        ****   }
+ 821:main.c        ****   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+ 395              		.loc 1 821 0
  396 0270 54409FE5 		ldr	r4, .L43+4
  397 0274 002094E5 		ldr	r2, [r4, #0]
  398 0278 0200A0E3 		mov	r0, #2
@@ -1200,8 +1203,8 @@
  400 0280 0010A0E3 		mov	r1, #0
  401 0284 0420D2E5 		ldrb	r2, [r2, #4]	@ zero_extendqisi2
  402 0288 FEFFFFEB 		bl	LCDSetRowColor
- 819:main.c        ****   LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
- 403              		.loc 1 819 0
+ 822:main.c        ****   LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
+ 403              		.loc 1 822 0
  404 028c 0030A0E3 		mov	r3, #0
  405 0290 00308DE5 		str	r3, [sp, #0]
  406 0294 34309FE5 		ldr	r3, .L43+8
@@ -1214,8 +1217,8 @@
  413 02b0 0230A0E3 		mov	r3, #2
  414 02b4 04C08DE5 		str	ip, [sp, #4]
  415 02b8 FEFFFFEB 		bl	LCDPrintString
- 820:main.c        **** }...
- 416              		.loc 1 820 0
+ 823:main.c        **** }...
+ 416              		.loc 1 823 0
  417 02bc 08D08DE2 		add	sp, sp, #8
  418 02c0 1040BDE8 		ldmfd	sp!, {r4, lr}
  419 02c4 1EFF2FE1 		bx	lr
@@ -1231,33 +1234,33 @@
  430              		.global	raiseVolume
  432              	raiseVolume:
  433              	.LFB25:
- 434              		.loc 1 798 0
+ 434              		.loc 1 801 0
  435              		@ Function supports interworking.
  436              		@ args = 0, pretend = 0, frame = 0
  437              		@ frame_needed = 0, uses_anonymous_args = 0
  438 02d8 10402DE9 		stmfd	sp!, {r4, lr}
  439              	.LCFI4:
- 440              		.loc 1 799 0
+ 440              		.loc 1 802 0
  441 02dc 78209FE5 		ldr	r2, .L48
  442 02e0 003092E5 		ldr	r3, [r2, #0]
  443 02e4 1F0053E3 		cmp	r3, #31
- 444              		.loc 1 798 0
+ 444              		.loc 1 801 0
  445 02e8 08D04DE2 		sub	sp, sp, #8
  446              	.LCFI5:
- 447              		.loc 1 799 0
+ 447              		.loc 1 802 0
  448 02ec 050000CA 		bgt	.L46
- 449              		.loc 1 800 0
+ 449              		.loc 1 803 0
  450 02f0 013083E2 		add	r3, r3, #1
  451 02f4 003082E5 		str	r3, [r2, #0]
- 452              		.loc 1 801 0
+ 452              		.loc 1 804 0
  453 02f8 FEFFFFEB 		bl	vs1002Config
- 454              		.loc 1 802 0
+ 454              		.loc 1 805 0
  455 02fc 3100A0E3 		mov	r0, #49
  456 0300 FEFFFFEB 		bl	vs1002SetVolume
- 457              		.loc 1 803 0
+ 457              		.loc 1 806 0
  458 0304 FEFFFFEB 		bl	vs1002Finish
  459              	.L46:
- 460              		.loc 1 805 0
+ 460              		.loc 1 808 0
  461 0308 50409FE5 		ldr	r4, .L48+4
  462 030c 002094E5 		ldr	r2, [r4, #0]
  463 0310 0200A0E3 		mov	r0, #2
@@ -1265,7 +1268,7 @@
  465 0318 0010A0E3 		mov	r1, #0
  466 031c 0420D2E5 		ldrb	r2, [r2, #4]	@ zero_extendqisi2
  467 0320 FEFFFFEB 		bl	LCDSetRowColor
- 468              		.loc 1 806 0
+ 468              		.loc 1 809 0
  469 0324 001094E5 		ldr	r1, [r4, #0]
  470 0328 0030A0E3 		mov	r3, #0
  471 032c 0320D1E5 		ldrb	r2, [r1, #3]	@ zero_extendqisi2
@@ -1277,7 +1280,7 @@
  477 0344 0230A0E3 		mov	r3, #2
  478 0348 04C08DE5 		str	ip, [sp, #4]
  479 034c FEFFFFEB 		bl	LCDPrintString
- 480              		.loc 1 807 0
+ 480              		.loc 1 810 0
  481 0350 08D08DE2 		add	sp, sp, #8
  482 0354 1040BDE8 		ldmfd	sp!, {r4, lr}
  483 0358 1EFF2FE1 		bx	lr
@@ -1292,33 +1295,33 @@
  493              		.global	quickClear
  495              	quickClear:
  496              	.LFB17:
- 497              		.loc 1 669 0
+ 497              		.loc 1 672 0
  498              		@ Function supports interworking.
  499              		@ args = 0, pretend = 0, frame = 0
  500              		@ frame_needed = 0, uses_anonymous_args = 0
  501              	.LVL22:
- 502              		.loc 1 670 0
+ 502              		.loc 1 673 0
  503 0368 B8209FE5 		ldr	r2, .L55
  504 036c 003092E5 		ldr	r3, [r2, #0]
- 505              		.loc 1 669 0
+ 505              		.loc 1 672 0
  506 0370 F0402DE9 		stmfd	sp!, {r4, r5, r6, r7, lr}
  507              	.LCFI6:
- 508              		.loc 1 670 0
+ 508              		.loc 1 673 0
  509 0374 FF3DC3E3 		bic	r3, r3, #16320
  510 0378 3030C3E3 		bic	r3, r3, #48
  511 037c 003082E5 		str	r3, [r2, #0]
- 512              		.loc 1 672 0
+ 512              		.loc 1 675 0
  513 0380 06E0D0E5 		ldrb	lr, [r0, #6]	@ zero_extendqisi2
  514 0384 00005EE3 		cmp	lr, #0
- 515              		.loc 1 669 0
+ 515              		.loc 1 672 0
  516 0388 08D04DE2 		sub	sp, sp, #8
  517              	.LCFI7:
- 518              		.loc 1 669 0
+ 518              		.loc 1 672 0
  519 038c 0050A0E1 		mov	r5, r0
- 520              		.loc 1 672 0
+ 520              		.loc 1 675 0
  521 0390 0700001A 		bne	.L51
  522              	.LVL23:
- 523              		.loc 1 673 0
+ 523              		.loc 1 676 0
  524 0394 02C0D0E5 		ldrb	ip, [r0, #2]	@ zero_extendqisi2
  525 0398 0420D0E5 		ldrb	r2, [r0, #4]	@ zero_extendqisi2
  526 039c 0E10A0E1 		mov	r1, lr
@@ -1329,7 +1332,7 @@
  531 03b0 FEFFFFEB 		bl	LCDPrintString
  532              	.LVL24:
  533              	.L51:
- 534              		.loc 1 675 0
+ 534              		.loc 1 678 0
  535 03b4 0000D5E5 		ldrb	r0, [r5, #0]	@ zero_extendqisi2
  536 03b8 0010A0E3 		mov	r1, #0
  537 03bc 0420D5E5 		ldrb	r2, [r5, #4]	@ zero_extendqisi2
@@ -1338,26 +1341,26 @@
  540 03c8 0040A0E3 		mov	r4, #0
  541              	.LVL25:
  542              	.LBB50:
- 543              		.loc 1 678 0
+ 543              		.loc 1 681 0
  544 03cc 58709FE5 		ldr	r7, .L55+4
- 545              		.loc 1 677 0
+ 545              		.loc 1 680 0
  546 03d0 0460A0E1 		mov	r6, r4
  547              	.L52:
  548 03d4 02C0D5E5 		ldrb	ip, [r5, #2]	@ zero_extendqisi2
  549 03d8 840285E0 		add	r0, r5, r4, asl #5
  550              	.LBE50:
- 551              		.loc 1 675 0
+ 551              		.loc 1 678 0
  552 03dc 014084E2 		add	r4, r4, #1
  553              	.LVL26:
  554              	.LBB51:
- 555              		.loc 1 677 0
+ 555              		.loc 1 680 0
  556 03e0 0420D5E5 		ldrb	r2, [r5, #4]	@ zero_extendqisi2
  557 03e4 0C0080E2 		add	r0, r0, #12
  558 03e8 0610A0E1 		mov	r1, r6
  559 03ec 0430A0E1 		mov	r3, r4
  560 03f0 40108DE8 		stmia	sp, {r6, ip}	@ phole stm
  561 03f4 FEFFFFEB 		bl	LCDPrintString
- 562              		.loc 1 678 0
+ 562              		.loc 1 681 0
  563 03f8 0020D7E5 		ldrb	r2, [r7, #0]	@ zero_extendqisi2
  564 03fc 2C009FE5 		ldr	r0, .L55+8
  565 0400 0610A0E1 		mov	r1, r6
@@ -1365,12 +1368,12 @@
  567 0408 00608DE5 		str	r6, [sp, #0]
  568 040c 04608DE5 		str	r6, [sp, #4]
  569 0410 FEFFFFEB 		bl	LCDPrintString
- 570              		.loc 1 676 0
+ 570              		.loc 1 679 0
  571 0414 0F0054E3 		cmp	r4, #15
  572              	.LVL27:
  573 0418 EDFFFF1A 		bne	.L52
  574              	.LBE51:
- 575              		.loc 1 680 0
+ 575              		.loc 1 683 0
  576 041c 08D08DE2 		add	sp, sp, #8
  577 0420 F040BDE8 		ldmfd	sp!, {r4, r5, r6, r7, lr}
  578 0424 1EFF2FE1 		bx	lr
@@ -1700,28 +1703,28 @@
  911              		.global	sendMP3Data
  913              	sendMP3Data:
  914              	.LFB23:
- 915              		.loc 1 766 0
+ 915              		.loc 1 769 0
  916              		@ Function supports interworking.
  917              		@ args = 0, pretend = 0, frame = 0
  918              		@ frame_needed = 0, uses_anonymous_args = 0
  919 06cc F0412DE9 		stmfd	sp!, {r4, r5, r6, r7, r8, lr}
  920              	.LCFI14:
- 921              		.loc 1 767 0
+ 921              		.loc 1 770 0
  922 06d0 FEFFFFEB 		bl	vs1002Config
- 923              		.loc 1 768 0
+ 923              		.loc 1 771 0
  924 06d4 54809FE5 		ldr	r8, .L89
- 925              		.loc 1 771 0
+ 925              		.loc 1 774 0
  926 06d8 54709FE5 		ldr	r7, .L89+4
  927 06dc 54409FE5 		ldr	r4, .L89+8
- 928              		.loc 1 772 0
+ 928              		.loc 1 775 0
  929 06e0 0060A0E3 		mov	r6, #0
- 930              		.loc 1 771 0
+ 930              		.loc 1 774 0
  931 06e4 0150A0E3 		mov	r5, #1
  932 06e8 080000EA 		b	.L88
  933              	.L86:
- 934              		.loc 1 769 0
+ 934              		.loc 1 772 0
  935 06ec FEFFFFEB 		bl	vs1002SendMusic
- 936              		.loc 1 771 0
+ 936              		.loc 1 774 0
  937 06f0 340097E5 		ldr	r0, [r7, #52]
  938 06f4 40109FE5 		ldr	r1, .L89+12
  939 06f8 2020A0E3 		mov	r2, #32
@@ -1729,20 +1732,20 @@
  941 0700 0008A0E1 		mov	r0, r0, asl #16
  942 0704 000050E3 		cmp	r0, #0
  943 0708 0050C4D5 		strleb	r5, [r4, #0]
- 944              		.loc 1 772 0
+ 944              		.loc 1 775 0
  945 070c 0060C4C5 		strgtb	r6, [r4, #0]
  946              	.L88:
- 947              		.loc 1 768 0
+ 947              		.loc 1 771 0
  948 0710 003098E5 		ldr	r3, [r8, #0]
  949 0714 020613E3 		tst	r3, #2097152
- 950              		.loc 1 769 0
+ 950              		.loc 1 772 0
  951 0718 1C009FE5 		ldr	r0, .L89+12
  952 071c 2010A0E3 		mov	r1, #32
- 953              		.loc 1 768 0
+ 953              		.loc 1 771 0
  954 0720 F1FFFF1A 		bne	.L86
- 955              		.loc 1 774 0
+ 955              		.loc 1 777 0
  956 0724 FEFFFFEB 		bl	vs1002Finish
- 957              		.loc 1 775 0
+ 957              		.loc 1 778 0
  958 0728 F041BDE8 		ldmfd	sp!, {r4, r5, r6, r7, r8, lr}
  959 072c 1EFF2FE1 		bx	lr
  960              	.L90:
@@ -1757,43 +1760,43 @@
  970              		.global	startMP3Player
  972              	startMP3Player:
  973              	.LFB22:
- 974              		.loc 1 753 0
+ 974              		.loc 1 756 0
  975              		@ Function supports interworking.
  976              		@ args = 0, pretend = 0, frame = 0
  977              		@ frame_needed = 0, uses_anonymous_args = 0
  978 0740 10402DE9 		stmfd	sp!, {r4, lr}
  979              	.LCFI15:
- 980              		.loc 1 754 0
+ 980              		.loc 1 757 0
  981 0744 FEFFFFEB 		bl	vs1002Config
- 982              		.loc 1 757 0
+ 982              		.loc 1 760 0
  983 0748 50409FE5 		ldr	r4, .L93
- 984              		.loc 1 755 0
+ 984              		.loc 1 758 0
  985 074c 0000A0E3 		mov	r0, #0
  986 0750 021BA0E3 		mov	r1, #2048
  987 0754 FEFFFFEB 		bl	vs1002SCIWrite
- 988              		.loc 1 756 0
+ 988              		.loc 1 759 0
  989 0758 FEFFFFEB 		bl	vs1002Finish
- 990              		.loc 1 757 0
+ 990              		.loc 1 760 0
  991 075c 0232A0E3 		mov	r3, #536870912
  992 0760 0C3084E5 		str	r3, [r4, #12]
- 993              		.loc 1 758 0
+ 993              		.loc 1 761 0
  994 0764 FEFFFFEB 		bl	sendMP3Data
- 995              		.loc 1 759 0
+ 995              		.loc 1 762 0
  996 0768 34209FE5 		ldr	r2, .L93+4
  997 076c 043092E5 		ldr	r3, [r2, #4]
  998 0770 033B83E3 		orr	r3, r3, #3072
  999 0774 043082E5 		str	r3, [r2, #4]
- 1000              		.loc 1 760 0
+ 1000              		.loc 1 763 0
  1001 0778 0020E0E3 		mvn	r2, #0
  1002 077c EF3F12E5 		ldr	r3, [r2, #-4079]
  1003 0780 203083E3 		orr	r3, r3, #32
  1004 0784 EF3F02E5 		str	r3, [r2, #-4079]
- 1005              		.loc 1 761 0
+ 1005              		.loc 1 764 0
  1006 0788 083094E5 		ldr	r3, [r4, #8]
  1007 078c 033783E3 		orr	r3, r3, #786432
  1008 0790 503083E3 		orr	r3, r3, #80
  1009 0794 083084E5 		str	r3, [r4, #8]
- 1010              		.loc 1 762 0
+ 1010              		.loc 1 765 0
  1011 0798 1040BDE8 		ldmfd	sp!, {r4, lr}
  1012 079c 1EFF2FE1 		bx	lr
  1013              	.L94:
@@ -1837,31 +1840,31 @@
  1054              		.global	disableRadio
  1056              	disableRadio:
  1057              	.LFB21:
- 1058              		.loc 1 732 0
+ 1058              		.loc 1 735 0
  1059              		@ Function supports interworking.
  1060              		@ args = 0, pretend = 0, frame = 0
  1061              		@ frame_needed = 0, uses_anonymous_args = 0
  1062 07d4 30402DE9 		stmfd	sp!, {r4, r5, lr}
  1063              	.LCFI17:
- 1064              		.loc 1 733 0
+ 1064              		.loc 1 736 0
  1065 07d8 98309FE5 		ldr	r3, .L103
- 1066              		.loc 1 736 0
+ 1066              		.loc 1 739 0
  1067 07dc 98509FE5 		ldr	r5, .L103+4
- 1068              		.loc 1 733 0
+ 1068              		.loc 1 736 0
  1069 07e0 0040A0E3 		mov	r4, #0
  1070 07e4 0040C3E5 		strb	r4, [r3, #0]
- 1071              		.loc 1 736 0
+ 1071              		.loc 1 739 0
  1072 07e8 002095E5 		ldr	r2, [r5, #0]
- 1073              		.loc 1 732 0
+ 1073              		.loc 1 735 0
  1074 07ec 08D04DE2 		sub	sp, sp, #8
  1075              	.LCFI18:
- 1076              		.loc 1 736 0
+ 1076              		.loc 1 739 0
  1077 07f0 0230D2E5 		ldrb	r3, [r2, #2]	@ zero_extendqisi2
  1078 07f4 0200A0E3 		mov	r0, #2
  1079 07f8 0410A0E1 		mov	r1, r4
  1080 07fc 0420D2E5 		ldrb	r2, [r2, #4]	@ zero_extendqisi2
  1081 0800 FEFFFFEB 		bl	LCDSetRowColor
- 1082              		.loc 1 737 0
+ 1082              		.loc 1 740 0
  1083 0804 003095E5 		ldr	r3, [r5, #0]
  1084 0808 0320D3E5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
  1085 080c 00408DE5 		str	r4, [sp, #0]
@@ -1871,7 +1874,7 @@
  1089 081c 0410A0E1 		mov	r1, r4
  1090 0820 04C08DE5 		str	ip, [sp, #4]
  1091 0824 FEFFFFEB 		bl	LCDPrintString
- 1092              		.loc 1 740 0
+ 1092              		.loc 1 743 0
  1093 0828 54209FE5 		ldr	r2, .L103+12
  1094 082c 1C3092E5 		ldr	r3, [r2, #28]
  1095 0830 013283E3 		orr	r3, r3, #268435456
@@ -1890,18 +1893,18 @@
  1108 0848 FBFFFF1A 		bne	.L100
  1109              	.LBE54:
  1110              	.LBE53:
- 1111              		.loc 1 742 0
+ 1111              		.loc 1 745 0
  1112 084c FEFFFFEB 		bl	ns73Config
- 1113              		.loc 1 743 0
+ 1113              		.loc 1 746 0
  1114 0850 0000A0E3 		mov	r0, #0
  1115 0854 0410A0E3 		mov	r1, #4
  1116 0858 FEFFFFEB 		bl	ns73Send
- 1117              		.loc 1 744 0
+ 1117              		.loc 1 747 0
  1118 085c 20209FE5 		ldr	r2, .L103+12
  1119 0860 143092E5 		ldr	r3, [r2, #20]
  1120 0864 013283E3 		orr	r3, r3, #268435456
  1121 0868 143082E5 		str	r3, [r2, #20]
- 1122              		.loc 1 745 0
+ 1122              		.loc 1 748 0
  1123 086c 08D08DE2 		add	sp, sp, #8
  1124 0870 3040BDE8 		ldmfd	sp!, {r4, r5, lr}
  1125 0874 1EFF2FE1 		bx	lr
@@ -1922,31 +1925,31 @@
  1141              		.global	enableRadio
  1143              	enableRadio:
  1144              	.LFB20:
- 1145              		.loc 1 715 0
+ 1145              		.loc 1 718 0
  1146              		@ Function supports interworking.
  1147              		@ args = 0, pretend = 0, frame = 0
  1148              		@ frame_needed = 0, uses_anonymous_args = 0
  1149 088c 10402DE9 		stmfd	sp!, {r4, lr}
  1150              	.LCFI19:
- 1151              		.loc 1 716 0
+ 1151              		.loc 1 719 0
  1152 0890 9C309FE5 		ldr	r3, .L109
- 1153              		.loc 1 719 0
+ 1153              		.loc 1 722 0
  1154 0894 9C409FE5 		ldr	r4, .L109+4
- 1155              		.loc 1 716 0
+ 1155              		.loc 1 719 0
  1156 0898 0120A0E3 		mov	r2, #1
  1157 089c 0020C3E5 		strb	r2, [r3, #0]
- 1158              		.loc 1 719 0
+ 1158              		.loc 1 722 0
  1159 08a0 002094E5 		ldr	r2, [r4, #0]
- 1160              		.loc 1 715 0
+ 1160              		.loc 1 718 0
  1161 08a4 08D04DE2 		sub	sp, sp, #8
  1162              	.LCFI20:
- 1163              		.loc 1 719 0
+ 1163              		.loc 1 722 0
  1164 08a8 0230D2E5 		ldrb	r3, [r2, #2]	@ zero_extendqisi2
  1165 08ac 0200A0E3 		mov	r0, #2
  1166 08b0 0010A0E3 		mov	r1, #0
  1167 08b4 0420D2E5 		ldrb	r2, [r2, #4]	@ zero_extendqisi2
  1168 08b8 FEFFFFEB 		bl	LCDSetRowColor
- 1169              		.loc 1 720 0
+ 1169              		.loc 1 723 0
  1170 08bc 003094E5 		ldr	r3, [r4, #0]
  1171 08c0 0040A0E3 		mov	r4, #0
  1172 08c4 0320D3E5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
@@ -1957,7 +1960,7 @@
  1177 08d8 0410A0E1 		mov	r1, r4
  1178 08dc 04C08DE5 		str	ip, [sp, #4]
  1179 08e0 FEFFFFEB 		bl	LCDPrintString
- 1180              		.loc 1 723 0
+ 1180              		.loc 1 726 0
  1181 08e4 54209FE5 		ldr	r2, .L109+12
  1182 08e8 1C3092E5 		ldr	r3, [r2, #28]
  1183 08ec 013283E3 		orr	r3, r3, #268435456
@@ -1976,18 +1979,18 @@
  1196 0904 FBFFFF1A 		bne	.L106
  1197              	.LBE56:
  1198              	.LBE55:
- 1199              		.loc 1 725 0
+ 1199              		.loc 1 728 0
  1200 0908 FEFFFFEB 		bl	ns73Config
- 1201              		.loc 1 726 0
+ 1201              		.loc 1 729 0
  1202 090c 0000A0E3 		mov	r0, #0
  1203 0910 8110A0E3 		mov	r1, #129
  1204 0914 FEFFFFEB 		bl	ns73Send
- 1205              		.loc 1 727 0
+ 1205              		.loc 1 730 0
  1206 0918 20209FE5 		ldr	r2, .L109+12
  1207 091c 143092E5 		ldr	r3, [r2, #20]
  1208 0920 013283E3 		orr	r3, r3, #268435456
  1209 0924 143082E5 		str	r3, [r2, #20]
- 1210              		.loc 1 728 0
+ 1210              		.loc 1 731 0
  1211 0928 08D08DE2 		add	sp, sp, #8
  1212 092c 1040BDE8 		ldmfd	sp!, {r4, lr}
  1213 0930 1EFF2FE1 		bx	lr
@@ -2004,12 +2007,12 @@
  1225              		.global	initializeRadio
  1227              	initializeRadio:
  1228              	.LFB19:
- 1229              		.loc 1 701 0
+ 1229              		.loc 1 704 0
  1230              		@ Function supports interworking.
  1231              		@ args = 0, pretend = 0, frame = 0
  1232              		@ frame_needed = 0, uses_anonymous_args = 0
  1233              	.LVL55:
- 1234              		.loc 1 702 0
+ 1234              		.loc 1 705 0
  1235 0948 68209FE5 		ldr	r2, .L117
  1236 094c 1C3092E5 		ldr	r3, [r2, #28]
  1237 0950 013283E3 		orr	r3, r3, #268435456
@@ -2020,13 +2023,13 @@
  1242 0958 5C209FE5 		ldr	r2, .L117+4
  1243              	.LBE58:
  1244              	.LBE57:
- 1245              		.loc 1 701 0
+ 1245              		.loc 1 704 0
  1246 095c 10402DE9 		stmfd	sp!, {r4, lr}
  1247              	.LCFI21:
- 1248              		.loc 1 702 0
+ 1248              		.loc 1 705 0
  1249 0960 0030A0E3 		mov	r3, #0
  1250              	.LVL56:
- 1251              		.loc 1 701 0
+ 1251              		.loc 1 704 0
  1252 0964 0040A0E1 		mov	r4, r0
  1253              	.LVL57:
  1254              	.L112:
@@ -2041,15 +2044,15 @@
  1263 0974 FBFFFF1A 		bne	.L112
  1264              	.LBE59:
  1265              	.LBE60:
- 1266              		.loc 1 705 0
+ 1266              		.loc 1 708 0
  1267 0978 FEFFFFEB 		bl	ns73Config
  1268              	.LVL58:
- 1269              		.loc 1 706 0
+ 1269              		.loc 1 709 0
  1270 097c FEFFFFEB 		bl	ns73Init
- 1271              		.loc 1 707 0
+ 1271              		.loc 1 710 0
  1272 0980 0400A0E1 		mov	r0, r4
  1273 0984 FEFFFFEB 		bl	ns73SetChannel
- 1274              		.loc 1 709 0
+ 1274              		.loc 1 712 0
  1275 0988 28209FE5 		ldr	r2, .L117
  1276 098c 143092E5 		ldr	r3, [r2, #20]
  1277 0990 013283E3 		orr	r3, r3, #268435456
@@ -2060,7 +2063,7 @@
  1282 0998 20209FE5 		ldr	r2, .L117+8
  1283              	.LBE62:
  1284              	.LBE61:
- 1285              		.loc 1 709 0
+ 1285              		.loc 1 712 0
  1286 099c 0030A0E3 		mov	r3, #0
  1287              	.LVL59:
  1288              	.L113:
@@ -2075,7 +2078,7 @@
  1297 09ac FBFFFF1A 		bne	.L113
  1298              	.LBE63:
  1299              	.LBE64:
- 1300              		.loc 1 711 0
+ 1300              		.loc 1 714 0
  1301 09b0 1040BDE8 		ldmfd	sp!, {r4, lr}
  1302 09b4 1EFF2FE1 		bx	lr
  1303              	.L118:
@@ -2122,25 +2125,25 @@
  1347              		.global	stopMP3Player
  1349              	stopMP3Player:
  1350              	.LFB24:
- 1351              		.loc 1 779 0
+ 1351              		.loc 1 782 0
  1352              		@ Function supports interworking.
  1353              		@ args = 0, pretend = 0, frame = 0
  1354              		@ frame_needed = 0, uses_anonymous_args = 0
- 1355              		.loc 1 780 0
+ 1355              		.loc 1 783 0
  1356 09fc 2020A0E3 		mov	r2, #32
  1357 0a00 0030E0E3 		mvn	r3, #0
  1358 0a04 EB2F03E5 		str	r2, [r3, #-4075]
- 1359              		.loc 1 781 0
+ 1359              		.loc 1 784 0
  1360 0a08 74309FE5 		ldr	r3, .L127
  1361 0a0c 0222A0E3 		mov	r2, #536870912
- 1362              		.loc 1 779 0
+ 1362              		.loc 1 782 0
  1363 0a10 10402DE9 		stmfd	sp!, {r4, lr}
  1364              	.LCFI23:
- 1365              		.loc 1 781 0
+ 1365              		.loc 1 784 0
  1366 0a14 042083E5 		str	r2, [r3, #4]
- 1367              		.loc 1 782 0
+ 1367              		.loc 1 785 0
  1368 0a18 FEFFFFEB 		bl	vs1002Config
- 1369              		.loc 1 783 0
+ 1369              		.loc 1 786 0
  1370 0a1c 0000A0E3 		mov	r0, #0
  1371 0a20 0810A0E3 		mov	r1, #8
  1372 0a24 FEFFFFEB 		bl	vs1002SCIWrite
@@ -2148,7 +2151,7 @@
  1374              	.LVL62:
  1375              	.L124:
  1376              	.LBB65:
- 1377              		.loc 1 784 0
+ 1377              		.loc 1 787 0
  1378 0a2c 0000A0E3 		mov	r0, #0
  1379 0a30 014084E2 		add	r4, r4, #1
  1380 0a34 0010A0E1 		mov	r1, r0
@@ -2156,26 +2159,26 @@
  1382 0a3c 960054E3 		cmp	r4, #150
  1383 0a40 F9FFFF1A 		bne	.L124
  1384              	.LBE65:
- 1385              		.loc 1 785 0
+ 1385              		.loc 1 788 0
  1386 0a44 FEFFFFEB 		bl	vs1002Finish
- 1387              		.loc 1 786 0
+ 1387              		.loc 1 789 0
  1388 0a48 34209FE5 		ldr	r2, .L127
  1389 0a4c 083092E5 		ldr	r3, [r2, #8]
  1390 0a50 033783E3 		orr	r3, r3, #786432
  1391 0a54 503083E3 		orr	r3, r3, #80
  1392 0a58 083082E5 		str	r3, [r2, #8]
- 1393              		.loc 1 787 0
+ 1393              		.loc 1 790 0
  1394 0a5c 24009FE5 		ldr	r0, .L127+4
  1395 0a60 FEFFFFEB 		bl	closeSong
- 1396              		.loc 1 788 0
+ 1396              		.loc 1 791 0
  1397 0a64 20309FE5 		ldr	r3, .L127+8
  1398 0a68 0020A0E3 		mov	r2, #0
  1399 0a6c 0020C3E5 		strb	r2, [r3, #0]
- 1400              		.loc 1 789 0
+ 1400              		.loc 1 792 0
  1401 0a70 102082E2 		add	r2, r2, #16
  1402 0a74 0030E0E3 		mvn	r3, #0
  1403 0a78 EF2F03E5 		str	r2, [r3, #-4079]
- 1404              		.loc 1 790 0
+ 1404              		.loc 1 793 0
  1405 0a7c 1040BDE8 		ldmfd	sp!, {r4, lr}
  1406 0a80 1EFF2FE1 		bx	lr
  1407              	.L128:
@@ -2702,1044 +2705,1044 @@
  1932 0f08 0010D3E5 		ldrb	r1, [r3, #0]	@ zero_extendqisi2
  1933 0f0c 000051E3 		cmp	r1, #0
  1934 0f10 0700000A 		beq	.L166
- 1935 0f14 003098E5 		ldr	r3, [r8, #0]
- 1936 0f18 0320D3E5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
- 1937 0f1c 00608DE5 		str	r6, [sp, #0]
- 1938 0f20 0610A0E1 		mov	r1, r6
- 1939 0f24 02C0D3E5 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
- 1940 0f28 18019FE5 		ldr	r0, .L182+80
- 1941 0f2c 0430A0E1 		mov	r3, r4
- 1942 0f30 050000EA 		b	.L180
- 1943              	.L166:
- 1944              		.loc 1 639 0
- 1945 0f34 003098E5 		ldr	r3, [r8, #0]
- 1946 0f38 0320D3E5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
- 1947 0f3c 00108DE5 		str	r1, [sp, #0]
- 1948 0f40 04019FE5 		ldr	r0, .L182+84
- 1949 0f44 02C0D3E5 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
- 1950 0f48 0430A0E1 		mov	r3, r4
- 1951              	.L180:
- 1952 0f4c 04C08DE5 		str	ip, [sp, #4]
- 1953 0f50 FEFFFFEB 		bl	LCDPrintString
- 1954              		.loc 1 641 0
- 1955 0f54 0010E0E3 		mvn	r1, #0
- 1956 0f58 EF2F11E5 		ldr	r2, [r1, #-4079]
- 1957              		.loc 1 640 0
- 1958 0f5c C4309FE5 		ldr	r3, .L182+48
- 1959              		.loc 1 641 0
- 1960 0f60 102082E3 		orr	r2, r2, #16
- 1961              		.loc 1 640 0
- 1962 0f64 0000A0E3 		mov	r0, #0
- 1963 0f68 0000C3E5 		strb	r0, [r3, #0]
- 1964              		.loc 1 641 0
- 1965 0f6c EF2F01E5 		str	r2, [r1, #-4079]
- 1966              		.loc 1 643 0
- 1967 0f70 100080E2 		add	r0, r0, #16
- 1968              	.LBB88:
- 1969              	.LBB89:
- 1970              		.loc 1 262 0
- 1971 0f74 B8209FE5 		ldr	r2, .L182+60
- 1972 0f78 060000EA 		b	.L168
- 1973              	.LVL86:
- 1974              	.L169:
- 1975              	@ 262 "main.c" 1
- 1976 0f7c 0000A0E1 		nop
- 1977              	@ 0 "" 2
- 1978 0f80 013083E2 		add	r3, r3, #1
- 1979 0f84 020053E1 		cmp	r3, r2
- 1980 0f88 FBFFFF1A 		bne	.L169
- 1981              	.LBE89:
- 1982              	.LBE88:
- 1983              		.loc 1 651 0
- 1984 0f8c EF3F11E5 		ldr	r3, [r1, #-4079]
- 1985              	.LVL87:
- 1986 0f90 103083E3 		orr	r3, r3, #16
- 1987 0f94 EF3F01E5 		str	r3, [r1, #-4079]
- 1988              	.L168:
- 1989              		.loc 1 643 0
- 1990 0f98 EB0F01E5 		str	r0, [r1, #-4075]
- 1991 0f9c 0030A0E3 		mov	r3, #0
- 1992              	.LVL88:
- 1993 0fa0 F5FFFFEA 		b	.L169
- 1994              	.LVL89:
- 1995              	.L156:
- 1996              		.loc 1 654 0
- 1997 0fa4 58309FE5 		ldr	r3, .L182+12
- 1998 0fa8 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
- 1999 0fac 000053E3 		cmp	r3, #0
- 2000 0fb0 44009FE5 		ldr	r0, .L182+4
- 2001 0fb4 0200000A 		beq	.L170
- 2002 0fb8 000090E5 		ldr	r0, [r0, #0]
- 2003 0fbc FEFFFFEB 		bl	quickClear
- 2004 0fc0 020000EA 		b	.L171
- 2005              	.L170:
- 2006              		.loc 1 655 0
- 2007 0fc4 003090E5 		ldr	r3, [r0, #0]
- 2008 0fc8 0400D3E5 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
- 2009 0fcc FEFFFFEB 		bl	LCDClear
- 2010              	.L171:
- 2011              		.loc 1 656 0
- 2012 0fd0 24309FE5 		ldr	r3, .L182+4
- 2013 0fd4 000093E5 		ldr	r0, [r3, #0]
- 2014              	.L181:
- 2015 0fd8 FEFFFFEB 		bl	printMenu
- 2016              	.L147:
- 2017              		.loc 1 658 0
- 2018 0fdc 0020E0E3 		mvn	r2, #0
- 2019 0fe0 EF3F12E5 		ldr	r3, [r2, #-4079]
- 2020 0fe4 103083E3 		orr	r3, r3, #16
- 2021 0fe8 EF3F02E5 		str	r3, [r2, #-4079]
- 2022              		.loc 1 659 0
- 2023 0fec 08D08DE2 		add	sp, sp, #8
- 2024 0ff0 F04FBDE8 		ldmfd	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
- 2025 0ff4 1EFF2FE1 		bx	lr
- 2026              	.L183:
- 2027              		.align	2
- 2028              	.L182:
- 2029 0ff8 A0252600 		.word	2500000
- 2030 0ffc 7C040000 		.word	current_display
- 2031 1000 74000000 		.word	file_manager
- 2032 1004 01000000 		.word	file_is_open
- 2033 1008 14000000 		.word	current_song
- 2034 100c 00000000 		.word	white
- 2035 1010 00000000 		.word	black
- 2036 1014 00000000 		.word	NotFound
- 2037 1018 80969800 		.word	10000000
- 2038 101c 78020000 		.word	settings_menu
- 2039 1020 00000000 		.word	volume_setting
- 2040 1024 00000000 		.word	.LC0
- 2041 1028 08000000 		.word	button_pressed
- 2042 102c 60E31600 		.word	1500000
- 2043 1030 00000000 		.word	radio_channel
- 2044 1034 40420F00 		.word	1000000
- 2045 1038 75030000 		.word	885
- 2046 103c 32040000 		.word	1074
- 2047 1040 008002E0 		.word	-536707072
- 2048 1044 00000000 		.word	radio_enable
- 2049 1048 07000000 		.word	.LC2
- 2050 104c 03000000 		.word	.LC1
- 2051              	.LFE16:
- 2053              		.section	.rodata.str1.1
- 2054              	.LC3:
- 2055 000a 53442049 		.ascii	"SD Init Error\012\000"
- 2055      6E697420 
- 2055      4572726F 
- 2055      720A00
- 2056              	.LC4:
- 2057 0019 5344204F 		.ascii	"SD OpenRoot Error\012\000"
- 2057      70656E52 
- 2057      6F6F7420 
- 2057      4572726F 
- 2057      720A00
- 2058              		.text
- 2059              		.align	2
- 2060              		.global	bootUp
- 2062              	bootUp:
- 2063              	.LFB4:
- 2064              		.loc 1 269 0
- 2065              		@ Function supports interworking.
- 2066              		@ args = 0, pretend = 0, frame = 0
- 2067              		@ frame_needed = 0, uses_anonymous_args = 0
- 2068 1050 04E02DE5 		str	lr, [sp, #-4]!
- 2069              	.LCFI27:
- 2070              		.loc 1 270 0
- 2071 1054 B0019FE5 		ldr	r0, .L190
- 2072 1058 FEFFFFEB 		bl	rprintf_devopen
- 2073              	.LBB90:
- 2074              	.LBB91:
- 2075              		.loc 1 262 0
- 2076 105c AC219FE5 		ldr	r2, .L190+4
- 2077              	.LBE91:
- 2078              	.LBE90:
- 2079              		.loc 1 270 0
- 2080 1060 0030A0E3 		mov	r3, #0
- 2081              	.LVL90:
- 2082              	.L185:
- 2083              	.LBB93:
- 2084              	.LBB92:
- 2085              		.loc 1 262 0
- 2086              	@ 262 "main.c" 1
- 2087 1064 0000A0E1 		nop
- 2088              	@ 0 "" 2
- 2089 1068 013083E2 		add	r3, r3, #1
- 2090 106c 020053E1 		cmp	r3, r2
- 2091 1070 FBFFFF1A 		bne	.L185
- 2092              	.LBE92:
- 2093              	.LBE93:
- 2094              		.loc 1 274 0
- 2095 1074 FEFFFFEB 		bl	sd_raw_init
- 2096              	.LVL91:
- 2097 1078 000050E3 		cmp	r0, #0
- 2098              		.loc 1 276 0
- 2099 107c 90019F05 		ldreq	r0, .L190+8
- 2100 1080 FEFFFF0B 		bleq	rprintf
- 2101              	.L186:
- 2102              		.loc 1 278 0
- 2103 1084 FEFFFFEB 		bl	openroot
- 2104 1088 000050E3 		cmp	r0, #0
- 2105              		.loc 1 280 0
- 2106 108c 84019F15 		ldrne	r0, .L190+12
- 2107 1090 FEFFFF1B 		blne	rprintf
- 2108              	.L187:
- 2109              		.loc 1 285 0
- 2110 1094 80219FE5 		ldr	r2, .L190+16
- 2111 1098 083092E5 		ldr	r3, [r2, #8]
- 2112 109c 013683E3 		orr	r3, r3, #1048576
- 2113 10a0 083082E5 		str	r3, [r2, #8]
- 2114              		.loc 1 286 0
- 2115 10a4 083092E5 		ldr	r3, [r2, #8]
- 2116 10a8 0236C3E3 		bic	r3, r3, #2097152
- 2117 10ac 083082E5 		str	r3, [r2, #8]
- 2118              		.loc 1 287 0
- 2119 10b0 68119FE5 		ldr	r1, .L190+20
- 2120 10b4 043091E5 		ldr	r3, [r1, #4]
- 2121 10b8 033B83E3 		orr	r3, r3, #3072
- 2122 10bc 043081E5 		str	r3, [r1, #4]
- 2123              		.loc 1 288 0
- 2124 10c0 183092E5 		ldr	r3, [r2, #24]
- 2125 10c4 013483E3 		orr	r3, r3, #16777216
- 2126 10c8 033883E3 		orr	r3, r3, #196608
- 2127 10cc 183082E5 		str	r3, [r2, #24]
- 2128              		.loc 1 291 0
- 2129 10d0 183092E5 		ldr	r3, [r2, #24]
- 2130 10d4 023483E3 		orr	r3, r3, #33554432
- 2131 10d8 183082E5 		str	r3, [r2, #24]
- 2132              		.loc 1 292 0
- 2133 10dc 183092E5 		ldr	r3, [r2, #24]
- 2134 10e0 013283E3 		orr	r3, r3, #268435456
- 2135 10e4 183082E5 		str	r3, [r2, #24]
- 2136              		.loc 1 295 0
- 2137 10e8 083092E5 		ldr	r3, [r2, #8]
- 2138 10ec 803083E3 		orr	r3, r3, #128
- 2139 10f0 083082E5 		str	r3, [r2, #8]
- 2140              		.loc 1 298 0
- 2141 10f4 083092E5 		ldr	r3, [r2, #8]
- 2142 10f8 033B83E3 		orr	r3, r3, #3072
- 2143 10fc 083082E5 		str	r3, [r2, #8]
- 2144              		.loc 1 299 0
- 2145 1100 003091E5 		ldr	r3, [r1, #0]
- 2146 1104 CF3483E3 		orr	r3, r3, #-822083584
- 2147 1108 003081E5 		str	r3, [r1, #0]
- 2148              		.loc 1 300 0
- 2149 110c 033BA0E3 		mov	r3, #3072
- 2150 1110 0C3082E5 		str	r3, [r2, #12]
- 2151              		.loc 1 303 0
- 2152 1114 083092E5 		ldr	r3, [r2, #8]
- 2153 1118 033783E3 		orr	r3, r3, #786432
- 2154 111c 083082E5 		str	r3, [r2, #8]
- 2155              		.loc 1 306 0
- 2156 1120 083092E5 		ldr	r3, [r2, #8]
- 2157 1124 073283E3 		orr	r3, r3, #1879048192
- 2158 1128 083082E5 		str	r3, [r2, #8]
- 2159              		.loc 1 307 0
- 2160 112c 0232A0E3 		mov	r3, #536870912
- 2161 1130 043082E5 		str	r3, [r2, #4]
- 2162              		.loc 1 308 0
- 2163 1134 033083E0 		add	r3, r3, r3
- 2164 1138 043082E5 		str	r3, [r2, #4]
- 2165              		.loc 1 309 0
- 2166 113c 0D3283E2 		add	r3, r3, #-805306368
- 2167 1140 043082E5 		str	r3, [r2, #4]
- 2168              		.loc 1 312 0
- 2169 1144 183092E5 		ldr	r3, [r2, #24]
- 2170 1148 0E36C3E3 		bic	r3, r3, #14680064
- 2171 114c 183082E5 		str	r3, [r2, #24]
- 2172              		.loc 1 314 0
- 2173 1150 083092E5 		ldr	r3, [r2, #8]
- 2174 1154 0235C3E3 		bic	r3, r3, #8388608
- 2175 1158 083082E5 		str	r3, [r2, #8]
- 2176              		.loc 1 317 0
- 2177 115c C0309FE5 		ldr	r3, .L190+24
- 2178 1160 0120A0E3 		mov	r2, #1
- 2179              		.loc 1 318 0
- 2180 1164 0010E0E3 		mvn	r1, #0
- 2181              		.loc 1 317 0
- 2182 1168 002183E5 		str	r2, [r3, #256]
- 2183              		.loc 1 318 0
- 2184 116c 3030E0E3 		mvn	r3, #48
- 2185 1170 F33F01E5 		str	r3, [r1, #-4083]
- 2186              		.loc 1 319 0
- 2187 1174 413083E2 		add	r3, r3, #65
- 2188 1178 EF3F01E5 		str	r3, [r1, #-4079]
- 2189              		.loc 1 320 0
- 2190 117c 153083E2 		add	r3, r3, #21
- 2191 1180 FF3D01E5 		str	r3, [r1, #-3583]
- 2192              		.loc 1 321 0
- 2193 1184 9C309FE5 		ldr	r3, .L190+28
- 2194 1188 FF3E01E5 		str	r3, [r1, #-3839]
- 2195              		.loc 1 322 0
- 2196 118c 2430A0E3 		mov	r3, #36
- 2197 1190 FB3D01E5 		str	r3, [r1, #-3579]
- 2198              		.loc 1 323 0
- 2199 1194 90309FE5 		ldr	r3, .L190+32
- 2200              		.loc 1 326 0
- 2201 1198 90009FE5 		ldr	r0, .L190+36
- 2202              		.loc 1 323 0
- 2203 119c FB3E01E5 		str	r3, [r1, #-3835]
- 2204              		.loc 1 326 0
- 2205 11a0 4B3FA0E3 		mov	r3, #300
- 2206 11a4 0C3080E5 		str	r3, [r0, #12]
- 2207              		.loc 1 327 0
- 2208 11a8 043090E5 		ldr	r3, [r0, #4]
- 2209 11ac 013083E3 		orr	r3, r3, #1
- 2210 11b0 043080E5 		str	r3, [r0, #4]
- 2211              		.loc 1 328 0
- 2212 11b4 00C0A0E3 		mov	ip, #0
- 2213              		.loc 1 329 0
- 2214 11b8 0330A0E3 		mov	r3, #3
- 2215              		.loc 1 328 0
- 2216 11bc 70C080E5 		str	ip, [r0, #112]
- 2217              		.loc 1 333 0
- 2218 11c0 6C209FE5 		ldr	r2, .L190+40
- 2219              		.loc 1 329 0
- 2220 11c4 143080E5 		str	r3, [r0, #20]
- 2221              		.loc 1 330 0
- 2222 11c8 FA3FA0E3 		mov	r3, #1000
- 2223 11cc 183080E5 		str	r3, [r0, #24]
- 2224              		.loc 1 333 0
- 2225 11d0 323E43E2 		sub	r3, r3, #800
- 2226 11d4 0C3082E5 		str	r3, [r2, #12]
- 2227              		.loc 1 334 0
- 2228 11d8 043092E5 		ldr	r3, [r2, #4]
- 2229 11dc 013083E3 		orr	r3, r3, #1
- 2230 11e0 043082E5 		str	r3, [r2, #4]
- 2231              		.loc 1 339 0
- 2232 11e4 4C109FE5 		ldr	r1, .L190+44
- 2233              		.loc 1 336 0
- 2234 11e8 0A3CA0E3 		mov	r3, #2560
- 2235              		.loc 1 335 0
- 2236 11ec 70C082E5 		str	ip, [r2, #112]
- 2237              		.loc 1 336 0
- 2238 11f0 283082E5 		str	r3, [r2, #40]
- 2239              		.loc 1 339 0
- 2240 11f4 273D43E2 		sub	r3, r3, #2496
- 2241 11f8 0C3081E5 		str	r3, [r1, #12]
- 2242              		.loc 1 340 0
- 2243 11fc 2030A0E3 		mov	r3, #32
- 2244 1200 003081E5 		str	r3, [r1, #0]
- 2245              		.loc 1 341 0
- 2246 1204 04E09DE4 		ldr	lr, [sp], #4
- 2247 1208 1EFF2FE1 		bx	lr
- 2248              	.L191:
- 2249              		.align	2
- 2250              	.L190:
- 2251 120c 00000000 		.word	putc_serial0
- 2252 1210 A0860100 		.word	100000
- 2253 1214 0A000000 		.word	.LC3
- 2254 1218 19000000 		.word	.LC4
- 2255 121c 008002E0 		.word	-536707072
- 2256 1220 00C002E0 		.word	-536690688
- 2257 1224 00C01FE0 		.word	-534790144
- 2258 1228 00000000 		.word	timer1ISR
- 2259 122c 00000000 		.word	timer0ISR
- 2260 1230 004000E0 		.word	-536854528
- 2261 1234 008000E0 		.word	-536838144
- 2262 1238 000002E0 		.word	-536739840
- 2263              	.LFE4:
- 2265              		.align	2
- 2267              	timer0ISR:
- 2268              	.LFB6:
- 2269              		.loc 1 362 0
- 2270              		@ Function supports interworking.
- 2271              		@ args = 0, pretend = 0, frame = 0
- 2272              		@ frame_needed = 0, uses_anonymous_args = 0
- 2273              	.LBB94:
- 2274              	.LBB95:
- 2275              		.loc 1 378 0
- 2276 123c A8209FE5 		ldr	r2, .L203
- 2277 1240 103092E5 		ldr	r3, [r2, #16]
- 2278 1244 020513E3 		tst	r3, #8388608
- 2279              	.LBE95:
- 2280              	.LBE94:
- 2281              		.loc 1 362 0
- 2282 1248 04E02DE5 		str	lr, [sp, #-4]!
- 2283              	.LCFI28:
- 2284              	.LBB97:
- 2285              	.LBB96:
- 2286              		.loc 1 378 0
- 2287 124c 0220A003 		moveq	r2, #2
- 2288 1250 0700000A 		beq	.L194
- 2289              		.loc 1 379 0
- 2290 1254 103092E5 		ldr	r3, [r2, #16]
- 2291 1258 020613E3 		tst	r3, #2097152
- 2292 125c 0120A003 		moveq	r2, #1
- 2293 1260 0300000A 		beq	.L194
- 2294              		.loc 1 380 0
- 2295 1264 103092E5 		ldr	r3, [r2, #16]
- 2296 1268 010513E3 		tst	r3, #4194304
- 2297 126c 0320A003 		moveq	r2, #3
- 2298 1270 0020A013 		movne	r2, #0
- 2299              	.L194:
- 2300              	.LBE96:
- 2301              	.LBE97:
- 2302              		.loc 1 363 0
- 2303 1274 74309FE5 		ldr	r3, .L203+4
- 2304 1278 0020C3E5 		strb	r2, [r3, #0]
- 2305              		.loc 1 364 0
- 2306 127c FEFFFFEB 		bl	MMA_get_y
- 2307              		.loc 1 365 0
- 2308 1280 6C309FE5 		ldr	r3, .L203+8
- 2309 1284 002093E5 		ldr	r2, [r3, #0]
- 2310              		.loc 1 364 0
- 2311 1288 68309FE5 		ldr	r3, .L203+12
- 2312              		.loc 1 365 0
- 2313 128c AF0F52E3 		cmp	r2, #700
- 2314              		.loc 1 364 0
- 2315 1290 000083E5 		str	r0, [r3, #0]
- 2316              		.loc 1 365 0
- 2317 1294 010000AA 		bge	.L197
- 2318 1298 AF0F50E3 		cmp	r0, #700
- 2319 129c 030000CA 		bgt	.L198
- 2320              	.L197:
- 2321 12a0 AF0F52E3 		cmp	r2, #700
- 2322 12a4 030000DA 		ble	.L199
- 2323 12a8 AF0F50E3 		cmp	r0, #700
- 2324 12ac 010000AA 		bge	.L199
- 2325              	.L198:
- 2326 12b0 0120A0E3 		mov	r2, #1
- 2327 12b4 000000EA 		b	.L202
- 2328              	.L199:
- 2329              		.loc 1 366 0
- 2330 12b8 0020A0E3 		mov	r2, #0
- 2331              	.L202:
- 2332 12bc 38309FE5 		ldr	r3, .L203+16
- 2333 12c0 0020C3E5 		strb	r2, [r3, #0]
- 2334              		.loc 1 368 0
- 2335 12c4 34309FE5 		ldr	r3, .L203+20
- 2336 12c8 FF20A0E3 		mov	r2, #255
- 2337 12cc 002083E5 		str	r2, [r3, #0]
- 2338              		.loc 1 367 0
- 2339 12d0 1C309FE5 		ldr	r3, .L203+8
- 2340              		.loc 1 369 0
- 2341 12d4 0020A0E3 		mov	r2, #0
- 2342              		.loc 1 367 0
- 2343 12d8 000083E5 		str	r0, [r3, #0]
- 2344              		.loc 1 369 0
- 2345 12dc 0030E0E3 		mvn	r3, #0
- 2346 12e0 CF2F03E5 		str	r2, [r3, #-4047]
- 2347              		.loc 1 370 0
- 2348 12e4 04E09DE4 		ldr	lr, [sp], #4
- 2349 12e8 1EFF2FE1 		bx	lr
- 2350              	.L204:
- 2351              		.align	2
- 2352              	.L203:
- 2353 12ec 008002E0 		.word	-536707072
- 2354 12f0 08000000 		.word	button_pressed
- 2355 12f4 0C000000 		.word	prev_position
- 2356 12f8 10000000 		.word	cur_position
- 2357 12fc 09000000 		.word	update_screen
- 2358 1300 004000E0 		.word	-536854528
- 2359              	.LFE6:
- 2361              		.global	__divsi3
- 2362              		.global	__modsi3
- 2363              		.section	.rodata.str1.1
- 2364              	.LC5:
- 2365 002c 474F2047 		.ascii	"GO GO MP3!\000"
- 2365      4F204D50 
- 2365      332100
- 2366              		.text
- 2367              		.align	2
- 2368              		.global	main
- 2370              	main:
- 2371              	.LFB2:
- 2372              		.loc 1 94 0
- 2373              		@ Function supports interworking.
- 2374              		@ args = 0, pretend = 0, frame = 0
- 2375              		@ frame_needed = 1, uses_anonymous_args = 0
- 2376 1304 0DC0A0E1 		mov	ip, sp
- 2377              	.LCFI29:
- 2378 1308 F0DF2DE9 		stmfd	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, ip, lr, pc}
- 2379              	.LCFI30:
- 2380 130c 04B04CE2 		sub	fp, ip, #4
- 2381              	.LCFI31:
- 2382 1310 08D04DE2 		sub	sp, sp, #8
- 2383              	.LCFI32:
- 2384              		.loc 1 104 0
- 2385 1314 FEFFFFEB 		bl	bootUp
- 2386              		.loc 1 107 0
- 2387 1318 FEFFFFEB 		bl	vs1002Config
- 2388              		.loc 1 108 0
- 2389 131c FEFFFFEB 		bl	vs1002Reset
- 2390              		.loc 1 109 0
- 2391 1320 FEFFFFEB 		bl	vs1002Init
- 2392              	.LBB98:
- 2393              		.loc 1 110 0
- 2394 1324 3000A0E3 		mov	r0, #48
- 2395 1328 FEFFFFEB 		bl	vs1002SetVolume
- 2396 132c 3000A0E3 		mov	r0, #48
- 2397 1330 FEFFFFEB 		bl	vs1002SetVolume
- 2398 1334 3000A0E3 		mov	r0, #48
- 2399 1338 FEFFFFEB 		bl	vs1002SetVolume
- 2400 133c 3000A0E3 		mov	r0, #48
- 2401 1340 FEFFFFEB 		bl	vs1002SetVolume
- 2402 1344 3000A0E3 		mov	r0, #48
- 2403 1348 FEFFFFEB 		bl	vs1002SetVolume
- 2404              	.LBE98:
- 2405              		.loc 1 111 0
- 2406 134c FEFFFFEB 		bl	vs1002Finish
- 2407              		.loc 1 114 0
- 2408 1350 FEFFFFEB 		bl	LCDInit
- 2409              		.loc 1 115 0
- 2410 1354 14359FE5 		ldr	r3, .L241
- 2411 1358 0000D3E5 		ldrb	r0, [r3, #0]	@ zero_extendqisi2
- 2412 135c FEFFFFEB 		bl	LCDClear
- 2413              		.loc 1 116 0
- 2414 1360 FEFFFFEB 		bl	LCDPrintLogo
- 2415              		.loc 1 119 0
- 2416 1364 08059FE5 		ldr	r0, .L241+4
- 2417 1368 FEFFFFEB 		bl	initializeRadio
- 2418              		.loc 1 122 0
- 2419 136c 04259FE5 		ldr	r2, .L241+8
- 2420 1370 003092E5 		ldr	r3, [r2, #0]
- 2421 1374 153C83E3 		orr	r3, r3, #5376
- 2422 1378 003082E5 		str	r3, [r2, #0]
- 2423 137c 0050A0E3 		mov	r5, #0
- 2424              	.LVL92:
- 2425              	.L206:
- 2426              		.loc 1 125 0
- 2427 1380 0000A0E3 		mov	r0, #0
- 2428 1384 FEFFFFEB 		bl	rootDirectory_files_stream
- 2429 1388 006050E2 		subs	r6, r0, #0
- 2430              		.loc 1 124 0
- 2431 138c 015085E2 		add	r5, r5, #1
- 2432              		.loc 1 125 0
- 2433 1390 FAFFFF1A 		bne	.L206
- 2434              		.loc 1 126 0
- 2435 1394 063085E2 		add	r3, r5, #6
- 2436 1398 0330C3E3 		bic	r3, r3, #3
- 2437 139c 0DD063E0 		rsb	sp, r3, sp
- 2438 13a0 08708DE2 		add	r7, sp, #8
- 2439              		.loc 1 127 0
- 2440 13a4 0700A0E1 		mov	r0, r7
- 2441 13a8 011085E2 		add	r1, r5, #1
- 2442 13ac FEFFFFEB 		bl	rootDirectory_files
- 2443              		.loc 1 128 0
- 2444 13b0 8032A0E1 		mov	r3, r0, asl #5
- 2445 13b4 043083E2 		add	r3, r3, #4
- 2446 13b8 0DD063E0 		rsb	sp, r3, sp
- 2447              		.loc 1 127 0
- 2448 13bc B8349FE5 		ldr	r3, .L241+12
- 2449 13c0 0040A0E1 		mov	r4, r0
- 2450              	.LBB99:
- 2451              		.loc 1 132 0
- 2452 13c4 0600A0E1 		mov	r0, r6
- 2453              	.LVL93:
- 2454              	.LBE99:
- 2455              		.loc 1 127 0
- 2456 13c8 004083E5 		str	r4, [r3, #0]
- 2457              		.loc 1 128 0
- 2458 13cc 08608DE2 		add	r6, sp, #8
- 2459              	.LBB101:
- 2460              		.loc 1 132 0
- 2461 13d0 00E0A0E1 		mov	lr, r0
- 2462              	.LVL94:
- 2463 13d4 0080A0E1 		mov	r8, r0
- 2464              	.LVL95:
- 2465 13d8 100000EA 		b	.L207
- 2466              	.LVL96:
- 2467              	.L213:
- 2468 13dc 0030A0E3 		mov	r3, #0
- 2469              	.LBB100:
- 2470              		.loc 1 142 0
- 2471 13e0 8EC2A0E1 		mov	ip, lr, asl #5
- 2472              	.L212:
- 2473              		.loc 1 134 0
- 2474 13e4 050050E1 		cmp	r0, r5
- 2475              		.loc 1 142 0
- 2476 13e8 03208CE0 		add	r2, ip, r3
- 2477 13ec 0280C687 		strhib	r8, [r6, r2]
- 2478              		.loc 1 134 0
- 2479 13f0 0600008A 		bhi	.L211
- 2480              	.LVL97:
- 2481              		.loc 1 135 0
- 2482 13f4 0010D7E7 		ldrb	r1, [r7, r0]	@ zero_extendqisi2
- 2483 13f8 2C0051E3 		cmp	r1, #44
- 2484              		.loc 1 136 0
- 2485 13fc 0230A001 		moveq	r3, r2
- 2486              		.loc 1 139 0
- 2487 1400 0210C617 		strneb	r1, [r6, r2]
- 2488              		.loc 1 136 0
- 2489 1404 0380C607 		streqb	r8, [r6, r3]
- 2490              		.loc 1 140 0
- 2491 1408 010080E2 		add	r0, r0, #1
- 2492              		.loc 1 136 0
- 2493 140c 1F30A003 		moveq	r3, #31
- 2494              	.LVL98:
- 2495              	.L211:
- 2496              		.loc 1 133 0
- 2497 1410 013083E2 		add	r3, r3, #1
- 2498 1414 200053E3 		cmp	r3, #32
- 2499 1418 F1FFFF1A 		bne	.L212
- 2500              	.LBE100:
- 2501              		.loc 1 132 0
- 2502 141c 01E08EE2 		add	lr, lr, #1
- 2503              	.LVL99:
- 2504              	.L207:
- 2505 1420 04005EE1 		cmp	lr, r4
- 2506 1424 ECFFFFBA 		blt	.L213
- 2507              	.LBE101:
- 2508              		.loc 1 148 0
- 2509 1428 0400A0E1 		mov	r0, r4
- 2510              	.LVL100:
- 2511 142c 0F10A0E3 		mov	r1, #15
- 2512 1430 FEFFFFEB 		bl	__divsi3
- 2513              	.LVL101:
- 2514              		.loc 1 149 0
- 2515 1434 40349FE5 		ldr	r3, .L241+12
- 2516              		.loc 1 148 0
- 2517 1438 FF4000E2 		and	r4, r0, #255
- 2518 143c 3C549FE5 		ldr	r5, .L241+16
- 2519              	.LVL102:
- 2520              		.loc 1 149 0
- 2521 1440 000093E5 		ldr	r0, [r3, #0]
- 2522              		.loc 1 148 0
- 2523 1444 013044E2 		sub	r3, r4, #1
- 2524 1448 0530C5E5 		strb	r3, [r5, #5]
- 2525              		.loc 1 149 0
- 2526 144c 0F10A0E3 		mov	r1, #15
- 2527 1450 FEFFFFEB 		bl	__modsi3
- 2528              		.loc 1 152 0
- 2529 1454 14349FE5 		ldr	r3, .L241
- 2530 1458 0020D3E5 		ldrb	r2, [r3, #0]	@ zero_extendqisi2
- 2531              		.loc 1 153 0
- 2532 145c 20349FE5 		ldr	r3, .L241+20
- 2533              		.loc 1 149 0
- 2534 1460 000050E3 		cmp	r0, #0
- 2535 1464 0540C515 		strneb	r4, [r5, #5]
- 2536              		.loc 1 153 0
- 2537 1468 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
- 2538              		.loc 1 151 0
- 2539 146c 0C449FE5 		ldr	r4, .L241+16
- 2540 1470 0050A0E3 		mov	r5, #0
- 2541              		.loc 1 153 0
- 2542 1474 0430C4E5 		strb	r3, [r4, #4]
- 2543              		.loc 1 156 0
- 2544 1478 0130A0E3 		mov	r3, #1
- 2545              		.loc 1 152 0
- 2546 147c 0320C4E5 		strb	r2, [r4, #3]
- 2547              		.loc 1 158 0
- 2548 1480 0400A0E1 		mov	r0, r4
- 2549 1484 0610A0E1 		mov	r1, r6
- 2550              		.loc 1 156 0
- 2551 1488 0030C4E5 		strb	r3, [r4, #0]
- 2552              		.loc 1 151 0
- 2553 148c 0250C4E5 		strb	r5, [r4, #2]
- 2554              		.loc 1 155 0
- 2555 1490 0650C4E5 		strb	r5, [r4, #6]
- 2556              		.loc 1 157 0
- 2557 1494 085084E5 		str	r5, [r4, #8]
- 2558              		.loc 1 158 0
- 2559 1498 FEFFFFEB 		bl	getNewFiles
- 2560              	.LBB102:
- 2561              		.loc 1 159 0
- 2562 149c E4239FE5 		ldr	r2, .L241+24
- 2563              	.L215:
- 2564 14a0 0530D2E7 		ldrb	r3, [r2, r5]	@ zero_extendqisi2
- 2565              	.LVL103:
- 2566 14a4 015085E2 		add	r5, r5, #1
- 2567 14a8 160055E3 		cmp	r5, #22
- 2568 14ac EC31C4E5 		strb	r3, [r4, #492]
- 2569 14b0 014084E2 		add	r4, r4, #1
- 2570 14b4 F9FFFF1A 		bne	.L215
- 2571              	.LBE102:
- 2572              		.loc 1 162 0
- 2573 14b8 CC039FE5 		ldr	r0, .L241+28
- 2574 14bc FEFFFFEB 		bl	fillSettings
- 2575              		.loc 1 166 0
- 2576 14c0 B0139FE5 		ldr	r1, .L241+8
- 2577 14c4 003091E5 		ldr	r3, [r1, #0]
- 2578              		.loc 1 165 0
- 2579 14c8 B0239FE5 		ldr	r2, .L241+16
- 2580 14cc BC439FE5 		ldr	r4, .L241+32
- 2581              		.loc 1 166 0
- 2582 14d0 FF3DC3E3 		bic	r3, r3, #16320
- 2583 14d4 3030C3E3 		bic	r3, r3, #48
- 2584              		.loc 1 167 0
- 2585 14d8 0400D2E5 		ldrb	r0, [r2, #4]	@ zero_extendqisi2
- 2586              		.loc 1 165 0
- 2587 14dc 002084E5 		str	r2, [r4, #0]
- 2588              		.loc 1 166 0
- 2589 14e0 003081E5 		str	r3, [r1, #0]
- 2590              		.loc 1 167 0
- 2591 14e4 FEFFFFEB 		bl	LCDClear
- 2592              		.loc 1 168 0
- 2593 14e8 000094E5 		ldr	r0, [r4, #0]
- 2594 14ec FEFFFFEB 		bl	printMenu
- 2595              		.loc 1 171 0
- 2596 14f0 003094E5 		ldr	r3, [r4, #0]
- 2597 14f4 0010A0E3 		mov	r1, #0
- 2598 14f8 0320D3E5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
- 2599 14fc 00108DE5 		str	r1, [sp, #0]
- 2600 1500 02C0D3E5 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
- 2601 1504 88039FE5 		ldr	r0, .L241+36
- 2602 1508 0230A0E3 		mov	r3, #2
- 2603 150c 04C08DE5 		str	ip, [sp, #4]
- 2604 1510 FEFFFFEB 		bl	LCDPrintString
- 2605              		.loc 1 175 0
- 2606 1514 7C739FE5 		ldr	r7, .L241+40
- 2607              		.loc 1 177 0
- 2608 1518 50939FE5 		ldr	r9, .L241
- 2609              		.loc 1 187 0
- 2610 151c 78839FE5 		ldr	r8, .L241+44
- 2611              	.LVL104:
- 2612              	.LBB103:
- 2613              	.LBB104:
- 2614              		.loc 1 262 0
- 2615 1520 78A39FE5 		ldr	sl, .L241+48
- 2616              	.L233:
- 2617              	.LBE104:
- 2618              	.LBE103:
- 2619              		.loc 1 175 0
- 2620 1524 003097E5 		ldr	r3, [r7, #0]
- 2621 1528 020513E3 		tst	r3, #8388608
- 2622 152c 2100000A 		beq	.L216
- 2623              		.loc 1 177 0
- 2624 1530 0000D9E5 		ldrb	r0, [r9, #0]	@ zero_extendqisi2
- 2625 1534 FEFFFFEB 		bl	LCDClear
- 2626              		.loc 1 178 0
- 2627 1538 0430A0E3 		mov	r3, #4
- 2628 153c 00308DE5 		str	r3, [sp, #0]
- 2629 1540 003094E5 		ldr	r3, [r4, #0]
- 2630 1544 38139FE5 		ldr	r1, .L241+20
- 2631 1548 02C0D3E5 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
- 2632 154c 0020D1E5 		ldrb	r2, [r1, #0]	@ zero_extendqisi2
- 2633 1550 0730A0E3 		mov	r3, #7
- 2634 1554 48039FE5 		ldr	r0, .L241+52
- 2635 1558 0010A0E3 		mov	r1, #0
- 2636 155c 04C08DE5 		str	ip, [sp, #4]
- 2637 1560 FEFFFFEB 		bl	LCDPrintString
- 2638 1564 0030A0E3 		mov	r3, #0
- 2639              	.LVL105:
- 2640              	.L217:
- 2641              	.LBB106:
- 2642              	.LBB107:
- 2643              		.loc 1 262 0
- 2644              	@ 262 "main.c" 1
- 2645 1568 0000A0E1 		nop
- 2646              	@ 0 "" 2
- 2647 156c 34239FE5 		ldr	r2, .L241+56
- 2648 1570 013083E2 		add	r3, r3, #1
- 2649 1574 020053E1 		cmp	r3, r2
- 2650 1578 FAFFFF1A 		bne	.L217
- 2651              	.LBE107:
- 2652              	.LBE106:
- 2653              		.loc 1 180 0
- 2654 157c 3020A0E3 		mov	r2, #48
- 2655 1580 0030E0E3 		mvn	r3, #0
- 2656              	.LVL106:
- 2657 1584 EB2F03E5 		str	r2, [r3, #-4075]
- 2658              		.loc 1 181 0
- 2659 1588 FEFFFFEB 		bl	main_msc
- 2660              	.LBB108:
- 2661              	.LBB109:
- 2662              		.loc 1 685 0
- 2663 158c 0E22A0E3 		mov	r2, #-536870912
- 2664 1590 003092E5 		ldr	r3, [r2, #0]
- 2665 1594 033083E3 		orr	r3, r3, #3
- 2666 1598 003082E5 		str	r3, [r2, #0]
- 2667              		.loc 1 686 0
- 2668 159c AA10A0E3 		mov	r1, #170
- 2669              		.loc 1 687 0
- 2670 15a0 5530A0E3 		mov	r3, #85
- 2671              		.loc 1 686 0
- 2672 15a4 081082E5 		str	r1, [r2, #8]
- 2673              		.loc 1 687 0
- 2674 15a8 083082E5 		str	r3, [r2, #8]
- 2675              		.loc 1 689 0
- 2676 15ac 0030A0E3 		mov	r3, #0
- 2677              		.loc 1 688 0
- 2678 15b0 081082E5 		str	r1, [r2, #8]
- 2679              		.loc 1 689 0
- 2680 15b4 083082E5 		str	r3, [r2, #8]
- 2681              	.L216:
- 2682              	.LBE109:
- 2683              	.LBE108:
- 2684              		.loc 1 187 0
- 2685 15b8 0030D8E5 		ldrb	r3, [r8, #0]	@ zero_extendqisi2
- 2686 15bc 000053E3 		cmp	r3, #0
- 2687 15c0 4300001A 		bne	.L218
- 2688 15c4 E0329FE5 		ldr	r3, .L241+60
- 2689 15c8 0050D3E5 		ldrb	r5, [r3, #0]	@ zero_extendqisi2
- 2690              	.LVL107:
- 2691 15cc 000055E3 		cmp	r5, #0
- 2692 15d0 3F00001A 		bne	.L218
- 2693              		.loc 1 189 0
- 2694 15d4 D4329FE5 		ldr	r3, .L241+64
- 2695 15d8 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
- 2696 15dc 000053E3 		cmp	r3, #0
- 2697 15e0 3B00000A 		beq	.L218
- 2698              		.loc 1 190 0
- 2699 15e4 2020A0E3 		mov	r2, #32
- 2700 15e8 0030E0E3 		mvn	r3, #0
- 2701 15ec EB2F03E5 		str	r2, [r3, #-4075]
- 2702              		.loc 1 191 0
- 2703 15f0 BC029FE5 		ldr	r0, .L241+68
- 2704 15f4 FEFFFFEB 		bl	closeSong
- 2705              		.loc 1 195 0
- 2706 15f8 80129FE5 		ldr	r1, .L241+16
- 2707              		.loc 1 192 0
- 2708 15fc B4329FE5 		ldr	r3, .L241+72
- 2709              		.loc 1 195 0
- 2710 1600 0020D1E5 		ldrb	r2, [r1, #0]	@ zero_extendqisi2
- 2711              		.loc 1 192 0
- 2712 1604 0050C3E5 		strb	r5, [r3, #0]
- 2713              		.loc 1 195 0
- 2714 1608 0E0052E3 		cmp	r2, #14
- 2715              		.loc 1 193 0
- 2716 160c 0232A0E3 		mov	r3, #536870912
- 2717 1610 043087E5 		str	r3, [r7, #4]
- 2718              		.loc 1 196 0
- 2719 1614 01208292 		addls	r2, r2, #1
- 2720              		.loc 1 197 0
- 2721 1618 08309195 		ldrls	r3, [r1, #8]
- 2722              		.loc 1 196 0
- 2723 161c 0020C195 		strlsb	r2, [r1, #0]
- 2724              		.loc 1 200 0
- 2725 1620 58C29FE5 		ldr	ip, .L241+16
- 2726              		.loc 1 197 0
- 2727 1624 01308392 		addls	r3, r3, #1
- 2728 1628 08308195 		strls	r3, [r1, #8]
- 2729              		.loc 1 200 0
- 2730 162c 0030DCE5 		ldrb	r3, [ip, #0]	@ zero_extendqisi2
- 2731 1630 0F0053E3 		cmp	r3, #15
- 2732 1634 0C00001A 		bne	.L220
- 2733 1638 0620DCE5 		ldrb	r2, [ip, #6]	@ zero_extendqisi2
- 2734 163c 0530DCE5 		ldrb	r3, [ip, #5]	@ zero_extendqisi2
- 2735 1640 030052E1 		cmp	r2, r3
- 2736 1644 0800002A 		bcs	.L220
- 2737              		.loc 1 203 0
- 2738 1648 013082E2 		add	r3, r2, #1
- 2739              		.loc 1 201 0
- 2740 164c 0120A0E3 		mov	r2, #1
- 2741 1650 0020CCE5 		strb	r2, [ip, #0]
- 2742              		.loc 1 202 0
- 2743 1654 0020A0E3 		mov	r2, #0
- 2744              		.loc 1 204 0
- 2745 1658 0C00A0E1 		mov	r0, ip
- 2746 165c 0610A0E1 		mov	r1, r6
- 2747              		.loc 1 202 0
- 2748 1660 08208CE5 		str	r2, [ip, #8]
- 2749              		.loc 1 203 0
- 2750 1664 0630CCE5 		strb	r3, [ip, #6]
- 2751              		.loc 1 204 0
- 2752 1668 FEFFFFEB 		bl	getNewFiles
- 2753              	.L220:
- 2754              		.loc 1 207 0
- 2755 166c 0C529FE5 		ldr	r5, .L241+16
- 2756 1670 0030D5E5 		ldrb	r3, [r5, #0]	@ zero_extendqisi2
- 2757 1674 833285E0 		add	r3, r5, r3, asl #5
- 2758 1678 2C30D3E5 		ldrb	r3, [r3, #44]	@ zero_extendqisi2
- 2759 167c 000053E3 		cmp	r3, #0
- 2760 1680 1300000A 		beq	.L218
- 2761              		.loc 1 208 0
- 2762 1684 0400D5E5 		ldrb	r0, [r5, #4]	@ zero_extendqisi2
- 2763 1688 FEFFFFEB 		bl	LCDClear
- 2764              		.loc 1 209 0
- 2765 168c 0500A0E1 		mov	r0, r5
- 2766 1690 FEFFFFEB 		bl	printMenu
- 2767              		.loc 1 210 0
- 2768 1694 0510A0E1 		mov	r1, r5
- 2769 1698 14029FE5 		ldr	r0, .L241+68
- 2770 169c FEFFFFEB 		bl	loadSongInfo
- 2771 16a0 10329FE5 		ldr	r3, .L241+72
- 2772 16a4 0000C3E5 		strb	r0, [r3, #0]
- 2773              		.loc 1 211 0
- 2774 16a8 FEFFFFEB 		bl	vs1002Config
- 2775              		.loc 1 212 0
- 2776 16ac 0000A0E3 		mov	r0, #0
- 2777 16b0 021BA0E3 		mov	r1, #2048
- 2778 16b4 FEFFFFEB 		bl	vs1002SCIWrite
- 2779              		.loc 1 213 0
- 2780 16b8 FEFFFFEB 		bl	vs1002Finish
- 2781              		.loc 1 214 0
- 2782 16bc 0232A0E3 		mov	r3, #536870912
- 2783 16c0 0C3087E5 		str	r3, [r7, #12]
- 2784              		.loc 1 215 0
- 2785 16c4 0020E0E3 		mvn	r2, #0
- 2786 16c8 EF3F12E5 		ldr	r3, [r2, #-4079]
- 2787 16cc 203083E3 		orr	r3, r3, #32
- 2788 16d0 EF3F02E5 		str	r3, [r2, #-4079]
- 2789              	.LVL108:
- 2790              	.L218:
- 2791              		.loc 1 220 0
- 2792 16d4 0030D8E5 		ldrb	r3, [r8, #0]	@ zero_extendqisi2
- 2793 16d8 020053E3 		cmp	r3, #2
- 2794 16dc 0300001A 		bne	.L221
- 2795 16e0 000094E5 		ldr	r0, [r4, #0]
- 2796 16e4 0610A0E1 		mov	r1, r6
- 2797 16e8 FEFFFFEB 		bl	handleUpButton
- 2798 16ec 580000EA 		b	.L222
- 2799              	.L221:
- 2800              		.loc 1 221 0
- 2801 16f0 010053E3 		cmp	r3, #1
- 2802 16f4 0300001A 		bne	.L223
- 2803 16f8 000094E5 		ldr	r0, [r4, #0]
- 2804 16fc 0610A0E1 		mov	r1, r6
- 2805 1700 FEFFFFEB 		bl	handleDownButton
- 2806 1704 520000EA 		b	.L222
- 2807              	.L223:
- 2808              		.loc 1 222 0
- 2809 1708 030053E3 		cmp	r3, #3
- 2810 170c 0100001A 		bne	.L224
- 2811 1710 FEFFFFEB 		bl	handleMiddleButton
- 2812 1714 4E0000EA 		b	.L222
- 2813              	.L224:
- 2814              		.loc 1 224 0
- 2815 1718 8C319FE5 		ldr	r3, .L241+60
- 2816 171c 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
- 2817 1720 000053E3 		cmp	r3, #0
- 2818 1724 4A00000A 		beq	.L222
- 2819              		.loc 1 225 0
- 2820 1728 0030E0E3 		mvn	r3, #0
- 2821 172c 1020A0E3 		mov	r2, #16
- 2822 1730 EB2F03E5 		str	r2, [r3, #-4075]
- 2823 1734 013083E2 		add	r3, r3, #1
- 2824              	.LVL109:
- 2825              	.L225:
- 2826              	.LBB110:
- 2827              	.LBB105:
- 2828              		.loc 1 262 0
- 2829              	@ 262 "main.c" 1
- 2830 1738 0000A0E1 		nop
- 2831              	@ 0 "" 2
- 2832 173c 013083E2 		add	r3, r3, #1
- 2833 1740 0A0053E1 		cmp	r3, sl
- 2834 1744 FBFFFF1A 		bne	.L225
- 2835              	.LBE105:
- 2836              	.LBE110:
- 2837              		.loc 1 227 0
- 2838 1748 FEFFFFEB 		bl	MMA_get_y
- 2839              	.LVL110:
- 2840 174c AF0F50E3 		cmp	r0, #700
- 2841 1750 190000DA 		ble	.L226
- 2842 1754 60319FE5 		ldr	r3, .L241+76
- 2843 1758 003093E5 		ldr	r3, [r3, #0]
- 2844 175c AF0F53E3 		cmp	r3, #700
- 2845 1760 150000DA 		ble	.L226
- 2846              		.loc 1 228 0
- 2847 1764 4C319FE5 		ldr	r3, .L241+72
- 2848 1768 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
- 2849 176c 000053E3 		cmp	r3, #0
- 2850 1770 0200000A 		beq	.L227
- 2851 1774 000094E5 		ldr	r0, [r4, #0]
- 2852 1778 FEFFFFEB 		bl	quickClear
- 2853 177c 020000EA 		b	.L228
- 2854              	.L227:
- 2855              		.loc 1 229 0
- 2856 1780 003094E5 		ldr	r3, [r4, #0]
- 2857 1784 0400D3E5 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
- 2858 1788 FEFFFFEB 		bl	LCDClear
- 2859              	.L228:
- 2860              		.loc 1 233 0
- 2861 178c 24319FE5 		ldr	r3, .L241+72
- 2862 1790 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
- 2863              		.loc 1 230 0
- 2864 1794 F0209FE5 		ldr	r2, .L241+28
- 2865              		.loc 1 233 0
- 2866 1798 000053E3 		cmp	r3, #0
- 2867              		.loc 1 231 0
- 2868 179c 0130A0E3 		mov	r3, #1
- 2869 17a0 0230C2E5 		strb	r3, [r2, #2]
- 2870              		.loc 1 232 0
- 2871 17a4 0232A0E3 		mov	r3, #536870912
- 2872 17a8 043087E5 		str	r3, [r7, #4]
- 2873              		.loc 1 230 0
- 2874 17ac 002084E5 		str	r2, [r4, #0]
- 2875              		.loc 1 233 0
- 2876 17b0 0F328312 		addne	r3, r3, #-268435456
- 2877              		.loc 1 234 0
- 2878 17b4 0131A003 		moveq	r3, #1073741824
- 2879 17b8 1E0000EA 		b	.L240
- 2880              	.L226:
- 2881              		.loc 1 236 0
- 2882 17bc FEFFFFEB 		bl	MMA_get_y
- 2883 17c0 F8209FE5 		ldr	r2, .L241+80
- 2884 17c4 020050E1 		cmp	r0, r2
- 2885 17c8 1B0000CA 		bgt	.L230
- 2886 17cc E8309FE5 		ldr	r3, .L241+76
- 2887 17d0 003093E5 		ldr	r3, [r3, #0]
- 2888 17d4 020053E1 		cmp	r3, r2
- 2889 17d8 170000CA 		bgt	.L230
- 2890              		.loc 1 237 0
- 2891 17dc D4309FE5 		ldr	r3, .L241+72
- 2892 17e0 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
- 2893 17e4 000053E3 		cmp	r3, #0
- 2894 17e8 0200000A 		beq	.L231
- 2895 17ec 000094E5 		ldr	r0, [r4, #0]
- 2896 17f0 FEFFFFEB 		bl	quickClear
- 2897 17f4 020000EA 		b	.L232
- 2898              	.L231:
- 2899              		.loc 1 238 0
- 2900 17f8 003094E5 		ldr	r3, [r4, #0]
- 2901 17fc 0400D3E5 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
- 2902 1800 FEFFFFEB 		bl	LCDClear
- 2903              	.L232:
- 2904              		.loc 1 243 0
- 2905 1804 AC309FE5 		ldr	r3, .L241+72
- 2906 1808 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
- 2907              		.loc 1 239 0
- 2908 180c 6C209FE5 		ldr	r2, .L241+16
- 2909              		.loc 1 243 0
- 2910 1810 000053E3 		cmp	r3, #0
- 2911              		.loc 1 240 0
- 2912 1814 0030A0E3 		mov	r3, #0
- 2913 1818 0230C2E5 		strb	r3, [r2, #2]
- 2914              		.loc 1 241 0
- 2915 181c 013283E2 		add	r3, r3, #268435456
- 2916 1820 043087E5 		str	r3, [r7, #4]
- 2917              		.loc 1 242 0
- 2918 1824 033283E2 		add	r3, r3, #805306368
- 2919 1828 043087E5 		str	r3, [r7, #4]
- 2920              		.loc 1 239 0
- 2921 182c 002084E5 		str	r2, [r4, #0]
- 2922              		.loc 1 243 0
- 2923 1830 0100000A 		beq	.L230
- 2924 1834 0E3283E2 		add	r3, r3, #-536870912
- 2925              	.L240:
- 2926 1838 0C3087E5 		str	r3, [r7, #12]
- 2927              	.L230:
- 2928              		.loc 1 245 0
- 2929 183c 000094E5 		ldr	r0, [r4, #0]
- 2930 1840 FEFFFFEB 		bl	printMenu
- 2931              		.loc 1 246 0
- 2932 1844 0020E0E3 		mvn	r2, #0
- 2933 1848 EF3F12E5 		ldr	r3, [r2, #-4079]
- 2934 184c 103083E3 		orr	r3, r3, #16
- 2935 1850 EF3F02E5 		str	r3, [r2, #-4079]
- 2936              	.L222:
- 2937              		.loc 1 249 0
- 2938 1854 0030E0E3 		mvn	r3, #0
- 2939 1858 EF2F13E5 		ldr	r2, [r3, #-4079]
- 2940 185c 102082E3 		orr	r2, r2, #16
- 2941 1860 EF2F03E5 		str	r2, [r3, #-4079]
- 2942              		.loc 1 248 0
- 2943 1864 013083E2 		add	r3, r3, #1
- 2944 1868 0030C8E5 		strb	r3, [r8, #0]
- 2945 186c 2CFFFFEA 		b	.L233
- 2946              	.L242:
- 2947              		.align	2
- 2948              	.L241:
- 2949 1870 00000000 		.word	white
- 2950 1874 CD030000 		.word	973
- 2951 1878 00C002E0 		.word	-536690688
- 2952 187c 04000000 		.word	NUMBEROFFILES
- 2953 1880 74000000 		.word	file_manager
- 2954 1884 00000000 		.word	black
- 2955 1888 00000000 		.word	welcome
- 2956 188c 78020000 		.word	settings_menu
- 2957 1890 7C040000 		.word	current_display
- 2958 1894 2C000000 		.word	.LC5
- 2959 1898 008002E0 		.word	-536707072
- 2960 189c 08000000 		.word	button_pressed
- 2961 18a0 C0C62D00 		.word	3000000
- 2962 18a4 00000000 		.word	USB
- 2963 18a8 80969800 		.word	10000000
- 2964 18ac 09000000 		.word	update_screen
- 2965 18b0 02000000 		.word	song_is_over
- 2966 18b4 14000000 		.word	current_song
- 2967 18b8 01000000 		.word	file_is_open
- 2968 18bc 0C000000 		.word	prev_position
- 2969 18c0 BB020000 		.word	699
+ 1935              		.loc 1 639 0
+ 1936 0f14 003098E5 		ldr	r3, [r8, #0]
+ 1937 0f18 0320D3E5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 1938 0f1c 00608DE5 		str	r6, [sp, #0]
+ 1939 0f20 0610A0E1 		mov	r1, r6
+ 1940 0f24 02C0D3E5 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
+ 1941 0f28 18019FE5 		ldr	r0, .L182+80
+ 1942 0f2c 0430A0E1 		mov	r3, r4
+ 1943 0f30 050000EA 		b	.L180
+ 1944              	.L166:
+ 1945              		.loc 1 641 0
+ 1946 0f34 003098E5 		ldr	r3, [r8, #0]
+ 1947 0f38 0320D3E5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 1948 0f3c 00108DE5 		str	r1, [sp, #0]
+ 1949 0f40 04019FE5 		ldr	r0, .L182+84
+ 1950 0f44 02C0D3E5 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
+ 1951 0f48 0430A0E1 		mov	r3, r4
+ 1952              	.L180:
+ 1953 0f4c 04C08DE5 		str	ip, [sp, #4]
+ 1954 0f50 FEFFFFEB 		bl	LCDPrintString
+ 1955              		.loc 1 644 0
+ 1956 0f54 0010E0E3 		mvn	r1, #0
+ 1957 0f58 EF2F11E5 		ldr	r2, [r1, #-4079]
+ 1958              		.loc 1 643 0
+ 1959 0f5c C4309FE5 		ldr	r3, .L182+48
+ 1960              		.loc 1 644 0
+ 1961 0f60 102082E3 		orr	r2, r2, #16
+ 1962              		.loc 1 643 0
+ 1963 0f64 0000A0E3 		mov	r0, #0
+ 1964 0f68 0000C3E5 		strb	r0, [r3, #0]
+ 1965              		.loc 1 644 0
+ 1966 0f6c EF2F01E5 		str	r2, [r1, #-4079]
+ 1967              		.loc 1 646 0
+ 1968 0f70 100080E2 		add	r0, r0, #16
+ 1969              	.LBB88:
+ 1970              	.LBB89:
+ 1971              		.loc 1 262 0
+ 1972 0f74 B8209FE5 		ldr	r2, .L182+60
+ 1973 0f78 060000EA 		b	.L168
+ 1974              	.LVL86:
+ 1975              	.L169:
+ 1976              	@ 262 "main.c" 1
+ 1977 0f7c 0000A0E1 		nop
+ 1978              	@ 0 "" 2
+ 1979 0f80 013083E2 		add	r3, r3, #1
+ 1980 0f84 020053E1 		cmp	r3, r2
+ 1981 0f88 FBFFFF1A 		bne	.L169
+ 1982              	.LBE89:
+ 1983              	.LBE88:
+ 1984              		.loc 1 654 0
+ 1985 0f8c EF3F11E5 		ldr	r3, [r1, #-4079]
+ 1986              	.LVL87:
+ 1987 0f90 103083E3 		orr	r3, r3, #16
+ 1988 0f94 EF3F01E5 		str	r3, [r1, #-4079]
+ 1989              	.L168:
+ 1990              		.loc 1 646 0
+ 1991 0f98 EB0F01E5 		str	r0, [r1, #-4075]
+ 1992 0f9c 0030A0E3 		mov	r3, #0
+ 1993              	.LVL88:
+ 1994 0fa0 F5FFFFEA 		b	.L169
+ 1995              	.LVL89:
+ 1996              	.L156:
+ 1997              		.loc 1 657 0
+ 1998 0fa4 58309FE5 		ldr	r3, .L182+12
+ 1999 0fa8 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2000 0fac 000053E3 		cmp	r3, #0
+ 2001 0fb0 44009FE5 		ldr	r0, .L182+4
+ 2002 0fb4 0200000A 		beq	.L170
+ 2003 0fb8 000090E5 		ldr	r0, [r0, #0]
+ 2004 0fbc FEFFFFEB 		bl	quickClear
+ 2005 0fc0 020000EA 		b	.L171
+ 2006              	.L170:
+ 2007              		.loc 1 658 0
+ 2008 0fc4 003090E5 		ldr	r3, [r0, #0]
+ 2009 0fc8 0400D3E5 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 2010 0fcc FEFFFFEB 		bl	LCDClear
+ 2011              	.L171:
+ 2012              		.loc 1 659 0
+ 2013 0fd0 24309FE5 		ldr	r3, .L182+4
+ 2014 0fd4 000093E5 		ldr	r0, [r3, #0]
+ 2015              	.L181:
+ 2016 0fd8 FEFFFFEB 		bl	printMenu
+ 2017              	.L147:
+ 2018              		.loc 1 661 0
+ 2019 0fdc 0020E0E3 		mvn	r2, #0
+ 2020 0fe0 EF3F12E5 		ldr	r3, [r2, #-4079]
+ 2021 0fe4 103083E3 		orr	r3, r3, #16
+ 2022 0fe8 EF3F02E5 		str	r3, [r2, #-4079]
+ 2023              		.loc 1 662 0
+ 2024 0fec 08D08DE2 		add	sp, sp, #8
+ 2025 0ff0 F04FBDE8 		ldmfd	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+ 2026 0ff4 1EFF2FE1 		bx	lr
+ 2027              	.L183:
+ 2028              		.align	2
+ 2029              	.L182:
+ 2030 0ff8 A0252600 		.word	2500000
+ 2031 0ffc 7C040000 		.word	current_display
+ 2032 1000 74000000 		.word	file_manager
+ 2033 1004 01000000 		.word	file_is_open
+ 2034 1008 14000000 		.word	current_song
+ 2035 100c 00000000 		.word	white
+ 2036 1010 00000000 		.word	black
+ 2037 1014 00000000 		.word	NotFound
+ 2038 1018 80969800 		.word	10000000
+ 2039 101c 78020000 		.word	settings_menu
+ 2040 1020 00000000 		.word	volume_setting
+ 2041 1024 00000000 		.word	.LC0
+ 2042 1028 08000000 		.word	button_pressed
+ 2043 102c 60E31600 		.word	1500000
+ 2044 1030 00000000 		.word	radio_channel
+ 2045 1034 40420F00 		.word	1000000
+ 2046 1038 75030000 		.word	885
+ 2047 103c 32040000 		.word	1074
+ 2048 1040 008002E0 		.word	-536707072
+ 2049 1044 00000000 		.word	radio_enable
+ 2050 1048 07000000 		.word	.LC2
+ 2051 104c 03000000 		.word	.LC1
+ 2052              	.LFE16:
+ 2054              		.section	.rodata.str1.1
+ 2055              	.LC3:
+ 2056 000a 53442049 		.ascii	"SD Init Error\012\000"
+ 2056      6E697420 
+ 2056      4572726F 
+ 2056      720A00
+ 2057              	.LC4:
+ 2058 0019 5344204F 		.ascii	"SD OpenRoot Error\012\000"
+ 2058      70656E52 
+ 2058      6F6F7420 
+ 2058      4572726F 
+ 2058      720A00
+ 2059              		.text
+ 2060              		.align	2
+ 2061              		.global	bootUp
+ 2063              	bootUp:
+ 2064              	.LFB4:
+ 2065              		.loc 1 269 0
+ 2066              		@ Function supports interworking.
+ 2067              		@ args = 0, pretend = 0, frame = 0
+ 2068              		@ frame_needed = 0, uses_anonymous_args = 0
+ 2069 1050 04E02DE5 		str	lr, [sp, #-4]!
+ 2070              	.LCFI27:
+ 2071              		.loc 1 270 0
+ 2072 1054 B0019FE5 		ldr	r0, .L190
+ 2073 1058 FEFFFFEB 		bl	rprintf_devopen
+ 2074              	.LBB90:
+ 2075              	.LBB91:
+ 2076              		.loc 1 262 0
+ 2077 105c AC219FE5 		ldr	r2, .L190+4
+ 2078              	.LBE91:
+ 2079              	.LBE90:
+ 2080              		.loc 1 270 0
+ 2081 1060 0030A0E3 		mov	r3, #0
+ 2082              	.LVL90:
+ 2083              	.L185:
+ 2084              	.LBB93:
+ 2085              	.LBB92:
+ 2086              		.loc 1 262 0
+ 2087              	@ 262 "main.c" 1
+ 2088 1064 0000A0E1 		nop
+ 2089              	@ 0 "" 2
+ 2090 1068 013083E2 		add	r3, r3, #1
+ 2091 106c 020053E1 		cmp	r3, r2
+ 2092 1070 FBFFFF1A 		bne	.L185
+ 2093              	.LBE92:
+ 2094              	.LBE93:
+ 2095              		.loc 1 274 0
+ 2096 1074 FEFFFFEB 		bl	sd_raw_init
+ 2097              	.LVL91:
+ 2098 1078 000050E3 		cmp	r0, #0
+ 2099              		.loc 1 276 0
+ 2100 107c 90019F05 		ldreq	r0, .L190+8
+ 2101 1080 FEFFFF0B 		bleq	rprintf
+ 2102              	.L186:
+ 2103              		.loc 1 278 0
+ 2104 1084 FEFFFFEB 		bl	openroot
+ 2105 1088 000050E3 		cmp	r0, #0
+ 2106              		.loc 1 280 0
+ 2107 108c 84019F15 		ldrne	r0, .L190+12
+ 2108 1090 FEFFFF1B 		blne	rprintf
+ 2109              	.L187:
+ 2110              		.loc 1 285 0
+ 2111 1094 80219FE5 		ldr	r2, .L190+16
+ 2112 1098 083092E5 		ldr	r3, [r2, #8]
+ 2113 109c 013683E3 		orr	r3, r3, #1048576
+ 2114 10a0 083082E5 		str	r3, [r2, #8]
+ 2115              		.loc 1 286 0
+ 2116 10a4 083092E5 		ldr	r3, [r2, #8]
+ 2117 10a8 0236C3E3 		bic	r3, r3, #2097152
+ 2118 10ac 083082E5 		str	r3, [r2, #8]
+ 2119              		.loc 1 287 0
+ 2120 10b0 68119FE5 		ldr	r1, .L190+20
+ 2121 10b4 043091E5 		ldr	r3, [r1, #4]
+ 2122 10b8 033B83E3 		orr	r3, r3, #3072
+ 2123 10bc 043081E5 		str	r3, [r1, #4]
+ 2124              		.loc 1 288 0
+ 2125 10c0 183092E5 		ldr	r3, [r2, #24]
+ 2126 10c4 013483E3 		orr	r3, r3, #16777216
+ 2127 10c8 033883E3 		orr	r3, r3, #196608
+ 2128 10cc 183082E5 		str	r3, [r2, #24]
+ 2129              		.loc 1 291 0
+ 2130 10d0 183092E5 		ldr	r3, [r2, #24]
+ 2131 10d4 023483E3 		orr	r3, r3, #33554432
+ 2132 10d8 183082E5 		str	r3, [r2, #24]
+ 2133              		.loc 1 292 0
+ 2134 10dc 183092E5 		ldr	r3, [r2, #24]
+ 2135 10e0 013283E3 		orr	r3, r3, #268435456
+ 2136 10e4 183082E5 		str	r3, [r2, #24]
+ 2137              		.loc 1 295 0
+ 2138 10e8 083092E5 		ldr	r3, [r2, #8]
+ 2139 10ec 803083E3 		orr	r3, r3, #128
+ 2140 10f0 083082E5 		str	r3, [r2, #8]
+ 2141              		.loc 1 298 0
+ 2142 10f4 083092E5 		ldr	r3, [r2, #8]
+ 2143 10f8 033B83E3 		orr	r3, r3, #3072
+ 2144 10fc 083082E5 		str	r3, [r2, #8]
+ 2145              		.loc 1 299 0
+ 2146 1100 003091E5 		ldr	r3, [r1, #0]
+ 2147 1104 CF3483E3 		orr	r3, r3, #-822083584
+ 2148 1108 003081E5 		str	r3, [r1, #0]
+ 2149              		.loc 1 300 0
+ 2150 110c 033BA0E3 		mov	r3, #3072
+ 2151 1110 0C3082E5 		str	r3, [r2, #12]
+ 2152              		.loc 1 303 0
+ 2153 1114 083092E5 		ldr	r3, [r2, #8]
+ 2154 1118 033783E3 		orr	r3, r3, #786432
+ 2155 111c 083082E5 		str	r3, [r2, #8]
+ 2156              		.loc 1 306 0
+ 2157 1120 083092E5 		ldr	r3, [r2, #8]
+ 2158 1124 073283E3 		orr	r3, r3, #1879048192
+ 2159 1128 083082E5 		str	r3, [r2, #8]
+ 2160              		.loc 1 307 0
+ 2161 112c 0232A0E3 		mov	r3, #536870912
+ 2162 1130 043082E5 		str	r3, [r2, #4]
+ 2163              		.loc 1 308 0
+ 2164 1134 033083E0 		add	r3, r3, r3
+ 2165 1138 043082E5 		str	r3, [r2, #4]
+ 2166              		.loc 1 309 0
+ 2167 113c 0D3283E2 		add	r3, r3, #-805306368
+ 2168 1140 043082E5 		str	r3, [r2, #4]
+ 2169              		.loc 1 312 0
+ 2170 1144 183092E5 		ldr	r3, [r2, #24]
+ 2171 1148 0E36C3E3 		bic	r3, r3, #14680064
+ 2172 114c 183082E5 		str	r3, [r2, #24]
+ 2173              		.loc 1 314 0
+ 2174 1150 083092E5 		ldr	r3, [r2, #8]
+ 2175 1154 0235C3E3 		bic	r3, r3, #8388608
+ 2176 1158 083082E5 		str	r3, [r2, #8]
+ 2177              		.loc 1 317 0
+ 2178 115c C0309FE5 		ldr	r3, .L190+24
+ 2179 1160 0120A0E3 		mov	r2, #1
+ 2180              		.loc 1 318 0
+ 2181 1164 0010E0E3 		mvn	r1, #0
+ 2182              		.loc 1 317 0
+ 2183 1168 002183E5 		str	r2, [r3, #256]
+ 2184              		.loc 1 318 0
+ 2185 116c 3030E0E3 		mvn	r3, #48
+ 2186 1170 F33F01E5 		str	r3, [r1, #-4083]
+ 2187              		.loc 1 319 0
+ 2188 1174 413083E2 		add	r3, r3, #65
+ 2189 1178 EF3F01E5 		str	r3, [r1, #-4079]
+ 2190              		.loc 1 320 0
+ 2191 117c 153083E2 		add	r3, r3, #21
+ 2192 1180 FF3D01E5 		str	r3, [r1, #-3583]
+ 2193              		.loc 1 321 0
+ 2194 1184 9C309FE5 		ldr	r3, .L190+28
+ 2195 1188 FF3E01E5 		str	r3, [r1, #-3839]
+ 2196              		.loc 1 322 0
+ 2197 118c 2430A0E3 		mov	r3, #36
+ 2198 1190 FB3D01E5 		str	r3, [r1, #-3579]
+ 2199              		.loc 1 323 0
+ 2200 1194 90309FE5 		ldr	r3, .L190+32
+ 2201              		.loc 1 326 0
+ 2202 1198 90009FE5 		ldr	r0, .L190+36
+ 2203              		.loc 1 323 0
+ 2204 119c FB3E01E5 		str	r3, [r1, #-3835]
+ 2205              		.loc 1 326 0
+ 2206 11a0 4B3FA0E3 		mov	r3, #300
+ 2207 11a4 0C3080E5 		str	r3, [r0, #12]
+ 2208              		.loc 1 327 0
+ 2209 11a8 043090E5 		ldr	r3, [r0, #4]
+ 2210 11ac 013083E3 		orr	r3, r3, #1
+ 2211 11b0 043080E5 		str	r3, [r0, #4]
+ 2212              		.loc 1 328 0
+ 2213 11b4 00C0A0E3 		mov	ip, #0
+ 2214              		.loc 1 329 0
+ 2215 11b8 0330A0E3 		mov	r3, #3
+ 2216              		.loc 1 328 0
+ 2217 11bc 70C080E5 		str	ip, [r0, #112]
+ 2218              		.loc 1 333 0
+ 2219 11c0 6C209FE5 		ldr	r2, .L190+40
+ 2220              		.loc 1 329 0
+ 2221 11c4 143080E5 		str	r3, [r0, #20]
+ 2222              		.loc 1 330 0
+ 2223 11c8 FA3FA0E3 		mov	r3, #1000
+ 2224 11cc 183080E5 		str	r3, [r0, #24]
+ 2225              		.loc 1 333 0
+ 2226 11d0 323E43E2 		sub	r3, r3, #800
+ 2227 11d4 0C3082E5 		str	r3, [r2, #12]
+ 2228              		.loc 1 334 0
+ 2229 11d8 043092E5 		ldr	r3, [r2, #4]
+ 2230 11dc 013083E3 		orr	r3, r3, #1
+ 2231 11e0 043082E5 		str	r3, [r2, #4]
+ 2232              		.loc 1 339 0
+ 2233 11e4 4C109FE5 		ldr	r1, .L190+44
+ 2234              		.loc 1 336 0
+ 2235 11e8 0A3CA0E3 		mov	r3, #2560
+ 2236              		.loc 1 335 0
+ 2237 11ec 70C082E5 		str	ip, [r2, #112]
+ 2238              		.loc 1 336 0
+ 2239 11f0 283082E5 		str	r3, [r2, #40]
+ 2240              		.loc 1 339 0
+ 2241 11f4 273D43E2 		sub	r3, r3, #2496
+ 2242 11f8 0C3081E5 		str	r3, [r1, #12]
+ 2243              		.loc 1 340 0
+ 2244 11fc 2030A0E3 		mov	r3, #32
+ 2245 1200 003081E5 		str	r3, [r1, #0]
+ 2246              		.loc 1 341 0
+ 2247 1204 04E09DE4 		ldr	lr, [sp], #4
+ 2248 1208 1EFF2FE1 		bx	lr
+ 2249              	.L191:
+ 2250              		.align	2
+ 2251              	.L190:
+ 2252 120c 00000000 		.word	putc_serial0
+ 2253 1210 A0860100 		.word	100000
+ 2254 1214 0A000000 		.word	.LC3
+ 2255 1218 19000000 		.word	.LC4
+ 2256 121c 008002E0 		.word	-536707072
+ 2257 1220 00C002E0 		.word	-536690688
+ 2258 1224 00C01FE0 		.word	-534790144
+ 2259 1228 00000000 		.word	timer1ISR
+ 2260 122c 00000000 		.word	timer0ISR
+ 2261 1230 004000E0 		.word	-536854528
+ 2262 1234 008000E0 		.word	-536838144
+ 2263 1238 000002E0 		.word	-536739840
+ 2264              	.LFE4:
+ 2266              		.align	2
+ 2268              	timer0ISR:
+ 2269              	.LFB6:
+ 2270              		.loc 1 362 0
+ 2271              		@ Function supports interworking.
+ 2272              		@ args = 0, pretend = 0, frame = 0
+ 2273              		@ frame_needed = 0, uses_anonymous_args = 0
+ 2274              	.LBB94:
+ 2275              	.LBB95:
+ 2276              		.loc 1 378 0
+ 2277 123c A8209FE5 		ldr	r2, .L203
+ 2278 1240 103092E5 		ldr	r3, [r2, #16]
+ 2279 1244 020513E3 		tst	r3, #8388608
+ 2280              	.LBE95:
+ 2281              	.LBE94:
+ 2282              		.loc 1 362 0
+ 2283 1248 04E02DE5 		str	lr, [sp, #-4]!
+ 2284              	.LCFI28:
+ 2285              	.LBB97:
+ 2286              	.LBB96:
+ 2287              		.loc 1 378 0
+ 2288 124c 0220A003 		moveq	r2, #2
+ 2289 1250 0700000A 		beq	.L194
+ 2290              		.loc 1 379 0
+ 2291 1254 103092E5 		ldr	r3, [r2, #16]
+ 2292 1258 020613E3 		tst	r3, #2097152
+ 2293 125c 0120A003 		moveq	r2, #1
+ 2294 1260 0300000A 		beq	.L194
+ 2295              		.loc 1 380 0
+ 2296 1264 103092E5 		ldr	r3, [r2, #16]
+ 2297 1268 010513E3 		tst	r3, #4194304
+ 2298 126c 0320A003 		moveq	r2, #3
+ 2299 1270 0020A013 		movne	r2, #0
+ 2300              	.L194:
+ 2301              	.LBE96:
+ 2302              	.LBE97:
+ 2303              		.loc 1 363 0
+ 2304 1274 74309FE5 		ldr	r3, .L203+4
+ 2305 1278 0020C3E5 		strb	r2, [r3, #0]
+ 2306              		.loc 1 364 0
+ 2307 127c FEFFFFEB 		bl	MMA_get_y
+ 2308              		.loc 1 365 0
+ 2309 1280 6C309FE5 		ldr	r3, .L203+8
+ 2310 1284 002093E5 		ldr	r2, [r3, #0]
+ 2311              		.loc 1 364 0
+ 2312 1288 68309FE5 		ldr	r3, .L203+12
+ 2313              		.loc 1 365 0
+ 2314 128c AF0F52E3 		cmp	r2, #700
+ 2315              		.loc 1 364 0
+ 2316 1290 000083E5 		str	r0, [r3, #0]
+ 2317              		.loc 1 365 0
+ 2318 1294 010000AA 		bge	.L197
+ 2319 1298 AF0F50E3 		cmp	r0, #700
+ 2320 129c 030000CA 		bgt	.L198
+ 2321              	.L197:
+ 2322 12a0 AF0F52E3 		cmp	r2, #700
+ 2323 12a4 030000DA 		ble	.L199
+ 2324 12a8 AF0F50E3 		cmp	r0, #700
+ 2325 12ac 010000AA 		bge	.L199
+ 2326              	.L198:
+ 2327 12b0 0120A0E3 		mov	r2, #1
+ 2328 12b4 000000EA 		b	.L202
+ 2329              	.L199:
+ 2330              		.loc 1 366 0
+ 2331 12b8 0020A0E3 		mov	r2, #0
+ 2332              	.L202:
+ 2333 12bc 38309FE5 		ldr	r3, .L203+16
+ 2334 12c0 0020C3E5 		strb	r2, [r3, #0]
+ 2335              		.loc 1 368 0
+ 2336 12c4 34309FE5 		ldr	r3, .L203+20
+ 2337 12c8 FF20A0E3 		mov	r2, #255
+ 2338 12cc 002083E5 		str	r2, [r3, #0]
+ 2339              		.loc 1 367 0
+ 2340 12d0 1C309FE5 		ldr	r3, .L203+8
+ 2341              		.loc 1 369 0
+ 2342 12d4 0020A0E3 		mov	r2, #0
+ 2343              		.loc 1 367 0
+ 2344 12d8 000083E5 		str	r0, [r3, #0]
+ 2345              		.loc 1 369 0
+ 2346 12dc 0030E0E3 		mvn	r3, #0
+ 2347 12e0 CF2F03E5 		str	r2, [r3, #-4047]
+ 2348              		.loc 1 370 0
+ 2349 12e4 04E09DE4 		ldr	lr, [sp], #4
+ 2350 12e8 1EFF2FE1 		bx	lr
+ 2351              	.L204:
+ 2352              		.align	2
+ 2353              	.L203:
+ 2354 12ec 008002E0 		.word	-536707072
+ 2355 12f0 08000000 		.word	button_pressed
+ 2356 12f4 0C000000 		.word	prev_position
+ 2357 12f8 10000000 		.word	cur_position
+ 2358 12fc 09000000 		.word	update_screen
+ 2359 1300 004000E0 		.word	-536854528
+ 2360              	.LFE6:
+ 2362              		.global	__divsi3
+ 2363              		.global	__modsi3
+ 2364              		.section	.rodata.str1.1
+ 2365              	.LC5:
+ 2366 002c 474F2047 		.ascii	"GO GO MP3!\000"
+ 2366      4F204D50 
+ 2366      332100
+ 2367              		.text
+ 2368              		.align	2
+ 2369              		.global	main
+ 2371              	main:
+ 2372              	.LFB2:
+ 2373              		.loc 1 94 0
+ 2374              		@ Function supports interworking.
+ 2375              		@ args = 0, pretend = 0, frame = 0
+ 2376              		@ frame_needed = 1, uses_anonymous_args = 0
+ 2377 1304 0DC0A0E1 		mov	ip, sp
+ 2378              	.LCFI29:
+ 2379 1308 F0DF2DE9 		stmfd	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, ip, lr, pc}
+ 2380              	.LCFI30:
+ 2381 130c 04B04CE2 		sub	fp, ip, #4
+ 2382              	.LCFI31:
+ 2383 1310 08D04DE2 		sub	sp, sp, #8
+ 2384              	.LCFI32:
+ 2385              		.loc 1 104 0
+ 2386 1314 FEFFFFEB 		bl	bootUp
+ 2387              		.loc 1 107 0
+ 2388 1318 FEFFFFEB 		bl	vs1002Config
+ 2389              		.loc 1 108 0
+ 2390 131c FEFFFFEB 		bl	vs1002Reset
+ 2391              		.loc 1 109 0
+ 2392 1320 FEFFFFEB 		bl	vs1002Init
+ 2393              	.LBB98:
+ 2394              		.loc 1 110 0
+ 2395 1324 3000A0E3 		mov	r0, #48
+ 2396 1328 FEFFFFEB 		bl	vs1002SetVolume
+ 2397 132c 3000A0E3 		mov	r0, #48
+ 2398 1330 FEFFFFEB 		bl	vs1002SetVolume
+ 2399 1334 3000A0E3 		mov	r0, #48
+ 2400 1338 FEFFFFEB 		bl	vs1002SetVolume
+ 2401 133c 3000A0E3 		mov	r0, #48
+ 2402 1340 FEFFFFEB 		bl	vs1002SetVolume
+ 2403 1344 3000A0E3 		mov	r0, #48
+ 2404 1348 FEFFFFEB 		bl	vs1002SetVolume
+ 2405              	.LBE98:
+ 2406              		.loc 1 111 0
+ 2407 134c FEFFFFEB 		bl	vs1002Finish
+ 2408              		.loc 1 114 0
+ 2409 1350 FEFFFFEB 		bl	LCDInit
+ 2410              		.loc 1 115 0
+ 2411 1354 14359FE5 		ldr	r3, .L241
+ 2412 1358 0000D3E5 		ldrb	r0, [r3, #0]	@ zero_extendqisi2
+ 2413 135c FEFFFFEB 		bl	LCDClear
+ 2414              		.loc 1 116 0
+ 2415 1360 FEFFFFEB 		bl	LCDPrintLogo
+ 2416              		.loc 1 119 0
+ 2417 1364 FA0FA0E3 		mov	r0, #1000
+ 2418 1368 FEFFFFEB 		bl	initializeRadio
+ 2419              		.loc 1 122 0
+ 2420 136c 00259FE5 		ldr	r2, .L241+4
+ 2421 1370 003092E5 		ldr	r3, [r2, #0]
+ 2422 1374 153C83E3 		orr	r3, r3, #5376
+ 2423 1378 003082E5 		str	r3, [r2, #0]
+ 2424 137c 0050A0E3 		mov	r5, #0
+ 2425              	.LVL92:
+ 2426              	.L206:
+ 2427              		.loc 1 125 0
+ 2428 1380 0000A0E3 		mov	r0, #0
+ 2429 1384 FEFFFFEB 		bl	rootDirectory_files_stream
+ 2430 1388 006050E2 		subs	r6, r0, #0
+ 2431              		.loc 1 124 0
+ 2432 138c 015085E2 		add	r5, r5, #1
+ 2433              		.loc 1 125 0
+ 2434 1390 FAFFFF1A 		bne	.L206
+ 2435              		.loc 1 126 0
+ 2436 1394 063085E2 		add	r3, r5, #6
+ 2437 1398 0330C3E3 		bic	r3, r3, #3
+ 2438 139c 0DD063E0 		rsb	sp, r3, sp
+ 2439 13a0 08708DE2 		add	r7, sp, #8
+ 2440              		.loc 1 127 0
+ 2441 13a4 0700A0E1 		mov	r0, r7
+ 2442 13a8 011085E2 		add	r1, r5, #1
+ 2443 13ac FEFFFFEB 		bl	rootDirectory_files
+ 2444              		.loc 1 128 0
+ 2445 13b0 8032A0E1 		mov	r3, r0, asl #5
+ 2446 13b4 043083E2 		add	r3, r3, #4
+ 2447 13b8 0DD063E0 		rsb	sp, r3, sp
+ 2448              		.loc 1 127 0
+ 2449 13bc B4349FE5 		ldr	r3, .L241+8
+ 2450 13c0 0040A0E1 		mov	r4, r0
+ 2451              	.LBB99:
+ 2452              		.loc 1 132 0
+ 2453 13c4 0600A0E1 		mov	r0, r6
+ 2454              	.LVL93:
+ 2455              	.LBE99:
+ 2456              		.loc 1 127 0
+ 2457 13c8 004083E5 		str	r4, [r3, #0]
+ 2458              		.loc 1 128 0
+ 2459 13cc 08608DE2 		add	r6, sp, #8
+ 2460              	.LBB101:
+ 2461              		.loc 1 132 0
+ 2462 13d0 00E0A0E1 		mov	lr, r0
+ 2463              	.LVL94:
+ 2464 13d4 0080A0E1 		mov	r8, r0
+ 2465              	.LVL95:
+ 2466 13d8 100000EA 		b	.L207
+ 2467              	.LVL96:
+ 2468              	.L213:
+ 2469 13dc 0030A0E3 		mov	r3, #0
+ 2470              	.LBB100:
+ 2471              		.loc 1 142 0
+ 2472 13e0 8EC2A0E1 		mov	ip, lr, asl #5
+ 2473              	.L212:
+ 2474              		.loc 1 134 0
+ 2475 13e4 050050E1 		cmp	r0, r5
+ 2476              		.loc 1 142 0
+ 2477 13e8 03208CE0 		add	r2, ip, r3
+ 2478 13ec 0280C687 		strhib	r8, [r6, r2]
+ 2479              		.loc 1 134 0
+ 2480 13f0 0600008A 		bhi	.L211
+ 2481              	.LVL97:
+ 2482              		.loc 1 135 0
+ 2483 13f4 0010D7E7 		ldrb	r1, [r7, r0]	@ zero_extendqisi2
+ 2484 13f8 2C0051E3 		cmp	r1, #44
+ 2485              		.loc 1 136 0
+ 2486 13fc 0230A001 		moveq	r3, r2
+ 2487              		.loc 1 139 0
+ 2488 1400 0210C617 		strneb	r1, [r6, r2]
+ 2489              		.loc 1 136 0
+ 2490 1404 0380C607 		streqb	r8, [r6, r3]
+ 2491              		.loc 1 140 0
+ 2492 1408 010080E2 		add	r0, r0, #1
+ 2493              		.loc 1 136 0
+ 2494 140c 1F30A003 		moveq	r3, #31
+ 2495              	.LVL98:
+ 2496              	.L211:
+ 2497              		.loc 1 133 0
+ 2498 1410 013083E2 		add	r3, r3, #1
+ 2499 1414 200053E3 		cmp	r3, #32
+ 2500 1418 F1FFFF1A 		bne	.L212
+ 2501              	.LBE100:
+ 2502              		.loc 1 132 0
+ 2503 141c 01E08EE2 		add	lr, lr, #1
+ 2504              	.LVL99:
+ 2505              	.L207:
+ 2506 1420 04005EE1 		cmp	lr, r4
+ 2507 1424 ECFFFFBA 		blt	.L213
+ 2508              	.LBE101:
+ 2509              		.loc 1 148 0
+ 2510 1428 0400A0E1 		mov	r0, r4
+ 2511              	.LVL100:
+ 2512 142c 0F10A0E3 		mov	r1, #15
+ 2513 1430 FEFFFFEB 		bl	__divsi3
+ 2514              	.LVL101:
+ 2515              		.loc 1 149 0
+ 2516 1434 3C349FE5 		ldr	r3, .L241+8
+ 2517              		.loc 1 148 0
+ 2518 1438 FF4000E2 		and	r4, r0, #255
+ 2519 143c 38549FE5 		ldr	r5, .L241+12
+ 2520              	.LVL102:
+ 2521              		.loc 1 149 0
+ 2522 1440 000093E5 		ldr	r0, [r3, #0]
+ 2523              		.loc 1 148 0
+ 2524 1444 013044E2 		sub	r3, r4, #1
+ 2525 1448 0530C5E5 		strb	r3, [r5, #5]
+ 2526              		.loc 1 149 0
+ 2527 144c 0F10A0E3 		mov	r1, #15
+ 2528 1450 FEFFFFEB 		bl	__modsi3
+ 2529              		.loc 1 152 0
+ 2530 1454 14349FE5 		ldr	r3, .L241
+ 2531 1458 0020D3E5 		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 2532              		.loc 1 153 0
+ 2533 145c 1C349FE5 		ldr	r3, .L241+16
+ 2534              		.loc 1 149 0
+ 2535 1460 000050E3 		cmp	r0, #0
+ 2536 1464 0540C515 		strneb	r4, [r5, #5]
+ 2537              		.loc 1 153 0
+ 2538 1468 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2539              		.loc 1 151 0
+ 2540 146c 08449FE5 		ldr	r4, .L241+12
+ 2541 1470 0050A0E3 		mov	r5, #0
+ 2542              		.loc 1 153 0
+ 2543 1474 0430C4E5 		strb	r3, [r4, #4]
+ 2544              		.loc 1 156 0
+ 2545 1478 0130A0E3 		mov	r3, #1
+ 2546              		.loc 1 152 0
+ 2547 147c 0320C4E5 		strb	r2, [r4, #3]
+ 2548              		.loc 1 158 0
+ 2549 1480 0400A0E1 		mov	r0, r4
+ 2550 1484 0610A0E1 		mov	r1, r6
+ 2551              		.loc 1 156 0
+ 2552 1488 0030C4E5 		strb	r3, [r4, #0]
+ 2553              		.loc 1 151 0
+ 2554 148c 0250C4E5 		strb	r5, [r4, #2]
+ 2555              		.loc 1 155 0
+ 2556 1490 0650C4E5 		strb	r5, [r4, #6]
+ 2557              		.loc 1 157 0
+ 2558 1494 085084E5 		str	r5, [r4, #8]
+ 2559              		.loc 1 158 0
+ 2560 1498 FEFFFFEB 		bl	getNewFiles
+ 2561              	.LBB102:
+ 2562              		.loc 1 159 0
+ 2563 149c E0239FE5 		ldr	r2, .L241+20
+ 2564              	.L215:
+ 2565 14a0 0530D2E7 		ldrb	r3, [r2, r5]	@ zero_extendqisi2
+ 2566              	.LVL103:
+ 2567 14a4 015085E2 		add	r5, r5, #1
+ 2568 14a8 160055E3 		cmp	r5, #22
+ 2569 14ac EC31C4E5 		strb	r3, [r4, #492]
+ 2570 14b0 014084E2 		add	r4, r4, #1
+ 2571 14b4 F9FFFF1A 		bne	.L215
+ 2572              	.LBE102:
+ 2573              		.loc 1 162 0
+ 2574 14b8 C8039FE5 		ldr	r0, .L241+24
+ 2575 14bc FEFFFFEB 		bl	fillSettings
+ 2576              		.loc 1 166 0
+ 2577 14c0 AC139FE5 		ldr	r1, .L241+4
+ 2578 14c4 003091E5 		ldr	r3, [r1, #0]
+ 2579              		.loc 1 165 0
+ 2580 14c8 AC239FE5 		ldr	r2, .L241+12
+ 2581 14cc B8439FE5 		ldr	r4, .L241+28
+ 2582              		.loc 1 166 0
+ 2583 14d0 FF3DC3E3 		bic	r3, r3, #16320
+ 2584 14d4 3030C3E3 		bic	r3, r3, #48
+ 2585              		.loc 1 167 0
+ 2586 14d8 0400D2E5 		ldrb	r0, [r2, #4]	@ zero_extendqisi2
+ 2587              		.loc 1 165 0
+ 2588 14dc 002084E5 		str	r2, [r4, #0]
+ 2589              		.loc 1 166 0
+ 2590 14e0 003081E5 		str	r3, [r1, #0]
+ 2591              		.loc 1 167 0
+ 2592 14e4 FEFFFFEB 		bl	LCDClear
+ 2593              		.loc 1 168 0
+ 2594 14e8 000094E5 		ldr	r0, [r4, #0]
+ 2595 14ec FEFFFFEB 		bl	printMenu
+ 2596              		.loc 1 171 0
+ 2597 14f0 003094E5 		ldr	r3, [r4, #0]
+ 2598 14f4 0010A0E3 		mov	r1, #0
+ 2599 14f8 0320D3E5 		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 2600 14fc 00108DE5 		str	r1, [sp, #0]
+ 2601 1500 02C0D3E5 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
+ 2602 1504 84039FE5 		ldr	r0, .L241+32
+ 2603 1508 0230A0E3 		mov	r3, #2
+ 2604 150c 04C08DE5 		str	ip, [sp, #4]
+ 2605 1510 FEFFFFEB 		bl	LCDPrintString
+ 2606              		.loc 1 175 0
+ 2607 1514 78739FE5 		ldr	r7, .L241+36
+ 2608              		.loc 1 177 0
+ 2609 1518 50939FE5 		ldr	r9, .L241
+ 2610              		.loc 1 187 0
+ 2611 151c 74839FE5 		ldr	r8, .L241+40
+ 2612              	.LVL104:
+ 2613              	.LBB103:
+ 2614              	.LBB104:
+ 2615              		.loc 1 262 0
+ 2616 1520 74A39FE5 		ldr	sl, .L241+44
+ 2617              	.L233:
+ 2618              	.LBE104:
+ 2619              	.LBE103:
+ 2620              		.loc 1 175 0
+ 2621 1524 003097E5 		ldr	r3, [r7, #0]
+ 2622 1528 020513E3 		tst	r3, #8388608
+ 2623 152c 2100000A 		beq	.L216
+ 2624              		.loc 1 177 0
+ 2625 1530 0000D9E5 		ldrb	r0, [r9, #0]	@ zero_extendqisi2
+ 2626 1534 FEFFFFEB 		bl	LCDClear
+ 2627              		.loc 1 178 0
+ 2628 1538 0430A0E3 		mov	r3, #4
+ 2629 153c 00308DE5 		str	r3, [sp, #0]
+ 2630 1540 003094E5 		ldr	r3, [r4, #0]
+ 2631 1544 34139FE5 		ldr	r1, .L241+16
+ 2632 1548 02C0D3E5 		ldrb	ip, [r3, #2]	@ zero_extendqisi2
+ 2633 154c 0020D1E5 		ldrb	r2, [r1, #0]	@ zero_extendqisi2
+ 2634 1550 0730A0E3 		mov	r3, #7
+ 2635 1554 44039FE5 		ldr	r0, .L241+48
+ 2636 1558 0010A0E3 		mov	r1, #0
+ 2637 155c 04C08DE5 		str	ip, [sp, #4]
+ 2638 1560 FEFFFFEB 		bl	LCDPrintString
+ 2639 1564 0030A0E3 		mov	r3, #0
+ 2640              	.LVL105:
+ 2641              	.L217:
+ 2642              	.LBB106:
+ 2643              	.LBB107:
+ 2644              		.loc 1 262 0
+ 2645              	@ 262 "main.c" 1
+ 2646 1568 0000A0E1 		nop
+ 2647              	@ 0 "" 2
+ 2648 156c 30239FE5 		ldr	r2, .L241+52
+ 2649 1570 013083E2 		add	r3, r3, #1
+ 2650 1574 020053E1 		cmp	r3, r2
+ 2651 1578 FAFFFF1A 		bne	.L217
+ 2652              	.LBE107:
+ 2653              	.LBE106:
+ 2654              		.loc 1 180 0
+ 2655 157c 3020A0E3 		mov	r2, #48
+ 2656 1580 0030E0E3 		mvn	r3, #0
+ 2657              	.LVL106:
+ 2658 1584 EB2F03E5 		str	r2, [r3, #-4075]
+ 2659              		.loc 1 181 0
+ 2660 1588 FEFFFFEB 		bl	main_msc
+ 2661              	.LBB108:
+ 2662              	.LBB109:
+ 2663              		.loc 1 688 0
+ 2664 158c 0E22A0E3 		mov	r2, #-536870912
+ 2665 1590 003092E5 		ldr	r3, [r2, #0]
+ 2666 1594 033083E3 		orr	r3, r3, #3
+ 2667 1598 003082E5 		str	r3, [r2, #0]
+ 2668              		.loc 1 689 0
+ 2669 159c AA10A0E3 		mov	r1, #170
+ 2670              		.loc 1 690 0
+ 2671 15a0 5530A0E3 		mov	r3, #85
+ 2672              		.loc 1 689 0
+ 2673 15a4 081082E5 		str	r1, [r2, #8]
+ 2674              		.loc 1 690 0
+ 2675 15a8 083082E5 		str	r3, [r2, #8]
+ 2676              		.loc 1 692 0
+ 2677 15ac 0030A0E3 		mov	r3, #0
+ 2678              		.loc 1 691 0
+ 2679 15b0 081082E5 		str	r1, [r2, #8]
+ 2680              		.loc 1 692 0
+ 2681 15b4 083082E5 		str	r3, [r2, #8]
+ 2682              	.L216:
+ 2683              	.LBE109:
+ 2684              	.LBE108:
+ 2685              		.loc 1 187 0
+ 2686 15b8 0030D8E5 		ldrb	r3, [r8, #0]	@ zero_extendqisi2
+ 2687 15bc 000053E3 		cmp	r3, #0
+ 2688 15c0 4300001A 		bne	.L218
+ 2689 15c4 DC329FE5 		ldr	r3, .L241+56
+ 2690 15c8 0050D3E5 		ldrb	r5, [r3, #0]	@ zero_extendqisi2
+ 2691              	.LVL107:
+ 2692 15cc 000055E3 		cmp	r5, #0
+ 2693 15d0 3F00001A 		bne	.L218
+ 2694              		.loc 1 189 0
+ 2695 15d4 D0329FE5 		ldr	r3, .L241+60
+ 2696 15d8 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2697 15dc 000053E3 		cmp	r3, #0
+ 2698 15e0 3B00000A 		beq	.L218
+ 2699              		.loc 1 190 0
+ 2700 15e4 2020A0E3 		mov	r2, #32
+ 2701 15e8 0030E0E3 		mvn	r3, #0
+ 2702 15ec EB2F03E5 		str	r2, [r3, #-4075]
+ 2703              		.loc 1 191 0
+ 2704 15f0 B8029FE5 		ldr	r0, .L241+64
+ 2705 15f4 FEFFFFEB 		bl	closeSong
+ 2706              		.loc 1 195 0
+ 2707 15f8 7C129FE5 		ldr	r1, .L241+12
+ 2708              		.loc 1 192 0
+ 2709 15fc B0329FE5 		ldr	r3, .L241+68
+ 2710              		.loc 1 195 0
+ 2711 1600 0020D1E5 		ldrb	r2, [r1, #0]	@ zero_extendqisi2
+ 2712              		.loc 1 192 0
+ 2713 1604 0050C3E5 		strb	r5, [r3, #0]
+ 2714              		.loc 1 195 0
+ 2715 1608 0E0052E3 		cmp	r2, #14
+ 2716              		.loc 1 193 0
+ 2717 160c 0232A0E3 		mov	r3, #536870912
+ 2718 1610 043087E5 		str	r3, [r7, #4]
+ 2719              		.loc 1 196 0
+ 2720 1614 01208292 		addls	r2, r2, #1
+ 2721              		.loc 1 197 0
+ 2722 1618 08309195 		ldrls	r3, [r1, #8]
+ 2723              		.loc 1 196 0
+ 2724 161c 0020C195 		strlsb	r2, [r1, #0]
+ 2725              		.loc 1 200 0
+ 2726 1620 54C29FE5 		ldr	ip, .L241+12
+ 2727              		.loc 1 197 0
+ 2728 1624 01308392 		addls	r3, r3, #1
+ 2729 1628 08308195 		strls	r3, [r1, #8]
+ 2730              		.loc 1 200 0
+ 2731 162c 0030DCE5 		ldrb	r3, [ip, #0]	@ zero_extendqisi2
+ 2732 1630 0F0053E3 		cmp	r3, #15
+ 2733 1634 0C00001A 		bne	.L220
+ 2734 1638 0620DCE5 		ldrb	r2, [ip, #6]	@ zero_extendqisi2
+ 2735 163c 0530DCE5 		ldrb	r3, [ip, #5]	@ zero_extendqisi2
+ 2736 1640 030052E1 		cmp	r2, r3
+ 2737 1644 0800002A 		bcs	.L220
+ 2738              		.loc 1 203 0
+ 2739 1648 013082E2 		add	r3, r2, #1
+ 2740              		.loc 1 201 0
+ 2741 164c 0120A0E3 		mov	r2, #1
+ 2742 1650 0020CCE5 		strb	r2, [ip, #0]
+ 2743              		.loc 1 202 0
+ 2744 1654 0020A0E3 		mov	r2, #0
+ 2745              		.loc 1 204 0
+ 2746 1658 0C00A0E1 		mov	r0, ip
+ 2747 165c 0610A0E1 		mov	r1, r6
+ 2748              		.loc 1 202 0
+ 2749 1660 08208CE5 		str	r2, [ip, #8]
+ 2750              		.loc 1 203 0
+ 2751 1664 0630CCE5 		strb	r3, [ip, #6]
+ 2752              		.loc 1 204 0
+ 2753 1668 FEFFFFEB 		bl	getNewFiles
+ 2754              	.L220:
+ 2755              		.loc 1 207 0
+ 2756 166c 08529FE5 		ldr	r5, .L241+12
+ 2757 1670 0030D5E5 		ldrb	r3, [r5, #0]	@ zero_extendqisi2
+ 2758 1674 833285E0 		add	r3, r5, r3, asl #5
+ 2759 1678 2C30D3E5 		ldrb	r3, [r3, #44]	@ zero_extendqisi2
+ 2760 167c 000053E3 		cmp	r3, #0
+ 2761 1680 1300000A 		beq	.L218
+ 2762              		.loc 1 208 0
+ 2763 1684 0400D5E5 		ldrb	r0, [r5, #4]	@ zero_extendqisi2
+ 2764 1688 FEFFFFEB 		bl	LCDClear
+ 2765              		.loc 1 209 0
+ 2766 168c 0500A0E1 		mov	r0, r5
+ 2767 1690 FEFFFFEB 		bl	printMenu
+ 2768              		.loc 1 210 0
+ 2769 1694 0510A0E1 		mov	r1, r5
+ 2770 1698 10029FE5 		ldr	r0, .L241+64
+ 2771 169c FEFFFFEB 		bl	loadSongInfo
+ 2772 16a0 0C329FE5 		ldr	r3, .L241+68
+ 2773 16a4 0000C3E5 		strb	r0, [r3, #0]
+ 2774              		.loc 1 211 0
+ 2775 16a8 FEFFFFEB 		bl	vs1002Config
+ 2776              		.loc 1 212 0
+ 2777 16ac 0000A0E3 		mov	r0, #0
+ 2778 16b0 021BA0E3 		mov	r1, #2048
+ 2779 16b4 FEFFFFEB 		bl	vs1002SCIWrite
+ 2780              		.loc 1 213 0
+ 2781 16b8 FEFFFFEB 		bl	vs1002Finish
+ 2782              		.loc 1 214 0
+ 2783 16bc 0232A0E3 		mov	r3, #536870912
+ 2784 16c0 0C3087E5 		str	r3, [r7, #12]
+ 2785              		.loc 1 215 0
+ 2786 16c4 0020E0E3 		mvn	r2, #0
+ 2787 16c8 EF3F12E5 		ldr	r3, [r2, #-4079]
+ 2788 16cc 203083E3 		orr	r3, r3, #32
+ 2789 16d0 EF3F02E5 		str	r3, [r2, #-4079]
+ 2790              	.LVL108:
+ 2791              	.L218:
+ 2792              		.loc 1 220 0
+ 2793 16d4 0030D8E5 		ldrb	r3, [r8, #0]	@ zero_extendqisi2
+ 2794 16d8 020053E3 		cmp	r3, #2
+ 2795 16dc 0300001A 		bne	.L221
+ 2796 16e0 000094E5 		ldr	r0, [r4, #0]
+ 2797 16e4 0610A0E1 		mov	r1, r6
+ 2798 16e8 FEFFFFEB 		bl	handleUpButton
+ 2799 16ec 580000EA 		b	.L222
+ 2800              	.L221:
+ 2801              		.loc 1 221 0
+ 2802 16f0 010053E3 		cmp	r3, #1
+ 2803 16f4 0300001A 		bne	.L223
+ 2804 16f8 000094E5 		ldr	r0, [r4, #0]
+ 2805 16fc 0610A0E1 		mov	r1, r6
+ 2806 1700 FEFFFFEB 		bl	handleDownButton
+ 2807 1704 520000EA 		b	.L222
+ 2808              	.L223:
+ 2809              		.loc 1 222 0
+ 2810 1708 030053E3 		cmp	r3, #3
+ 2811 170c 0100001A 		bne	.L224
+ 2812 1710 FEFFFFEB 		bl	handleMiddleButton
+ 2813 1714 4E0000EA 		b	.L222
+ 2814              	.L224:
+ 2815              		.loc 1 224 0
+ 2816 1718 88319FE5 		ldr	r3, .L241+56
+ 2817 171c 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2818 1720 000053E3 		cmp	r3, #0
+ 2819 1724 4A00000A 		beq	.L222
+ 2820              		.loc 1 225 0
+ 2821 1728 0030E0E3 		mvn	r3, #0
+ 2822 172c 1020A0E3 		mov	r2, #16
+ 2823 1730 EB2F03E5 		str	r2, [r3, #-4075]
+ 2824 1734 013083E2 		add	r3, r3, #1
+ 2825              	.LVL109:
+ 2826              	.L225:
+ 2827              	.LBB110:
+ 2828              	.LBB105:
+ 2829              		.loc 1 262 0
+ 2830              	@ 262 "main.c" 1
+ 2831 1738 0000A0E1 		nop
+ 2832              	@ 0 "" 2
+ 2833 173c 013083E2 		add	r3, r3, #1
+ 2834 1740 0A0053E1 		cmp	r3, sl
+ 2835 1744 FBFFFF1A 		bne	.L225
+ 2836              	.LBE105:
+ 2837              	.LBE110:
+ 2838              		.loc 1 227 0
+ 2839 1748 FEFFFFEB 		bl	MMA_get_y
+ 2840              	.LVL110:
+ 2841 174c AF0F50E3 		cmp	r0, #700
+ 2842 1750 190000DA 		ble	.L226
+ 2843 1754 5C319FE5 		ldr	r3, .L241+72
+ 2844 1758 003093E5 		ldr	r3, [r3, #0]
+ 2845 175c AF0F53E3 		cmp	r3, #700
+ 2846 1760 150000DA 		ble	.L226
+ 2847              		.loc 1 228 0
+ 2848 1764 48319FE5 		ldr	r3, .L241+68
+ 2849 1768 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2850 176c 000053E3 		cmp	r3, #0
+ 2851 1770 0200000A 		beq	.L227
+ 2852 1774 000094E5 		ldr	r0, [r4, #0]
+ 2853 1778 FEFFFFEB 		bl	quickClear
+ 2854 177c 020000EA 		b	.L228
+ 2855              	.L227:
+ 2856              		.loc 1 229 0
+ 2857 1780 003094E5 		ldr	r3, [r4, #0]
+ 2858 1784 0400D3E5 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 2859 1788 FEFFFFEB 		bl	LCDClear
+ 2860              	.L228:
+ 2861              		.loc 1 233 0
+ 2862 178c 20319FE5 		ldr	r3, .L241+68
+ 2863 1790 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2864              		.loc 1 230 0
+ 2865 1794 EC209FE5 		ldr	r2, .L241+24
+ 2866              		.loc 1 233 0
+ 2867 1798 000053E3 		cmp	r3, #0
+ 2868              		.loc 1 231 0
+ 2869 179c 0130A0E3 		mov	r3, #1
+ 2870 17a0 0230C2E5 		strb	r3, [r2, #2]
+ 2871              		.loc 1 232 0
+ 2872 17a4 0232A0E3 		mov	r3, #536870912
+ 2873 17a8 043087E5 		str	r3, [r7, #4]
+ 2874              		.loc 1 230 0
+ 2875 17ac 002084E5 		str	r2, [r4, #0]
+ 2876              		.loc 1 233 0
+ 2877 17b0 0F328312 		addne	r3, r3, #-268435456
+ 2878              		.loc 1 234 0
+ 2879 17b4 0131A003 		moveq	r3, #1073741824
+ 2880 17b8 1E0000EA 		b	.L240
+ 2881              	.L226:
+ 2882              		.loc 1 236 0
+ 2883 17bc FEFFFFEB 		bl	MMA_get_y
+ 2884 17c0 F4209FE5 		ldr	r2, .L241+76
+ 2885 17c4 020050E1 		cmp	r0, r2
+ 2886 17c8 1B0000CA 		bgt	.L230
+ 2887 17cc E4309FE5 		ldr	r3, .L241+72
+ 2888 17d0 003093E5 		ldr	r3, [r3, #0]
+ 2889 17d4 020053E1 		cmp	r3, r2
+ 2890 17d8 170000CA 		bgt	.L230
+ 2891              		.loc 1 237 0
+ 2892 17dc D0309FE5 		ldr	r3, .L241+68
+ 2893 17e0 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2894 17e4 000053E3 		cmp	r3, #0
+ 2895 17e8 0200000A 		beq	.L231
+ 2896 17ec 000094E5 		ldr	r0, [r4, #0]
+ 2897 17f0 FEFFFFEB 		bl	quickClear
+ 2898 17f4 020000EA 		b	.L232
+ 2899              	.L231:
+ 2900              		.loc 1 238 0
+ 2901 17f8 003094E5 		ldr	r3, [r4, #0]
+ 2902 17fc 0400D3E5 		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 2903 1800 FEFFFFEB 		bl	LCDClear
+ 2904              	.L232:
+ 2905              		.loc 1 243 0
+ 2906 1804 A8309FE5 		ldr	r3, .L241+68
+ 2907 1808 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 2908              		.loc 1 239 0
+ 2909 180c 68209FE5 		ldr	r2, .L241+12
+ 2910              		.loc 1 243 0
+ 2911 1810 000053E3 		cmp	r3, #0
+ 2912              		.loc 1 240 0
+ 2913 1814 0030A0E3 		mov	r3, #0
+ 2914 1818 0230C2E5 		strb	r3, [r2, #2]
+ 2915              		.loc 1 241 0
+ 2916 181c 013283E2 		add	r3, r3, #268435456
+ 2917 1820 043087E5 		str	r3, [r7, #4]
+ 2918              		.loc 1 242 0
+ 2919 1824 033283E2 		add	r3, r3, #805306368
+ 2920 1828 043087E5 		str	r3, [r7, #4]
+ 2921              		.loc 1 239 0
+ 2922 182c 002084E5 		str	r2, [r4, #0]
+ 2923              		.loc 1 243 0
+ 2924 1830 0100000A 		beq	.L230
+ 2925 1834 0E3283E2 		add	r3, r3, #-536870912
+ 2926              	.L240:
+ 2927 1838 0C3087E5 		str	r3, [r7, #12]
+ 2928              	.L230:
+ 2929              		.loc 1 245 0
+ 2930 183c 000094E5 		ldr	r0, [r4, #0]
+ 2931 1840 FEFFFFEB 		bl	printMenu
+ 2932              		.loc 1 246 0
+ 2933 1844 0020E0E3 		mvn	r2, #0
+ 2934 1848 EF3F12E5 		ldr	r3, [r2, #-4079]
+ 2935 184c 103083E3 		orr	r3, r3, #16
+ 2936 1850 EF3F02E5 		str	r3, [r2, #-4079]
+ 2937              	.L222:
+ 2938              		.loc 1 249 0
+ 2939 1854 0030E0E3 		mvn	r3, #0
+ 2940 1858 EF2F13E5 		ldr	r2, [r3, #-4079]
+ 2941 185c 102082E3 		orr	r2, r2, #16
+ 2942 1860 EF2F03E5 		str	r2, [r3, #-4079]
+ 2943              		.loc 1 248 0
+ 2944 1864 013083E2 		add	r3, r3, #1
+ 2945 1868 0030C8E5 		strb	r3, [r8, #0]
+ 2946 186c 2CFFFFEA 		b	.L233
+ 2947              	.L242:
+ 2948              		.align	2
+ 2949              	.L241:
+ 2950 1870 00000000 		.word	white
+ 2951 1874 00C002E0 		.word	-536690688
+ 2952 1878 04000000 		.word	NUMBEROFFILES
+ 2953 187c 74000000 		.word	file_manager
+ 2954 1880 00000000 		.word	black
+ 2955 1884 00000000 		.word	welcome
+ 2956 1888 78020000 		.word	settings_menu
+ 2957 188c 7C040000 		.word	current_display
+ 2958 1890 2C000000 		.word	.LC5
+ 2959 1894 008002E0 		.word	-536707072
+ 2960 1898 08000000 		.word	button_pressed
+ 2961 189c C0C62D00 		.word	3000000
+ 2962 18a0 00000000 		.word	USB
+ 2963 18a4 80969800 		.word	10000000
+ 2964 18a8 09000000 		.word	update_screen
+ 2965 18ac 02000000 		.word	song_is_over
+ 2966 18b0 14000000 		.word	current_song
+ 2967 18b4 01000000 		.word	file_is_open
+ 2968 18b8 0C000000 		.word	prev_position
+ 2969 18bc BB020000 		.word	699
  2970              	.LFE2:
  2972              		.global	volume_setting
  2973              		.data
@@ -3849,104 +3852,104 @@
  3569              	.Letext0:
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:13     .text:00000000 delay_ms
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:23     .text:00000000 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:43     .text:00000024 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:49     .text:00000028 getButton
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:57     .text:00000028 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:77     .text:00000060 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:83     .text:00000064 getNewFiles
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:91     .text:00000064 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:215    .text:00000144 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3044   .bss:00000004 NUMBEROFFILES
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:221    .text:00000148 fillSettings
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:229    .text:00000148 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:319    .text:000001f8 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3016   .rodata:00000035 volume
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3026   .rodata:00000045 radio_power
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3031   .rodata:00000050 radio_channel_menu
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3036   .rodata:0000005d settings
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:330    .text:00000210 reset
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:338    .text:00000210 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:367    .text:00000240 lowerVolume
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:423    .text:000002c8 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2977   .data:00000000 volume_setting
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3066   .bss:0000047c current_display
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:432    .text:000002d8 raiseVolume
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:438    .text:000002d8 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:487    .text:0000035c $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:495    .text:00000368 quickClear
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:503    .text:00000368 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:582    .text:00000428 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3011   .rodata:00000033 newline
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:590    .text:00000434 printMenu
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:598    .text:00000434 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:675    .text:000004fc $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:681    .text:00000500 highlightRow
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:689    .text:00000500 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:769    .text:000005d8 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:775    .text:000005dc handleDownButton
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:782    .text:000005dc $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:839    .text:00000654 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3060   .bss:00000074 file_manager
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:845    .text:00000658 handleUpButton
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:852    .text:00000658 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:907    .text:000006c8 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:913    .text:000006cc sendMP3Data
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:919    .text:000006cc $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:963    .text:00000730 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3057   .bss:00000014 current_song
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3041   .bss:00000002 song_is_over
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:972    .text:00000740 startMP3Player
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:978    .text:00000740 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1016   .text:000007a0 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1022   .text:000007a8 timer1ISR
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1028   .text:000007a8 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1046   .text:000007d0 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1056   .text:000007d4 disableRadio
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1062   .text:000007d4 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1129   .text:00000878 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2989   .bss:00000000 radio_enable
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1143   .text:0000088c enableRadio
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1149   .text:0000088c $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1217   .text:00000934 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1227   .text:00000948 initializeRadio
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1235   .text:00000948 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1306   .text:000009b8 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1314   .text:000009c4 closeSong
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1321   .text:000009c4 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1343   .text:000009f8 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1349   .text:000009fc stopMP3Player
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1356   .text:000009fc $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1410   .text:00000a84 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3039   .bss:00000001 file_is_open
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1418   .text:00000a90 loadSongInfo
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1425   .text:00000a90 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1519   .text:00000b64 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1525   .text:00000b68 handleMiddleButton
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:1531   .text:00000b68 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2029   .text:00000ff8 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3001   .rodata:00000016 NotFound
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3063   .bss:00000278 settings_menu
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3046   .bss:00000008 button_pressed
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2983   .data:00000004 radio_channel
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2062   .text:00001050 bootUp
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2068   .text:00001050 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2251   .text:0000120c $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2267   .text:0000123c timer0ISR
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2276   .text:0000123c $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2353   .text:000012ec $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3051   .bss:0000000c prev_position
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3054   .bss:00000010 cur_position
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3048   .bss:00000009 update_screen
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2370   .text:00001304 main
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2376   .text:00001304 $a
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2949   .text:00001870 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2995   .rodata:00000000 welcome
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3006   .rodata:00000025 USB
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2978   .data:00000000 $d
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:3021   .rodata:0000003c contrast
-/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccYbpzCD.s:2992   .bss:00000001 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:13     .text:00000000 delay_ms
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:23     .text:00000000 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:43     .text:00000024 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:49     .text:00000028 getButton
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:57     .text:00000028 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:77     .text:00000060 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:83     .text:00000064 getNewFiles
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:91     .text:00000064 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:215    .text:00000144 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3044   .bss:00000004 NUMBEROFFILES
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:221    .text:00000148 fillSettings
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:229    .text:00000148 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:319    .text:000001f8 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3016   .rodata:00000035 volume
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3026   .rodata:00000045 radio_power
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3031   .rodata:00000050 radio_channel_menu
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3036   .rodata:0000005d settings
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:330    .text:00000210 reset
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:338    .text:00000210 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:367    .text:00000240 lowerVolume
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:423    .text:000002c8 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2977   .data:00000000 volume_setting
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3066   .bss:0000047c current_display
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:432    .text:000002d8 raiseVolume
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:438    .text:000002d8 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:487    .text:0000035c $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:495    .text:00000368 quickClear
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:503    .text:00000368 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:582    .text:00000428 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3011   .rodata:00000033 newline
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:590    .text:00000434 printMenu
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:598    .text:00000434 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:675    .text:000004fc $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:681    .text:00000500 highlightRow
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:689    .text:00000500 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:769    .text:000005d8 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:775    .text:000005dc handleDownButton
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:782    .text:000005dc $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:839    .text:00000654 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3060   .bss:00000074 file_manager
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:845    .text:00000658 handleUpButton
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:852    .text:00000658 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:907    .text:000006c8 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:913    .text:000006cc sendMP3Data
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:919    .text:000006cc $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:963    .text:00000730 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3057   .bss:00000014 current_song
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3041   .bss:00000002 song_is_over
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:972    .text:00000740 startMP3Player
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:978    .text:00000740 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1016   .text:000007a0 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1022   .text:000007a8 timer1ISR
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1028   .text:000007a8 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1046   .text:000007d0 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1056   .text:000007d4 disableRadio
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1062   .text:000007d4 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1129   .text:00000878 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2989   .bss:00000000 radio_enable
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1143   .text:0000088c enableRadio
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1149   .text:0000088c $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1217   .text:00000934 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1227   .text:00000948 initializeRadio
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1235   .text:00000948 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1306   .text:000009b8 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1314   .text:000009c4 closeSong
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1321   .text:000009c4 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1343   .text:000009f8 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1349   .text:000009fc stopMP3Player
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1356   .text:000009fc $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1410   .text:00000a84 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3039   .bss:00000001 file_is_open
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1418   .text:00000a90 loadSongInfo
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1425   .text:00000a90 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1519   .text:00000b64 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1525   .text:00000b68 handleMiddleButton
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:1531   .text:00000b68 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2030   .text:00000ff8 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3001   .rodata:00000016 NotFound
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3063   .bss:00000278 settings_menu
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3046   .bss:00000008 button_pressed
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2983   .data:00000004 radio_channel
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2063   .text:00001050 bootUp
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2069   .text:00001050 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2252   .text:0000120c $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2268   .text:0000123c timer0ISR
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2277   .text:0000123c $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2354   .text:000012ec $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3051   .bss:0000000c prev_position
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3054   .bss:00000010 cur_position
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3048   .bss:00000009 update_screen
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2371   .text:00001304 main
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2377   .text:00001304 $a
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2950   .text:00001870 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2995   .rodata:00000000 welcome
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3006   .rodata:00000025 USB
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2978   .data:00000000 $d
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:3021   .rodata:0000003c contrast
+/var/folders/RF/RFBGvIBUF8CKtbT-qYCkn++++TI/-Tmp-//ccXlwMmq.s:2992   .bss:00000001 $d
 
 UNDEFINED SYMBOLS
 white
