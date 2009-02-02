@@ -66,10 +66,20 @@ void enableRadio(void);
 void disableRadio(void);
 
 // MP3 handling
+void initializeMP3Player(void);
 void startMP3Player(void);
 void sendMP3Data(void);
 void stopMP3Player(void);
 
 // Volume handling
-void raiseVolume(void);
-void lowerVolume(void);
+void raiseVolume(int n);
+void lowerVolume(int n);
+
+// SPI handling
+void selectSD(void);
+void selectLCD(void);
+void selectRadio(void);
+void deselectRadio(void);
+
+// LCD
+void splashScreen(void);
