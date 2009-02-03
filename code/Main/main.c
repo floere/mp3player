@@ -175,13 +175,13 @@ unsigned long int numberOfChars = 0;
 		//Wait for a button to be pressed or for the screen to be rotated.
 		//while(!button_pressed && !update_screen){
 		if(!button_pressed && !update_screen){
-			//If the current song is done playing, start playing the next song if it's available.
-			if(song_is_over){
-				disableMP3Interrupt();			//Stop the "Send Song" interrupts
-				closeSong(&current_song);	//Close the current song
-				file_is_open=0;				//change master flag
-				ledBlueOff();
-				//Get the next song on the page by changing rows
+      // If the current song is done playing, start playing the next song if it's available.
+      if (song_is_over) {
+        disableMP3Interrupt();
+        closeSong(&current_song); // Close the current song
+        file_is_open = 0;         //change master flag
+        ledBlueOff();
+        // Get the next song on the page by changing rows
 				if(file_manager.current_row < NUMROWS){
 					file_manager.current_row++;
 					file_manager.current_index++;
@@ -199,7 +199,7 @@ unsigned long int numberOfChars = 0;
 					printMenu(&file_manager);									//Print the menu with the next song!
 					file_is_open = loadSongInfo(&current_song, &file_manager);	//Get the current song info.					
 					vs1002Config();												//Enable the MP3 Comm. Lines
-					vs1002SCIWrite(SCI_MODE, SM_SDINEW);						//Make sure the MP3 player is in the right mode.
+					vs1002SCIWrite(SCI_MODE, SM_SDINEW);						//Make sure the MP3 player is in the right mode. TODO necessary?
 					vs1002Finish();												//Disable the MP3 Comm. Lines
 					ledBlueOn();
 					enableMP3Interrupt();
@@ -339,15 +339,19 @@ static void timer1ISR(void) {
   VICVectAddr = 0;  // Update VIC priorities
 }
 
-// Usage: button_value=getButton();
+// Usage: button_value = getButton();
 // Inputs:  None
 // Outputs: None
 // Function returns the value of the button that is currently being pressed.
 // UP_BUT, DWN_BUT, and MID_BUT values can be viewed in MP3Dev.h
 char getButton(void){
-  if(!(IOPIN1 & SW_UP)) return UP_BUT;
-  else if(!(IOPIN1 & SW_DWN)) return DWN_BUT;
-  else if(!(IOPIN1 & SW_MID)) return MID_BUT;
+  if (!(IOPIN1 & SW_UP)) {
+    return UP_BUT;
+  } else if (!(IOPIN1 & SW_DWN)) {
+    return DWN_BUT;
+  } else if (!(IOPIN1 & SW_MID)) {
+    return MID_BUT;
+  }
   return NO_BUT;
 }
 
@@ -370,42 +374,44 @@ void getNewFiles(DisplayStruct *files, FileStruct *file_list){
   }
 }
 
-//Usage: file_is_open = loadSongInfo(&current_song, &file_manager);
-//Inputs: SongStruct *song: Pointer to the struct in which the song information will be loaded
-//		  DisplayStruct *selected_song: Pointer to the song whose information will be loaded
-//The function takes the currently selected file name from the selected_song structure and loads
+// Usage: file_is_open = loadSongInfo(&current_song, &file_manager);
+// Inputs: SongStruct *song: Pointer to the struct in which the song information will be loaded
+// DisplayStruct *selected_song: Pointer to the song whose information will be loaded
+//
+// The function takes the currently selected file name from the selected_song structure and loads
 // the vital file information into the song structure.  The function also opens the song and prepares
 // it to be played.  If the function succesfully opens the song, a 1 is returned, else a 0 is returned.
+//
 char loadSongInfo(SongStruct *song, DisplayStruct *selected_song){
-	//Get the selected songs file name
-	for(int i=0; i<MAXFILENAMELEN; i++){
-		song->file_name[i] = selected_song->list[selected_song->current_index].file_name[i];
-	}
-	//Get the selected songs display name
-	for(int i=0; i<MAXDISPLEN; i++){
-		if((song->file_name[i] == '.') || (i==MAXDISPLEN-1)){
-			song->name[i]='\0';
-			i=MAXDISPLEN;
-		}	
-		else song->name[i]=song->file_name[i];
-	}
-	
-	selectSD();	//Make sure SPI is selected for reading the card
-	
-	//Check to see if the selected song is valid
-	if(!root_file_exists(song->file_name)){
-		selectLCD();
-		return 0;
-	}	
-	//Open the selected song
-	else{
-		song->handle=root_open(song->file_name);
-		song->size=fat16_file_size(song->handle);
-		fat16_read_file(song->handle, song->data, MAXBUFFERSIZE);
-	}
-	
-	selectLCD();
-	return 1;
+  // Get the selected songs file name
+  for(int i=0; i < MAXFILENAMELEN; i++) {
+    song->file_name[i] = selected_song->list[selected_song->current_index].file_name[i];
+  }
+  // Get the selected songs display name
+  for(int i=0; i<MAXDISPLEN; i++){
+    if((song->file_name[i] == '.') || (i==MAXDISPLEN-1)){
+      song->name[i] = '\0';
+      i = MAXDISPLEN;
+    } else {
+      song->name[i]=song->file_name[i];
+    }
+  }
+  
+  selectSD(); // Make sure SPI is selected for reading the card
+  
+  // Check to see if the selected song is valid
+  if(!root_file_exists(song->file_name)) {
+    selectLCD();
+    return 0;
+  } else {
+    // open the selected song
+    song->handle = root_open(song->file_name);
+    song->size = fat16_file_size(song->handle);
+    fat16_read_file(song->handle, song->data, MAXBUFFERSIZE);
+  }
+  
+  selectLCD();
+  return 1;
 }
 
 // Usage: CloseSong(&current_song);
@@ -532,13 +538,13 @@ void handleDownButton(DisplayStruct *display, FileStruct *Files){
 //	(2.-If the file menu is displayed and a song IS being played, the fucntion stops the currently playing song)
 //	(3.-If the settings menu is displayed, the function opens the selected setting and allows the user to edit the setting.)
 void handleMiddleButton(void){
-  disableUIInterrupt(250);
+  disableUIInterrupt(DEBOUNCE_SWITCH); // was 250
   
   // If the File Menu is being displayed, middle button acts like play/stop
   if (current_display == &file_manager) {
     if (!file_is_open) { // If a file isn't already playing then this acts like a play button
       file_is_open = loadSongInfo(&current_song, &file_manager); // Get the current song info.
-      if (!file_is_open) { //Make sure this is a valid file
+      if (!file_is_open) { // Make sure this is a valid file
         LCDClear(white);
         LCDPrintString(NotFound, 0, black, 1,0,current_display->orientation);
         delay_ms(1000);
@@ -563,7 +569,7 @@ void handleMiddleButton(void){
 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
 			LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
 			while(button_pressed < MID_BUT){
-        disableUIInterrupt(150);
+        disableUIInterrupt(DEBOUNCE_SWITCH); // was 150
         if (button_pressed==UP_BUT) {
           raiseVolume(1);
         } else if (button_pressed==DWN_BUT) {
@@ -572,59 +578,47 @@ void handleMiddleButton(void){
         enableUIInterrupt();
 			}
 		}	
-		else if(current_display->current_row==RADIOCMENU){
-			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
-			LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
-			button_pressed=NO_BUT;
-			enableUIInterrupt();
-			while(button_pressed < MID_BUT){
-				disableUIInterrupt(100);
-				if(button_pressed==UP_BUT){
-					//Increase Radio Channel
-					if(radio_channel < 1075)radio_channel+=2;
-					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
-					LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
-				}
-				else if(button_pressed==DWN_BUT){
-					//Decrease Radio Channel
-					if(radio_channel > 885)radio_channel-=2;
-					LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
-					LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
-				}
-				ns73SetChannel(radio_channel);
-				enableUIInterrupt();
-			}
-			selectRadio();				//Select the FM transmitter
-			delay_ms(100);
-			ns73Config();					//Configure the FM Trans. I/O
-			ns73SetChannel(radio_channel);	//Set the channel	
-			deselectRadio();				//Unselect the FM transmitter
-		}
-		else if(current_display->current_row==RADIOPMENU){
+    else if (current_display->current_row == RADIOCMENU) {
+      displayRadioMenu();
+      button_pressed = NO_BUT;
+      enableUIInterrupt();
+      while (button_pressed < MID_BUT) {
+        disableUIInterrupt(DEBOUNCE_SWITCH); // was 100
+        if (button_pressed == UP_BUT) {
+          changeRadioFrequency(2);
+        } else if (button_pressed == DWN_BUT) {
+          changeRadioFrequency(-2);
+        }
+        enableUIInterrupt();
+      }
+      setRadioFrequency(radio_channel); // TODO Not really necessary, is it?
+    } else if (current_display->current_row == RADIOPMENU) {
       LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
       if (radio_enable) {
         LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
       } else {
         LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
       }
-			button_pressed = NO_BUT;
-			enableUIInterrupt();
-			while(button_pressed < MID_BUT){
-				disableUIInterrupt(100); // debounce the switch
-				if(button_pressed==UP_BUT){
+      button_pressed = NO_BUT;
+      enableUIInterrupt();
+      while (button_pressed < MID_BUT) {
+        disableUIInterrupt(DEBOUNCE_SWITCH); // was 100
+        if (button_pressed == UP_BUT) {
           enableRadio();
-				}
-				else if(button_pressed==DWN_BUT){
+        } else if (button_pressed == DWN_BUT) {
           disableRadio();
-				}
-				enableUIInterrupt();
-			}
-		}
-		if(file_is_open)quickClear(current_display);
-		else LCDClear(current_display->back_color);
-		printMenu(current_display);
-	}
-	enableUIInterrupt();
+        }
+        enableUIInterrupt();
+      }
+    }
+    if (file_is_open) {
+      quickClear(current_display);
+    } else {
+      LCDClear(current_display->back_color);
+    }
+    printMenu(current_display);
+  }
+  enableUIInterrupt();
 }
 
 //  Usage: quickClear(currentDisplay);
@@ -637,12 +631,12 @@ void handleMiddleButton(void){
 //
 void quickClear(DisplayStruct *display){
   selectLCD();		//Hand over SPI lines to LCD talk
-  //If we're on the first page of the menu, we also need to clear the title.
-  if (display->current_page==0) {
+  // If we're on the first page of the menu, we also need to clear the title.
+  if (display->current_page == 0) {
     LCDPrintString(display->title, 0, display->back_color, 0, 0, display->orientation);
   }
   LCDSetRowColor(display->current_row, 0, display->back_color, display->orientation);
-  for (int j=0; j<NUMROWS; j++) {
+  for (int j = 0; j < NUMROWS; j++) {
     LCDPrintString(display->list[j].file_name, 0, display->back_color, j+1, 0, display->orientation);
     LCDPrintString(newline, 0, black, j+1, 0, 0);
   }
@@ -669,8 +663,8 @@ void reset(void) {
 //
 void initializeRadio(int frequency) {
   selectRadio();        // Select SPI for FM Transmitter
-  delay_ms(900);
   
+  // TODO use setRadioFrequency here?
   ns73Config();         // Configure the FM Trans. I/O
   ns73Init();           // Setup the Default Register Values
   ns73SetChannel(frequency); // Transmit
@@ -689,11 +683,10 @@ void enableRadio(void) {
   LCDPrintString("On", 0, current_display->text_color, 2,0,current_display->orientation);
   
   // send data
-  selectRadio();        //Select the FM transmitter
-  delay_ms(100);
-  ns73Config();           //Configure the FM Trans. I/O
-  ns73Send(R0, PE | AG);  //Power up the radio
-  deselectRadio();        //Unselect the FM transmitter
+  selectRadio();          //Select the FM transmitter
+  ns73Config();           // Configure the FM Trans. I/O
+  ns73Send(R0, PE | AG);  // Power up the radio
+  deselectRadio();        // Unselect the FM transmitter
 }
 
 // Disables the radio.
@@ -707,10 +700,28 @@ void disableRadio(void) {
   
   // send data
   selectRadio();      //Select the FM transmitter
-  delay_ms(100);
   ns73Config();         //Configure the FM Trans. I/O
   ns73Send(R0, MUTE);   // Mute the radio	
   deselectRadio();      //Unselect the FM transmitter
+}
+
+// Set the radio frequency to f where f is i.e. 1000 for 100.0 Mhz.
+//
+void setRadioFrequency(int f) {
+  selectRadio();     // Select the FM transmitter
+  ns73Config();      // Configure the FM Trans. I/O
+  ns73SetChannel(f); // Set the channel	
+  deselectRadio();   // Unselect the FM transmitter
+}
+
+// Change the radio frequency by f where change is 0.1 times f Mhz.
+//
+void changeRadioFrequency(int f) {
+  if ((885 < radio_channel) && (radio_channel < 1075)) {
+    radio_channel += f;
+  }
+  displayRadioMenu();
+  ns73SetChannel(radio_channel); // TODO or setRadioFrequency?
 }
 
 //
@@ -833,6 +844,8 @@ void selectLCD(void) {
 // Hand over SPI lines to radio talk.
 void selectRadio(void) {
   IOCLR1 |= FM_CS;
+  delay_ms(100);
+  // In enableRadio: delay_ms(900); // TODO Does this really need to be 900?
 }
 
 // Hand off SPI lines from radio talk.
@@ -949,4 +962,15 @@ void initializeLEDs(void) {
   ledBlueOff();
   ledRedOff();
   ledGrnOff();
+}
+
+//
+// Menus
+//
+
+// Displays the radio menu settings.
+//
+void displayRadioMenu(void) {
+  LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
+  LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
 }

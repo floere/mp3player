@@ -10,6 +10,7 @@
 #define	NUMROWS				15		//Number of rows available on the LCD (doesn't include the title)
 
 #define DEBOUNCE_ACCELEROMETER 300
+#define DEBOUNCE_SWITCH        100
 
 //********************************************************************
 //
@@ -66,6 +67,10 @@ void quickClear(DisplayStruct *display);
 void initializeRadio(int);
 void enableRadio(void);
 void disableRadio(void);
+void setRadioFrequency(int);
+void changeRadioFrequency(int);
+// void increaseRadioFrequency(int);
+// void decreaseRadioFrequency(int);
 
 // MP3 handling
 void initializeMP3Player(void);
@@ -105,3 +110,6 @@ void exclusiveUIInterrupt(void);
 
 // LEDs
 void initializeLEDs(void);
+
+// Menus
+void displayRadioMenu(void);
