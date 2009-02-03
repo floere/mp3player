@@ -90,33 +90,33 @@ const char radio_power[11]= "Radio Power";
 const char radio_channel_menu[13]= "Radio Channel";
 const char settings[10]="Settings:";
 
-int main (void)
-{
-//*******************************************************
-//					Local Variables
-//*******************************************************
-unsigned long int numberOfChars = 0;
-
-//*******************************************************
-//					Main Code
-//*******************************************************
-  //Initialize ARM I/O
+int main (void) {
+  //*******************************************************
+  //					Local Variables
+  //*******************************************************
+  unsigned long int numberOfChars = 0;
+  
+  //*******************************************************
+  //					Main Code
+  //*******************************************************
+  
+  // Initialize ARM I/O
   bootUp();
+  
   initializeMP3Player();
   splashScreen();
   initializeRadio(radio_channel);
   
   // Find Out how many files are on the SD card
   selectSD();	//Make sure SPI is selected for reading the card
+  do {
+    numberOfChars++;
+  } while(rootDirectory_files_stream(0) != '\0'); // Get the total number of characters in the filenames on the SD card
+  char tempNames[numberOfChars];   // This is one array that contains all of the filenames in the SD card, seperated by '\0'
+  NUMBEROFFILES = rootDirectory_files(tempNames, numberOfChars + 1);
+  FileStruct Files[NUMBEROFFILES]; // Dynamically create an array for all of the filenames
   
-  do{
-  	numberOfChars++;
-  }while(rootDirectory_files_stream(0)!='\0');			//Get the total number of characters in the filenames on the SD card
-  char tempNames[numberOfChars];	//This is one array that contains all of the filenames in the SD card, seperated by '\0'
-  NUMBEROFFILES=rootDirectory_files(tempNames, numberOfChars+1);
-  FileStruct Files[NUMBEROFFILES];						//Dynamically create an array for all of the filenames
-  
-  //Get all of the filenames into a Global Array
+  // Get all of the filenames into a Global Array
   int chartracker=0;	
   for(int j=0; j<NUMBEROFFILES; j++){
   	for(int i=0; i<=MAXFILENAMELEN+1; i++){
@@ -131,7 +131,6 @@ unsigned long int numberOfChars = 0;
   		else Files[j].file_name[i] ='\0';
   	}	
   }
-	
 	
 	//Load the file manager with the songs/files on the SD card and set this as the current display
 	file_manager.total_pages = (NUMBEROFFILES/NUMROWS)-1;
@@ -152,15 +151,17 @@ unsigned long int numberOfChars = 0;
 	//Generate the settings menu and fill in default settings values
 	fillSettings(&settings_menu);
 	
-	//Setup the menu
-	current_display = &file_manager;
-	selectLCD();		//Hand over SPI lines to LCD talk
-	LCDClear(current_display->back_color);
-	printMenu(current_display);
-	
-	// TODO Floere remove
-	LCDPrintString("GO GO MP3!", 0, current_display->text_color, 2, 0, current_display->orientation);
-	
+  // Setup the menu
+  current_display = &file_manager;
+  selectLCD();
+  LCDClear(current_display->back_color);
+  
+  // TODO Floere remove
+  LCDPrintString("GO GO MP3!", 0, current_display->text_color, 2, 0, current_display->orientation);
+  delay_ms(500);
+  //
+  
+  printMenu(current_display);
 	while(1){
 	  // USB connected!
 		if (isUSBConnected()) {
