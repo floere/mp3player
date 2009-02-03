@@ -163,12 +163,11 @@ unsigned long int numberOfChars = 0;
 	
 	while(1){
 	  // USB connected!
-		if(IOPIN0 & (1<<23))
-		{
+		if (isUSBConnected()) {
 			LCDClear(white);
 			LCDPrintString(USB, 0, black, 7,4,current_display->orientation);
       delay_ms(1000);
-			VICIntEnClr = 0x30;		//Stop all interrupts to allow USB communication
+      stopAllInterrupts(); // To allow USB communication
 			main_msc();
 			reset();
 		}
@@ -178,7 +177,7 @@ unsigned long int numberOfChars = 0;
 		if(!button_pressed && !update_screen){
 			//If the current song is done playing, start playing the next song if it's available.
 			if(song_is_over){
-				VICIntEnClr = 0x20;			//Stop the "Send Song" interrupts
+				disableMP3Interrupt();			//Stop the "Send Song" interrupts
 				closeSong(&current_song);	//Close the current song
 				file_is_open=0;				//change master flag
 				ledBlueOff();
@@ -203,7 +202,7 @@ unsigned long int numberOfChars = 0;
 					vs1002SCIWrite(SCI_MODE, SM_SDINEW);						//Make sure the MP3 player is in the right mode.
 					vs1002Finish();												//Disable the MP3 Comm. Lines
 					ledBlueOn();
-					VICIntEnable |= 0x20;		//Enable Timer 0 Interrupts(This is the "Song Sending" interrupt).
+					enableMP3Interrupt();
 				}	
 			}
 		}
@@ -213,8 +212,7 @@ unsigned long int numberOfChars = 0;
 		else if(button_pressed == MID_BUT)handleMiddleButton();
 		
 		else if(update_screen){
-			VICIntEnClr = 0x10;	//Stop interrupts and allow accelerometer to stabilize
-			delay_ms(300);
+			disableUIInterrupt(DEBOUNCE_ACCELEROMETER); // Stop interrupts and allow accelerometer to stabilize
 			if(MMA_get_y()>700 && prev_position>700){	//Get new accelerometer value; make sure position is correct.
 				if(file_is_open)quickClear(current_display);
 				else LCDClear(current_display->back_color);
@@ -234,10 +232,10 @@ unsigned long int numberOfChars = 0;
 				if(file_is_open)ledBlueOn();
 			}
 			printMenu(current_display);					//If the screen has changed, show the new menu
-			VICIntEnable |= 0x10;						//Re-enable interrupts
+			enableUIInterrupt();
 		}
 		button_pressed=NO_BUT;
-		VICIntEnable |= 0x10;
+		enableUIInterrupt();
 	}
     return 0;
 }
@@ -293,60 +291,23 @@ void bootUp(void)
   //Setup the LCD I/O Lines
   IODIR0 |= (LCD_RES | LCD_CS);									//LCD Outputs
   
-  //Setup the LED Lines										
-  IODIR0 |= (LED_BLU | LED_RED | LED_GRN);						//Led's
-  ledBlueOff();
-  ledRedOff();
-  ledGrnOff();
+  initializeLEDs();
   
   //Setup the Buttons
   IODIR1 &= (~SW_UP & ~SW_DWN & ~SW_MID);		//Button Inputs
   
   IODIR0 &= ~(1<<23);							//Set the Vbus line as an input
   
-    //Setupt the Interrupts
-  VPBDIV=1;										// Set PCLK equal to the System Clock	
-  VICIntSelect = ~0x30; 							// Timer 0 AND TIMER 1 interrupt is an IRQ interrupt
-    VICIntEnable = 0x10; 							// Enable Timer 0 Interrupts (Don't start sending song data with Timer 1)
-    VICVectCntl0= 0x25; 							// Use slot 0 for timer 1 interrupt
-    VICVectAddr0 = (unsigned int)timer1ISR; 		// Set the address of ISR for slot 1		
-    VICVectCntl1 = 0x24; 							// Use slot 1 for timer 0 interrupt
-    VICVectAddr1 = (unsigned int)timer0ISR; 		// Set the address of ISR for slot 1
+  initializeInterrupts();
+  initializeUITimer();
+  initializeMP3Player();
   
-  //Configure Timer0
-  T0PR = 300;										//Divide Clock by 300 for 40kHz PS
-  T0TCR |=0X01;									//Enable the clock
-  T0CTCR=0;										  //Timer Mode
-  T0MCR=0x0003;									//Interrupt and Reset Timer on Match
-  T0MR0=1000;										//Interrupt on 40Hz
-  
-  //Configure Timer1
-  T1PR = 200;										//Divide Clock by 200 for ??kHz PS
-  T1TCR |=0X01;									//Enable the clock
-  T1CTCR=0;									  	//Timer Mode
-  T1CCR=0x0A00;									//Capture and interrupt on the rising edge of DREQ
-  
-  //Setup the SPI Port
-  S0SPCCR = 64;                 // SCK = 1 MHz, counter > 8 and even
-  S0SPCR  = 0x20;               // Master, no interrupt enable, 8 bits	
-}
-
-//  Usage: None (Automatically Called by FW)
-//  Inputs: None
-//  This function is a global interrupt called by a match on the Timer 0 match.
-//  This interrupt is responsible for sending music to the MP3 player when it is needed. 
-//  WARNING: Altering the Timer 0 Prescale register or Timer 0 Match value will put proper MP3 playing at risk.
-//           Adding superfluous code to this interrupt section may also contribute to improper MP3 playback.
-//
-static void timer1ISR(void) {
-  sendMP3Data();
-  T1IR = 0xFF;      // Clear the timer 0 interrupt
-  VICVectAddr = 0;  // Update VIC priorities
+  initializeSPI();
 }
 
 //Usage: None (Automatically Called by FW)
 //Inputs: None
-//This function is a global interrupt called by a match on the Timer 1 match.  The interrupt
+//This function is a global interrupt called by a match on the Timer 0 match.  The interrupt
 // is responsible for determining if a button has been pressed or if the screen has been rotated
 // and setting the appropriate global flag if either has occured.
 static void timer0ISR(void)
@@ -361,7 +322,21 @@ static void timer0ISR(void)
   prev_position = cur_position; // Save the position value for later reference
   
   T0IR = 0xFF;                  // Clear the timer interrupt
-  VICVectAddr =0;               // Update the VIC priorities
+  VICVectAddr = 0;              // Update the VIC priorities
+}
+
+//  Usage: None (Automatically Called by FW)
+//  Inputs: None
+//  This function is a global interrupt called by a match on the Timer 1 match.
+//  This interrupt is responsible for sending music to the MP3 player when it is needed. 
+//  WARNING: Altering the Timer 1 Prescale register or Timer 1 Match value will put proper MP3 playing at risk.
+//           Adding superfluous code to this interrupt section may also contribute to improper MP3 playback.
+//
+static void timer1ISR(void) {
+  sendMP3Data();
+  
+  T1IR = 0xFF;      // Clear the timer 1 interrupt
+  VICVectAddr = 0;  // Update VIC priorities
 }
 
 // Usage: button_value=getButton();
@@ -557,9 +532,8 @@ void handleDownButton(DisplayStruct *display, FileStruct *Files){
 //	(2.-If the file menu is displayed and a song IS being played, the fucntion stops the currently playing song)
 //	(3.-If the settings menu is displayed, the function opens the selected setting and allows the user to edit the setting.)
 void handleMiddleButton(void){
-	VICIntEnClr = 0x10;
-	delay_ms(250);
-	
+  disableUIInterrupt(250);
+  
   // If the File Menu is being displayed, middle button acts like play/stop
   if (current_display == &file_manager) {
     if (!file_is_open) { // If a file isn't already playing then this acts like a play button
@@ -583,30 +557,28 @@ void handleMiddleButton(void){
       LCDClear(settings_menu.back_color);
     }
     LCDPrintString(current_display->list[current_display->current_index].file_name,0,current_display->text_color,1,0,current_display->orientation);
-		VICIntEnable|=0x10;
+		enableUIInterrupt();
 		if (current_display->current_row == VOLUMEMENU) {
-			VICIntEnable |= 0x10;
+			enableUIInterrupt();
 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
 			LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
 			while(button_pressed < MID_BUT){
-        VICIntEnClr = 0x10;                     // Stop Interrupts to
-        delay_ms(150);                          // debounce the switch
+        disableUIInterrupt(150);
         if (button_pressed==UP_BUT) {
           raiseVolume(1);
         } else if (button_pressed==DWN_BUT) {
           lowerVolume(1);
         }
-        VICIntEnable |= 0x10;
+        enableUIInterrupt();
 			}
 		}	
 		else if(current_display->current_row==RADIOCMENU){
 			LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
 			LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
 			button_pressed=NO_BUT;
-			VICIntEnable |= 0x10;
+			enableUIInterrupt();
 			while(button_pressed < MID_BUT){
-				VICIntEnClr = 0x10;	//Stop Interrupts to
-				delay_ms(100);		//	debounce the switch					
+				disableUIInterrupt(100);
 				if(button_pressed==UP_BUT){
 					//Increase Radio Channel
 					if(radio_channel < 1075)radio_channel+=2;
@@ -620,7 +592,7 @@ void handleMiddleButton(void){
 					LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
 				}
 				ns73SetChannel(radio_channel);
-				VICIntEnable |= 0x10;
+				enableUIInterrupt();
 			}
 			selectRadio();				//Select the FM transmitter
 			delay_ms(100);
@@ -635,25 +607,24 @@ void handleMiddleButton(void){
       } else {
         LCDPrintString("Off", 0, current_display->text_color, 2,0,current_display->orientation);
       }
-			button_pressed=NO_BUT;
-			VICIntEnable |= 0x10;
+			button_pressed = NO_BUT;
+			enableUIInterrupt();
 			while(button_pressed < MID_BUT){
-				VICIntEnClr = 0x10;	//Stop Interrupts to
-				delay_ms(100);		//	debounce the switch					
+				disableUIInterrupt(100); // debounce the switch
 				if(button_pressed==UP_BUT){
           enableRadio();
 				}
 				else if(button_pressed==DWN_BUT){
           disableRadio();
 				}
-				VICIntEnable |= 0x10;
+				enableUIInterrupt();
 			}
 		}
 		if(file_is_open)quickClear(current_display);
 		else LCDClear(current_display->back_color);
 		printMenu(current_display);
 	}
-	VICIntEnable |= 0x10;
+	enableUIInterrupt();
 }
 
 //  Usage: quickClear(currentDisplay);
@@ -697,14 +668,14 @@ void reset(void) {
 // Frequency is given in tenths of a MHz. So 973 means 97.3 MHz.
 //
 void initializeRadio(int frequency) {
-  selectRadio();      //Select SPI for FM Transmitter
+  selectRadio();        // Select SPI for FM Transmitter
   delay_ms(900);
   
-  ns73Config();         //Configigure the FM Trans. I/O
-  ns73Init();           //Setup the Default Register Values
-  ns73SetChannel(frequency);  //Transmit to 97.3 FM
+  ns73Config();         // Configure the FM Trans. I/O
+  ns73Init();           // Setup the Default Register Values
+  ns73SetChannel(frequency); // Transmit
   
-  deselectRadio();      //Remove FM Transmitter from SPI bus
+  deselectRadio();      // Remove FM Transmitter from SPI bus
   delay_ms(100);
 }
 
@@ -765,7 +736,7 @@ void startMP3Player(void) {
   ledBlueOn();
   sendMP3Data();                        // Send first song data
   PINSEL1 |= 0x00000C00;
-  VICIntEnable |= 0x20;                 // Enable Timer 1 Interrupts (This is the "Song Sending" interrupt).
+  enableMP3Interrupt();
   IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES); // Assign LCD pins as Outputs
 }
 
@@ -788,7 +759,8 @@ void sendMP3Data(void) {
 // Stop playing.
 //
 void stopMP3Player(void) {
-  VICIntEnClr = 0x20;                                     // Disable Time 0 Interrupts(Stop the "Song Sending" interrupt)
+  disableMP3Interrupt();
+  
   ledBlueOff();
   vs1002Config();                                         // Enable the MP3 Comm Lines
   vs1002SCIWrite(SCI_MODE, SM_OUTOFWAV);                  // Tell the MP3 Player to jump out of WAV decoding
@@ -797,14 +769,15 @@ void stopMP3Player(void) {
   IODIR0 |= (LCD_DIO | LCD_SCK | LCD_CS | LCD_RES);       // Assign LCD pins as Outputs
   closeSong(&current_song);                               // Close the current song
   file_is_open = 0;                                       // Clear the global flag
-  VICIntEnable = 0x10;
+  
+  exclusiveUIInterrupt();
 }
 
 //
 // VOLUME
 //
 
-// Raises the Volume by 1.
+// Raises the Volume by n.
 //
 void raiseVolume(int n) {
   for(char i = 0; i < n; i++) {
@@ -834,6 +807,17 @@ void lowerVolume(int n) {
   LCDPrintString("%d", volume_setting, white, 2, 0, current_display->orientation);
 }
 
+//
+// SPI
+//
+
+// Initialize the SPI port.
+//
+void initializeSPI(void) {
+  S0SPCCR = 64;   // SCK = 1 MHz, counter > 8 and even
+  S0SPCR  = 0x20; // Master, no interrupt enable, 8 bits
+}
+
 // Hand over SPI lines to SD talk.
 //
 void selectSD(void) {
@@ -856,10 +840,113 @@ void deselectRadio(void) {
   IOSET1 |= FM_CS;
 }
 
+//
+// USB
+//
+
+// Returns if the USB is connected.
+//
+int isUSBConnected(void) {
+  return IOPIN0 & (1<<23);
+}
+
+//
+// LCD
+//
+
 // Show the splash-screen (Sparkfun Logo)
 //
 void splashScreen(void) {
   LCDInit();       // Initialize the LCD
   LCDClear(white); // Clear the screen with white
   LCDPrintLogo();  // Print the Sparkfun Logo
+}
+
+//
+// Timers
+//
+
+// Initialize the UI Timer.
+//
+void initializeUITimer(void) {
+  T0PR = 300;     // Divide Clock by 300 for 40kHz PS
+  T0TCR |= 0X01;  // Enable the clock
+  T0CTCR = 0;     // Timer Mode
+  T0MCR = 0x0003; // Interrupt and Reset Timer on Match
+  T0MR0 = 1000;   // Interrupt on 40Hz
+}
+
+// Initialize the MP3 Timer.
+//
+void initializeMP3Timer(void) {
+  T1PR = 200;     // Divide Clock by 200 for ??kHz PS
+  T1TCR |= 0X01;  // Enable the clock
+  T1CTCR = 0;     // Timer Mode
+  T1CCR = 0x0A00; // Capture and interrupt on the rising edge of DREQ
+}
+
+//
+// Interrupts
+//
+
+// Initializes interrupts and timers.
+//
+void initializeInterrupts(void) {
+  VPBDIV = 1;                              // Set PCLK equal to the System Clock	
+  VICIntSelect = ~0x30;                    // Timer 0 AND TIMER 1 interrupt is an IRQ interrupt
+  exclusiveUIInterrupt();                  // Enable Timer 0 Interrupts (Don't start sending song data with Timer 1)
+  VICVectCntl0= 0x25;                      // Use slot 0 for timer 1 interrupt
+  VICVectAddr0 = (unsigned int) timer1ISR; // Set the address of ISR for slot 1		
+  VICVectCntl1 = 0x24;                     // Use slot 1 for timer 0 interrupt
+  VICVectAddr1 = (unsigned int) timer0ISR; // Set the address of ISR for slot 1
+}
+
+// Stops all interrupts from triggering.
+//
+void stopAllInterrupts(void) {
+  VICIntEnClr = 0x30;
+}
+
+// Enable the MP3 interrupt.
+//
+void enableMP3Interrupt(void) {
+  VICIntEnable |= 0x20;
+}
+
+// Disable the MP3 interrupt.
+//
+void disableMP3Interrupt(void) {
+  VICIntEnClr = 0x20;
+}
+
+// Start the interrupts again.
+//
+void enableUIInterrupt(void) {
+  VICIntEnable |= 0x10;
+}
+
+// Stop the UI interrupt from triggering. (And stabilize/debounce for t miliseconds)
+//
+void disableUIInterrupt(int t) {
+  VICIntEnClr = 0x10;
+  delay_ms(t); // debounce
+}
+
+// Exclusively listen to the UI interrupt.
+//
+void exclusiveUIInterrupt(void) {
+  VICIntEnable = 0x10;
+}
+
+//
+// LEDs
+//
+
+// Initializes the LEDs to an off state.
+//
+void initializeLEDs(void) {
+  IODIR0 |= (LED_BLU | LED_RED | LED_GRN);
+  ledBlueOff();
+  ledRedOff();
+  ledGrnOff();
 }

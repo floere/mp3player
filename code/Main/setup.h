@@ -9,6 +9,8 @@
 #define MAXDISPLEN			22		//Number of characters that will fit in one row of the LCD
 #define	NUMROWS				15		//Number of rows available on the LCD (doesn't include the title)
 
+#define DEBOUNCE_ACCELEROMETER 300
+
 //********************************************************************
 //
 //				MP3 Player Structures
@@ -76,10 +78,30 @@ void raiseVolume(int n);
 void lowerVolume(int n);
 
 // SPI handling
+void initializeSPI(void);
 void selectSD(void);
 void selectLCD(void);
 void selectRadio(void);
 void deselectRadio(void);
 
+// USB handling
+int isUSBConnected(void);
+
 // LCD
 void splashScreen(void);
+
+// Timers
+void initializeMP3Timer(void);
+void initializeUITimer(void);
+
+// Interrupt Handling
+void initializeInterrupts(void);
+void stopAllInterrupts(void);
+void enableMP3Interrupt(void);
+void disableMP3Interrupt(void);
+void enableUIInterrupt(void);
+void disableUIInterrupt(int t);
+void exclusiveUIInterrupt(void);
+
+// LEDs
+void initializeLEDs(void);
