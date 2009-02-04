@@ -115,5 +115,7 @@ void initializeLEDs(void);
 // Menus
 void displayRadioMenu(void);
 
-// SD handling
-FileStruct* loadSDFiles();
+// Accelerometer
+void handleAccelerometer(void);
+int wishesSettings(void);
+int wishesFileManager(void);

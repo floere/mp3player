@@ -88,7 +88,7 @@ LOAD /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libg.a
 LOAD /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a
 END GROUP
 
-.text           0x00010000     0x97d8
+.text           0x00010000     0x9840
  *(.vectorg)
  .vectorg       0x00010000       0x98 Startup.o
                 0x00010050                __IRQ_Wrapper
@@ -100,469 +100,472 @@ END GROUP
                 0x00010160                __exit_ARM
  *(.text .text.*)
  .text          0x00010194        0x0 Startup.o
- .text          0x00010194     0x1a8c main.o
+ .text          0x00010194     0x1af4 main.o
+                0x00010630                wishesSettings
                 0x00010470                isUSBConnected
-                0x00011500                bootUp
+                0x00011668                bootUp
                 0x00010570                enableUIInterrupt
-                0x0001103c                stopMP3Player
+                0x000111a4                stopMP3Player
                 0x0001054c                enableMP3Interrupt
                 0x00010560                disableMP3Interrupt
-                0x000111a8                handleMiddleButton
+                0x00011310                handleMiddleButton
                 0x000103a4                reset
                 0x00010458                deselectRadio
                 0x000105b4                exclusiveUIInterrupt
-                0x00010ba8                raiseVolume
+                0x00010d10                raiseVolume
                 0x00010484                initializeUITimer
-                0x00010f8c                initializeRadio
-                0x00010af4                lowerVolume
-                0x000107fc                highlightRow
-                0x000105f4                displayRadioMenu
-                0x00010d5c                initializeMP3Player
+                0x000110f4                initializeRadio
+                0x00010c5c                lowerVolume
+                0x00010934                highlightRow
+                0x0001072c                displayRadioMenu
+                0x00010ec4                initializeMP3Player
                 0x000103f0                selectSD
-                0x00010954                handleUpButton
-                0x00010ed0                enableRadio
+                0x00010a8c                handleUpButton
+                0x00011038                enableRadio
                 0x000101f8                getNewFiles
-                0x000108d8                handleDownButton
-                0x00010e18                disableRadio
-                0x000116c8                main
+                0x00010b40                handleAccelerometer
+                0x00010a10                handleDownButton
+                0x000105f4                wishesFileManager
+                0x00010f80                disableRadio
+                0x00011830                main
                 0x00010194                delay_ms
                 0x00010424                selectRadio
                 0x00010584                disableUIInterrupt
                 0x000105c4                initializeLEDs
-                0x00010c54                sendMP3Data
+                0x00010dbc                sendMP3Data
                 0x000102dc                fillSettings
                 0x000103d4                initializeSPI
-                0x00010730                printMenu
-                0x00010ad0                splashScreen
-                0x00011004                closeSong
+                0x00010868                printMenu
+                0x00010c38                splashScreen
+                0x0001116c                closeSong
                 0x000101bc                getButton
                 0x00010408                selectLCD
                 0x0001053c                stopAllInterrupts
                 0x000104ec                initializeInterrupts
-                0x000110d0                loadSongInfo
-                0x00010dbc                setRadioFrequency
-                0x00010a90                clearScreen
-                0x00010664                quickClear
-                0x00010cf4                startMP3Player
-                0x00010d80                changeRadioFrequency
+                0x00011238                loadSongInfo
+                0x00010f24                setRadioFrequency
+                0x00010b00                clearScreen
+                0x0001079c                quickClear
+                0x00010e5c                startMP3Player
+                0x00010ee8                changeRadioFrequency
                 0x000104bc                initializeMP3Timer
- .text          0x00011c20       0x64 ../lib/syscalls.o
-                0x00011c38                _lseek_r
-                0x00011c40                _fstat_r
-                0x00011c50                isatty
-                0x00011c58                _sbrk_r
-                0x00011c20                _read_r
-                0x00011c30                _close_r
-                0x00011c28                _write_r
- .text          0x00011c84      0x2c8 ../lib/rprintf.o
-                0x00011c84                rprintf_devopen
-                0x00011cd4                rprintf
- .text          0x00011f4c      0x114 ../lib/serial.o
-                0x00012028                getkey_serial0
-                0x00012000                putstring_serial0
-                0x00012044                getc0
-                0x00011f4c                init_serial0
-                0x00011fa0                putchar_serial0
-                0x00011fe0                putc_serial0
- .text          0x00012060       0x4c ../lib/spi0.o
-                0x00012090                SPI0_recv
-                0x00012060                SPI0_send_recv
-                0x000120a4                SPI0_send
- .text          0x000120ac      0x484 ../lib/rootdir.o
-                0x000123c4                root_disk_info
-                0x000120ac                root_file_exists
-                0x00012184                rootDirectory_files
-                0x000120e0                root_delete
-                0x00012130                root_format
-                0x00012400                root_open_new
-                0x00012234                rootDirectory_files_stream
-                0x000122b8                print_disk_info
-                0x000123d4                root_open
-                0x00012448                openroot
- .text          0x00012530      0xc74 ../lib/sd_raw.o
-                0x00012530                sd_raw_available
-                0x00012934                sd_raw_read
-                0x00012fc4                format_card
-                0x00012da0                sd_raw_init
-                0x00012cf0                sd_raw_read_interval
-                0x00012678                SDoff
-                0x000126a0                sd_raw_get_info
-                0x00012ca8                sd_raw_sync
-                0x00012564                sd_raw_locked
-                0x00012a94                sd_raw_write
- .text          0x000131a4     0x1860 ../lib/fat16.o
-                0x00013f48                fat16_resize_file
-                0x00013c60                find_file_in_dir
-                0x000143c4                fat16_close
-                0x00013850                fat16_reset_dir
-                0x0001386c                fat16_delete_file
-                0x0001393c                fat16_get_fs_free
-                0x00013a48                fat16_read_dir
-                0x000140ec                fat16_seek_file
-                0x00013918                fat16_get_fs_size
-                0x000143b0                fat16_close_file
-                0x00014458                fat16_open_file
-                0x000136b4                fat16_read_file
-                0x00014640                fat16_open
-                0x00014834                fat16_create_file
-                0x000144d8                open_file_in_dir
-                0x0001451c                fat16_get_dir_entry_of_path
-                0x00014184                fat16_write_file
-                0x000143d8                fat16_open_dir
-                0x0001439c                fat16_close_dir
-                0x00013a40                fat16_file_size
- .text          0x00014a04      0x130 ../lib/partition.o
-                0x00014a04                partition_close
-                0x00014a24                partition_open
- .text          0x00014b34       0xcc ../lib/MMA7260.o
-                0x00014b90                MMA_get_x
-                0x00014b88                MMA_get_y
-                0x00014b98                MMA_change_mode
-                0x00014b80                MMA_get_z
- .text          0x00014c00      0xa24 ../lib/LCD_driver.o
-                0x00015420                LCDContrast
-                0x00014e1c                LCDPrintLogo
-                0x0001543c                LCDInit
-                0x0001501c                LCDPrintString
-                0x00014d24                LCDClear
-                0x00015364                LCDSetRowColor
- .text          0x00015624      0x270 ../lib/vs1002.o
-                0x0001583c                vs1002SetVolume
-                0x0001574c                vs1002SCIWrite
-                0x00015624                vs1002Config
-                0x000156e4                vs1002SineTest
-                0x0001564c                vs1002Finish
-                0x00015698                vs1002SendMusic
-                0x000157e0                vs1002SCIRead
-                0x000157a4                vs1002Mute
-                0x00015668                vs1002Reset
-                0x000157b4                vs1002Init
- .text          0x00015894      0x31c ../lib/NS73.o
-                0x00015ae8                ns73Init
-                0x00015a9c                ns73SetChannel
-                0x00015b64                ns73Config
-                0x00015990                ns73Send
-                0x00015894                ns73SerialReset
- .text          0x00015bb0      0x110 ../Bootloader/LPCUSB/main_msc.o
-                0x00015bb0                main_msc
- .text          0x00015cc0      0x418 ../Bootloader/LPCUSB/msc_bot.o
-                0x00015e0c                MSCBotBulkIn
-                0x000160b8                MSCBotReset
-                0x00015e70                MSCBotBulkOut
- .text          0x000160d8      0x358 ../Bootloader/LPCUSB/msc_scsi.o
-                0x00016220                SCSIHandleData
-                0x000160ec                SCSIHandleCmd
-                0x000160d8                SCSIReset
- .text          0x00016430      0x510 ../Bootloader/LPCUSB/blockdev_sd.o
-                0x000166cc                BlockDevRead
-                0x00016760                BlockDevInit
-                0x00016520                BlockDevGetSize
-                0x000164bc                BlockDevWrite
- .text          0x00016940      0x1e8 ../Bootloader/LPCUSB/lpc2000_spi.o
-                0x00016940                SPISetSpeed
-                0x00016a68                SPIInit
-                0x00016a04                SPIRecvN
-                0x0001695c                SPISend
-                0x000169a8                SPISendN
- .text          0x00016b28       0x74 ../Bootloader/LPCUSB/usbinit.o
-                0x00016b2c                USBInit
- .text          0x00016b9c      0x558 ../Bootloader/LPCUSB/usbhw_lpc.o
-                0x00016e54                USBHwEPRead
-                0x00016f08                USBHwISR
-                0x00016dcc                USBHwEPWrite
-                0x00016c6c                USBHwEPConfig
-                0x00016d5c                USBHwSetAddress
-                0x00016d6c                USBHwConnect
-                0x00016dac                USBHwEPStall
-                0x00016d14                USBHwRegisterDevIntHandler
-                0x00016cc8                USBHwRegisterEPIntHandler
-                0x00016ef8                USBHwConfigDevice
-                0x00016d7c                USBHwNakIntEnable
-                0x00017030                USBHwInit
-                0x00016d38                USBHwRegisterFrameHandler
-                0x00016d88                USBHwEPGetStatus
- .text          0x000170f4      0x210 ../Bootloader/LPCUSB/usbcontrol.o
-                0x000171b8                USBHandleControlTransfer
-                0x00017134                USBRegisterRequestHandler
- .text          0x00017304      0x31c ../Bootloader/LPCUSB/usbstdreq.o
-                0x00017314                USBGetDescriptor
-                0x00017398                USBRegisterCustomReqHandler
-                0x00017304                USBRegisterDescriptors
-                0x000173a8                USBHandleStandardRequest
- .text          0x00017620       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
-                0x00017634                malloc
-                0x00017620                free
- .text          0x00017648      0x734 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
-                0x00017648                _malloc_r
- .text          0x00017d7c       0xfc /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
-                0x00017d7c                memcpy
- .text          0x00017e78       0xd0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
-                0x00017e78                memset
- .text          0x00017f48        0x8 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
-                0x00017f4c                __malloc_unlock
-                0x00017f48                __malloc_lock
- .text          0x00017f50      0x134 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
-                0x00017f50                strchr
- .text          0x00018084       0xe8 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
-                0x00018084                strcmp
- .text          0x0001816c       0x9c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
-                0x0001816c                strlen
- .text          0x00018208      0x144 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
-                0x00018208                strncmp
- .text          0x0001834c      0x10c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
-                0x0001834c                strncpy
- .text          0x00018458       0x44 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
-                0x00018458                strrchr
- .text          0x0001849c      0x370 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
-                0x00018594                _free_r
-                0x0001849c                _malloc_trim_r
- .text          0x0001880c        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
- .text          0x0001880c      0x110 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
-                0x0001880c                __udivsi3
-                0x0001880c                __aeabi_uidiv
-                0x00018904                __aeabi_uidivmod
- .text          0x0001891c      0x140 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
-                0x0001891c                __aeabi_idiv
-                0x0001891c                __divsi3
-                0x00018a44                __aeabi_idivmod
- .text          0x00018a5c       0xcc /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
-                0x00018a5c                __umodsi3
- .text          0x00018b28       0xe4 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
-                0x00018b28                __modsi3
- .text          0x00018c0c        0x4 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
-                0x00018c0c                __aeabi_ldiv0
-                0x00018c0c                __div0
-                0x00018c0c                __aeabi_idiv0
+ .text          0x00011c88       0x64 ../lib/syscalls.o
+                0x00011ca0                _lseek_r
+                0x00011ca8                _fstat_r
+                0x00011cb8                isatty
+                0x00011cc0                _sbrk_r
+                0x00011c88                _read_r
+                0x00011c98                _close_r
+                0x00011c90                _write_r
+ .text          0x00011cec      0x2c8 ../lib/rprintf.o
+                0x00011cec                rprintf_devopen
+                0x00011d3c                rprintf
+ .text          0x00011fb4      0x114 ../lib/serial.o
+                0x00012090                getkey_serial0
+                0x00012068                putstring_serial0
+                0x000120ac                getc0
+                0x00011fb4                init_serial0
+                0x00012008                putchar_serial0
+                0x00012048                putc_serial0
+ .text          0x000120c8       0x4c ../lib/spi0.o
+                0x000120f8                SPI0_recv
+                0x000120c8                SPI0_send_recv
+                0x0001210c                SPI0_send
+ .text          0x00012114      0x484 ../lib/rootdir.o
+                0x0001242c                root_disk_info
+                0x00012114                root_file_exists
+                0x000121ec                rootDirectory_files
+                0x00012148                root_delete
+                0x00012198                root_format
+                0x00012468                root_open_new
+                0x0001229c                rootDirectory_files_stream
+                0x00012320                print_disk_info
+                0x0001243c                root_open
+                0x000124b0                openroot
+ .text          0x00012598      0xc74 ../lib/sd_raw.o
+                0x00012598                sd_raw_available
+                0x0001299c                sd_raw_read
+                0x0001302c                format_card
+                0x00012e08                sd_raw_init
+                0x00012d58                sd_raw_read_interval
+                0x000126e0                SDoff
+                0x00012708                sd_raw_get_info
+                0x00012d10                sd_raw_sync
+                0x000125cc                sd_raw_locked
+                0x00012afc                sd_raw_write
+ .text          0x0001320c     0x1860 ../lib/fat16.o
+                0x00013fb0                fat16_resize_file
+                0x00013cc8                find_file_in_dir
+                0x0001442c                fat16_close
+                0x000138b8                fat16_reset_dir
+                0x000138d4                fat16_delete_file
+                0x000139a4                fat16_get_fs_free
+                0x00013ab0                fat16_read_dir
+                0x00014154                fat16_seek_file
+                0x00013980                fat16_get_fs_size
+                0x00014418                fat16_close_file
+                0x000144c0                fat16_open_file
+                0x0001371c                fat16_read_file
+                0x000146a8                fat16_open
+                0x0001489c                fat16_create_file
+                0x00014540                open_file_in_dir
+                0x00014584                fat16_get_dir_entry_of_path
+                0x000141ec                fat16_write_file
+                0x00014440                fat16_open_dir
+                0x00014404                fat16_close_dir
+                0x00013aa8                fat16_file_size
+ .text          0x00014a6c      0x130 ../lib/partition.o
+                0x00014a6c                partition_close
+                0x00014a8c                partition_open
+ .text          0x00014b9c       0xcc ../lib/MMA7260.o
+                0x00014bf8                MMA_get_x
+                0x00014bf0                MMA_get_y
+                0x00014c00                MMA_change_mode
+                0x00014be8                MMA_get_z
+ .text          0x00014c68      0xa24 ../lib/LCD_driver.o
+                0x00015488                LCDContrast
+                0x00014e84                LCDPrintLogo
+                0x000154a4                LCDInit
+                0x00015084                LCDPrintString
+                0x00014d8c                LCDClear
+                0x000153cc                LCDSetRowColor
+ .text          0x0001568c      0x270 ../lib/vs1002.o
+                0x000158a4                vs1002SetVolume
+                0x000157b4                vs1002SCIWrite
+                0x0001568c                vs1002Config
+                0x0001574c                vs1002SineTest
+                0x000156b4                vs1002Finish
+                0x00015700                vs1002SendMusic
+                0x00015848                vs1002SCIRead
+                0x0001580c                vs1002Mute
+                0x000156d0                vs1002Reset
+                0x0001581c                vs1002Init
+ .text          0x000158fc      0x31c ../lib/NS73.o
+                0x00015b50                ns73Init
+                0x00015b04                ns73SetChannel
+                0x00015bcc                ns73Config
+                0x000159f8                ns73Send
+                0x000158fc                ns73SerialReset
+ .text          0x00015c18      0x110 ../Bootloader/LPCUSB/main_msc.o
+                0x00015c18                main_msc
+ .text          0x00015d28      0x418 ../Bootloader/LPCUSB/msc_bot.o
+                0x00015e74                MSCBotBulkIn
+                0x00016120                MSCBotReset
+                0x00015ed8                MSCBotBulkOut
+ .text          0x00016140      0x358 ../Bootloader/LPCUSB/msc_scsi.o
+                0x00016288                SCSIHandleData
+                0x00016154                SCSIHandleCmd
+                0x00016140                SCSIReset
+ .text          0x00016498      0x510 ../Bootloader/LPCUSB/blockdev_sd.o
+                0x00016734                BlockDevRead
+                0x000167c8                BlockDevInit
+                0x00016588                BlockDevGetSize
+                0x00016524                BlockDevWrite
+ .text          0x000169a8      0x1e8 ../Bootloader/LPCUSB/lpc2000_spi.o
+                0x000169a8                SPISetSpeed
+                0x00016ad0                SPIInit
+                0x00016a6c                SPIRecvN
+                0x000169c4                SPISend
+                0x00016a10                SPISendN
+ .text          0x00016b90       0x74 ../Bootloader/LPCUSB/usbinit.o
+                0x00016b94                USBInit
+ .text          0x00016c04      0x558 ../Bootloader/LPCUSB/usbhw_lpc.o
+                0x00016ebc                USBHwEPRead
+                0x00016f70                USBHwISR
+                0x00016e34                USBHwEPWrite
+                0x00016cd4                USBHwEPConfig
+                0x00016dc4                USBHwSetAddress
+                0x00016dd4                USBHwConnect
+                0x00016e14                USBHwEPStall
+                0x00016d7c                USBHwRegisterDevIntHandler
+                0x00016d30                USBHwRegisterEPIntHandler
+                0x00016f60                USBHwConfigDevice
+                0x00016de4                USBHwNakIntEnable
+                0x00017098                USBHwInit
+                0x00016da0                USBHwRegisterFrameHandler
+                0x00016df0                USBHwEPGetStatus
+ .text          0x0001715c      0x210 ../Bootloader/LPCUSB/usbcontrol.o
+                0x00017220                USBHandleControlTransfer
+                0x0001719c                USBRegisterRequestHandler
+ .text          0x0001736c      0x31c ../Bootloader/LPCUSB/usbstdreq.o
+                0x0001737c                USBGetDescriptor
+                0x00017400                USBRegisterCustomReqHandler
+                0x0001736c                USBRegisterDescriptors
+                0x00017410                USBHandleStandardRequest
+ .text          0x00017688       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+                0x0001769c                malloc
+                0x00017688                free
+ .text          0x000176b0      0x734 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+                0x000176b0                _malloc_r
+ .text          0x00017de4       0xfc /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+                0x00017de4                memcpy
+ .text          0x00017ee0       0xd0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+                0x00017ee0                memset
+ .text          0x00017fb0        0x8 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+                0x00017fb4                __malloc_unlock
+                0x00017fb0                __malloc_lock
+ .text          0x00017fb8      0x134 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+                0x00017fb8                strchr
+ .text          0x000180ec       0xe8 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+                0x000180ec                strcmp
+ .text          0x000181d4       0x9c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+                0x000181d4                strlen
+ .text          0x00018270      0x144 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+                0x00018270                strncmp
+ .text          0x000183b4      0x10c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+                0x000183b4                strncpy
+ .text          0x000184c0       0x44 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+                0x000184c0                strrchr
+ .text          0x00018504      0x370 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+                0x000185fc                _free_r
+                0x00018504                _malloc_trim_r
+ .text          0x00018874        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .text          0x00018874      0x110 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+                0x00018874                __udivsi3
+                0x00018874                __aeabi_uidiv
+                0x0001896c                __aeabi_uidivmod
+ .text          0x00018984      0x140 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+                0x00018984                __aeabi_idiv
+                0x00018984                __divsi3
+                0x00018aac                __aeabi_idivmod
+ .text          0x00018ac4       0xcc /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+                0x00018ac4                __umodsi3
+ .text          0x00018b90       0xe4 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+                0x00018b90                __modsi3
+ .text          0x00018c74        0x4 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
+                0x00018c74                __aeabi_ldiv0
+                0x00018c74                __div0
+                0x00018c74                __aeabi_idiv0
  *(.gnu.linkonce.t.*)
  *(.glue_7)
- .glue_7        0x00018c10        0x0 Startup.o
- .glue_7        0x00018c10        0x0 main.o
- .glue_7        0x00018c10        0x0 ../lib/syscalls.o
- .glue_7        0x00018c10        0x0 ../lib/rprintf.o
- .glue_7        0x00018c10        0x0 ../lib/serial.o
- .glue_7        0x00018c10        0x0 ../lib/spi0.o
- .glue_7        0x00018c10        0x0 ../lib/rootdir.o
- .glue_7        0x00018c10        0x0 ../lib/sd_raw.o
- .glue_7        0x00018c10        0x0 ../lib/fat16.o
- .glue_7        0x00018c10        0x0 ../lib/partition.o
- .glue_7        0x00018c10        0x0 ../lib/MMA7260.o
- .glue_7        0x00018c10        0x0 ../lib/LCD_driver.o
- .glue_7        0x00018c10        0x0 ../lib/vs1002.o
- .glue_7        0x00018c10        0x0 ../lib/NS73.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/main_msc.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/msc_bot.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/msc_scsi.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/blockdev_sd.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/lpc2000_spi.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/usbinit.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/usbhw_lpc.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/usbcontrol.o
- .glue_7        0x00018c10        0x0 ../Bootloader/LPCUSB/usbstdreq.o
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
- .glue_7        0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
+ .glue_7        0x00018c78        0x0 Startup.o
+ .glue_7        0x00018c78        0x0 main.o
+ .glue_7        0x00018c78        0x0 ../lib/syscalls.o
+ .glue_7        0x00018c78        0x0 ../lib/rprintf.o
+ .glue_7        0x00018c78        0x0 ../lib/serial.o
+ .glue_7        0x00018c78        0x0 ../lib/spi0.o
+ .glue_7        0x00018c78        0x0 ../lib/rootdir.o
+ .glue_7        0x00018c78        0x0 ../lib/sd_raw.o
+ .glue_7        0x00018c78        0x0 ../lib/fat16.o
+ .glue_7        0x00018c78        0x0 ../lib/partition.o
+ .glue_7        0x00018c78        0x0 ../lib/MMA7260.o
+ .glue_7        0x00018c78        0x0 ../lib/LCD_driver.o
+ .glue_7        0x00018c78        0x0 ../lib/vs1002.o
+ .glue_7        0x00018c78        0x0 ../lib/NS73.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/main_msc.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/msc_bot.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/msc_scsi.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/blockdev_sd.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/lpc2000_spi.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/usbinit.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/usbhw_lpc.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/usbcontrol.o
+ .glue_7        0x00018c78        0x0 ../Bootloader/LPCUSB/usbstdreq.o
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+ .glue_7        0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
  *(.glue_7t)
- .glue_7t       0x00018c10        0x0 Startup.o
- .glue_7t       0x00018c10        0x0 main.o
- .glue_7t       0x00018c10        0x0 ../lib/syscalls.o
- .glue_7t       0x00018c10        0x0 ../lib/rprintf.o
- .glue_7t       0x00018c10        0x0 ../lib/serial.o
- .glue_7t       0x00018c10        0x0 ../lib/spi0.o
- .glue_7t       0x00018c10        0x0 ../lib/rootdir.o
- .glue_7t       0x00018c10        0x0 ../lib/sd_raw.o
- .glue_7t       0x00018c10        0x0 ../lib/fat16.o
- .glue_7t       0x00018c10        0x0 ../lib/partition.o
- .glue_7t       0x00018c10        0x0 ../lib/MMA7260.o
- .glue_7t       0x00018c10        0x0 ../lib/LCD_driver.o
- .glue_7t       0x00018c10        0x0 ../lib/vs1002.o
- .glue_7t       0x00018c10        0x0 ../lib/NS73.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/main_msc.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/msc_bot.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/msc_scsi.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/blockdev_sd.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/lpc2000_spi.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/usbinit.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/usbhw_lpc.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/usbcontrol.o
- .glue_7t       0x00018c10        0x0 ../Bootloader/LPCUSB/usbstdreq.o
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
- .glue_7t       0x00018c10        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
+ .glue_7t       0x00018c78        0x0 Startup.o
+ .glue_7t       0x00018c78        0x0 main.o
+ .glue_7t       0x00018c78        0x0 ../lib/syscalls.o
+ .glue_7t       0x00018c78        0x0 ../lib/rprintf.o
+ .glue_7t       0x00018c78        0x0 ../lib/serial.o
+ .glue_7t       0x00018c78        0x0 ../lib/spi0.o
+ .glue_7t       0x00018c78        0x0 ../lib/rootdir.o
+ .glue_7t       0x00018c78        0x0 ../lib/sd_raw.o
+ .glue_7t       0x00018c78        0x0 ../lib/fat16.o
+ .glue_7t       0x00018c78        0x0 ../lib/partition.o
+ .glue_7t       0x00018c78        0x0 ../lib/MMA7260.o
+ .glue_7t       0x00018c78        0x0 ../lib/LCD_driver.o
+ .glue_7t       0x00018c78        0x0 ../lib/vs1002.o
+ .glue_7t       0x00018c78        0x0 ../lib/NS73.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/main_msc.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/msc_bot.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/msc_scsi.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/blockdev_sd.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/lpc2000_spi.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/usbinit.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/usbhw_lpc.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/usbcontrol.o
+ .glue_7t       0x00018c78        0x0 ../Bootloader/LPCUSB/usbstdreq.o
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+ .glue_7t       0x00018c78        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
  *(.gcc_except_table)
  *(.rodata)
- .rodata        0x00018c10       0x67 main.o
-                0x00018c26                NotFound
-                0x00018c6d                settings
-                0x00018c60                radio_channel_menu
-                0x00018c45                volume
-                0x00018c35                USB
-                0x00018c4c                contrast
-                0x00018c55                radio_power
-                0x00018c43                newline
-                0x00018c10                welcome
- .rodata        0x00018c77      0x63b ../lib/LCD_driver.o
- .rodata        0x000192b2       0x36 ../Bootloader/LPCUSB/msc_scsi.o
- .rodata        0x000192e8        0x4 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
-                0x000192e8                _global_impure_ptr
+ .rodata        0x00018c78       0x67 main.o
+                0x00018c8e                NotFound
+                0x00018cd5                settings
+                0x00018cc8                radio_channel_menu
+                0x00018cad                volume
+                0x00018c9d                USB
+                0x00018cb4                contrast
+                0x00018cbd                radio_power
+                0x00018cab                newline
+                0x00018c78                welcome
+ .rodata        0x00018cdf      0x63b ../lib/LCD_driver.o
+ .rodata        0x0001931a       0x36 ../Bootloader/LPCUSB/msc_scsi.o
+ .rodata        0x00019350        0x4 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+                0x00019350                _global_impure_ptr
  *(.rodata*)
  .rodata.str1.1
-                0x000192ec       0x37 main.o
- *fill*         0x00019323        0x1 00
+                0x00019354       0x37 main.o
+ *fill*         0x0001938b        0x1 00
  .rodata.str1.4
-                0x00019324      0x11c ../lib/rootdir.o
+                0x0001938c      0x11c ../lib/rootdir.o
  .rodata.str1.4
-                0x00019440       0x7c ../lib/sd_raw.o
+                0x000194a8       0x7c ../lib/sd_raw.o
  .rodata.str1.4
-                0x000194bc       0x28 ../lib/fat16.o
+                0x00019524       0x28 ../lib/fat16.o
  .rodata.str1.4
-                0x000194e4       0x34 ../Bootloader/LPCUSB/main_msc.o
+                0x0001954c       0x34 ../Bootloader/LPCUSB/main_msc.o
  .rodata.str1.4
-                0x00019518      0x2a8 ../Bootloader/LPCUSB/blockdev_sd.o
+                0x00019580      0x2a8 ../Bootloader/LPCUSB/blockdev_sd.o
                                 0x2ac (size before relaxing)
  .rodata.str1.4
-                0x000197c0       0x14 ../Bootloader/LPCUSB/lpc2000_spi.o
+                0x00019828       0x14 ../Bootloader/LPCUSB/lpc2000_spi.o
  .rodata.str1.4
-                0x000197d4        0x4 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+                0x0001983c        0x4 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
  *(.gnu.linkonce.r.*)
-                0x000197d8                . = ALIGN (0x4)
+                0x00019840                . = ALIGN (0x4)
 
-.vfp11_veneer   0x000197d8        0x0
- .vfp11_veneer  0x000197d8        0x0 Startup.o
- .vfp11_veneer  0x000197d8        0x0 main.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/syscalls.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/rprintf.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/serial.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/spi0.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/rootdir.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/sd_raw.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/fat16.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/partition.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/MMA7260.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/LCD_driver.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/vs1002.o
- .vfp11_veneer  0x000197d8        0x0 ../lib/NS73.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/main_msc.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/msc_bot.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/msc_scsi.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/blockdev_sd.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/lpc2000_spi.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/usbinit.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/usbhw_lpc.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/usbcontrol.o
- .vfp11_veneer  0x000197d8        0x0 ../Bootloader/LPCUSB/usbstdreq.o
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
- .vfp11_veneer  0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
+.vfp11_veneer   0x00019840        0x0
+ .vfp11_veneer  0x00019840        0x0 Startup.o
+ .vfp11_veneer  0x00019840        0x0 main.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/syscalls.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/rprintf.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/serial.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/spi0.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/rootdir.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/sd_raw.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/fat16.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/partition.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/MMA7260.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/LCD_driver.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/vs1002.o
+ .vfp11_veneer  0x00019840        0x0 ../lib/NS73.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/main_msc.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/msc_bot.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/msc_scsi.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/blockdev_sd.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/lpc2000_spi.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/usbinit.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/usbhw_lpc.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/usbcontrol.o
+ .vfp11_veneer  0x00019840        0x0 ../Bootloader/LPCUSB/usbstdreq.o
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+ .vfp11_veneer  0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
 
-.v4_bx          0x000197d8        0x0
- .v4_bx         0x000197d8        0x0 Startup.o
- .v4_bx         0x000197d8        0x0 main.o
- .v4_bx         0x000197d8        0x0 ../lib/syscalls.o
- .v4_bx         0x000197d8        0x0 ../lib/rprintf.o
- .v4_bx         0x000197d8        0x0 ../lib/serial.o
- .v4_bx         0x000197d8        0x0 ../lib/spi0.o
- .v4_bx         0x000197d8        0x0 ../lib/rootdir.o
- .v4_bx         0x000197d8        0x0 ../lib/sd_raw.o
- .v4_bx         0x000197d8        0x0 ../lib/fat16.o
- .v4_bx         0x000197d8        0x0 ../lib/partition.o
- .v4_bx         0x000197d8        0x0 ../lib/MMA7260.o
- .v4_bx         0x000197d8        0x0 ../lib/LCD_driver.o
- .v4_bx         0x000197d8        0x0 ../lib/vs1002.o
- .v4_bx         0x000197d8        0x0 ../lib/NS73.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/main_msc.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/msc_bot.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/msc_scsi.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/blockdev_sd.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/lpc2000_spi.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/usbinit.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/usbhw_lpc.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/usbcontrol.o
- .v4_bx         0x000197d8        0x0 ../Bootloader/LPCUSB/usbstdreq.o
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
- .v4_bx         0x000197d8        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
-                0x000197d8                . = ALIGN (0x4)
+.v4_bx          0x00019840        0x0
+ .v4_bx         0x00019840        0x0 Startup.o
+ .v4_bx         0x00019840        0x0 main.o
+ .v4_bx         0x00019840        0x0 ../lib/syscalls.o
+ .v4_bx         0x00019840        0x0 ../lib/rprintf.o
+ .v4_bx         0x00019840        0x0 ../lib/serial.o
+ .v4_bx         0x00019840        0x0 ../lib/spi0.o
+ .v4_bx         0x00019840        0x0 ../lib/rootdir.o
+ .v4_bx         0x00019840        0x0 ../lib/sd_raw.o
+ .v4_bx         0x00019840        0x0 ../lib/fat16.o
+ .v4_bx         0x00019840        0x0 ../lib/partition.o
+ .v4_bx         0x00019840        0x0 ../lib/MMA7260.o
+ .v4_bx         0x00019840        0x0 ../lib/LCD_driver.o
+ .v4_bx         0x00019840        0x0 ../lib/vs1002.o
+ .v4_bx         0x00019840        0x0 ../lib/NS73.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/main_msc.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/msc_bot.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/msc_scsi.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/blockdev_sd.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/lpc2000_spi.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/usbinit.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/usbhw_lpc.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/usbcontrol.o
+ .v4_bx         0x00019840        0x0 ../Bootloader/LPCUSB/usbstdreq.o
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+ .v4_bx         0x00019840        0x0 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
+                0x00019840                . = ALIGN (0x4)
 
-.ctors          0x000197d8        0x0
-                0x000197d8                PROVIDE (__ctors_start__, .)
+.ctors          0x00019840        0x0
+                0x00019840                PROVIDE (__ctors_start__, .)
  *(SORT(.ctors.*))
  *(.ctors)
-                0x000197d8                . = ALIGN (0x4)
-                0x000197d8                PROVIDE (__ctors_end__, .)
-                0x000197d8                . = ALIGN (0x4)
+                0x00019840                . = ALIGN (0x4)
+                0x00019840                PROVIDE (__ctors_end__, .)
+                0x00019840                . = ALIGN (0x4)
 
-.dtors          0x000197d8        0x0
-                0x000197d8                PROVIDE (__dtors_start__, .)
+.dtors          0x00019840        0x0
+                0x00019840                PROVIDE (__dtors_start__, .)
  *(SORT(.dtors.*))
  *(.dtors)
-                0x000197d8                . = ALIGN (0x4)
-                0x000197d8                PROVIDE (__dtors_end__, .)
-                0x000197d8                . = ALIGN (0x4)
-                0x000197d8                . = ALIGN (0x4)
-                0x000197d8                _etext = .
-                0x000197d8                PROVIDE (etext, .)
+                0x00019840                . = ALIGN (0x4)
+                0x00019840                PROVIDE (__dtors_end__, .)
+                0x00019840                . = ALIGN (0x4)
+                0x00019840                . = ALIGN (0x4)
+                0x00019840                _etext = .
+                0x00019840                PROVIDE (etext, .)
 
-.data           0x40000000      0x894 load address 0x000197d8
+.data           0x40000000      0x894 load address 0x00019840
                 0x40000000                _data = .
  *(.vectmapped)
                 0x40000000                . = ALIGN (0x4)
@@ -627,7 +630,7 @@ END GROUP
                 0x40000894                _edata = .
                 0x40000894                PROVIDE (edata, .)
 
-.bss            0x40000894      0x9e0 load address 0x0001a06c
+.bss            0x40000894      0x9e0 load address 0x0001a0d4
                 0x40000894                __bss_start = .
                 0x40000894                __bss_start__ = .
  *(.bss)
@@ -852,360 +855,360 @@ END GROUP
                 0x000004e8       0x20 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
 
 .debug_pubnames
-                0x00000000     0x10ef
+                0x00000000     0x1130
  *(.debug_pubnames)
  .debug_pubnames
-                0x00000000      0x3f4 main.o
+                0x00000000      0x435 main.o
  .debug_pubnames
-                0x000003f4       0x69 ../lib/syscalls.o
+                0x00000435       0x69 ../lib/syscalls.o
  .debug_pubnames
-                0x0000045d       0x32 ../lib/rprintf.o
+                0x0000049e       0x32 ../lib/rprintf.o
  .debug_pubnames
-                0x0000048f       0x7b ../lib/serial.o
+                0x000004d0       0x7b ../lib/serial.o
  .debug_pubnames
-                0x0000050a       0x41 ../lib/spi0.o
+                0x0000054b       0x41 ../lib/spi0.o
  .debug_pubnames
-                0x0000054b      0x103 ../lib/rootdir.o
+                0x0000058c      0x103 ../lib/rootdir.o
  .debug_pubnames
-                0x0000064e       0xc1 ../lib/sd_raw.o
+                0x0000068f       0xc1 ../lib/sd_raw.o
  .debug_pubnames
-                0x0000070f      0x1b1 ../lib/fat16.o
+                0x00000750      0x1b1 ../lib/fat16.o
  .debug_pubnames
-                0x000008c0       0x39 ../lib/partition.o
+                0x00000901       0x39 ../lib/partition.o
  .debug_pubnames
-                0x000008f9       0x50 ../lib/MMA7260.o
+                0x0000093a       0x50 ../lib/MMA7260.o
  .debug_pubnames
-                0x00000949       0x8e ../lib/LCD_driver.o
+                0x0000098a       0x8e ../lib/LCD_driver.o
  .debug_pubnames
-                0x000009d7       0xc2 ../lib/vs1002.o
+                0x00000a18       0xc2 ../lib/vs1002.o
  .debug_pubnames
-                0x00000a99       0x62 ../lib/NS73.o
+                0x00000ada       0x62 ../lib/NS73.o
  .debug_pubnames
-                0x00000afb       0x1f ../Bootloader/LPCUSB/main_msc.o
+                0x00000b3c       0x1f ../Bootloader/LPCUSB/main_msc.o
  .debug_pubnames
-                0x00000b1a       0x45 ../Bootloader/LPCUSB/msc_bot.o
+                0x00000b5b       0x45 ../Bootloader/LPCUSB/msc_bot.o
  .debug_pubnames
-                0x00000b5f       0x45 ../Bootloader/LPCUSB/msc_scsi.o
+                0x00000ba0       0x45 ../Bootloader/LPCUSB/msc_scsi.o
  .debug_pubnames
-                0x00000ba4       0x5a ../Bootloader/LPCUSB/blockdev_sd.o
+                0x00000be5       0x5a ../Bootloader/LPCUSB/blockdev_sd.o
  .debug_pubnames
-                0x00000bfe       0x54 ../Bootloader/LPCUSB/lpc2000_spi.o
+                0x00000c3f       0x54 ../Bootloader/LPCUSB/lpc2000_spi.o
  .debug_pubnames
-                0x00000c52       0x1e ../Bootloader/LPCUSB/usbinit.o
+                0x00000c93       0x1e ../Bootloader/LPCUSB/usbinit.o
  .debug_pubnames
-                0x00000c70      0x132 ../Bootloader/LPCUSB/usbhw_lpc.o
+                0x00000cb1      0x132 ../Bootloader/LPCUSB/usbhw_lpc.o
  .debug_pubnames
-                0x00000da2       0x4d ../Bootloader/LPCUSB/usbcontrol.o
+                0x00000de3       0x4d ../Bootloader/LPCUSB/usbcontrol.o
  .debug_pubnames
-                0x00000def       0x7f ../Bootloader/LPCUSB/usbstdreq.o
+                0x00000e30       0x7f ../Bootloader/LPCUSB/usbstdreq.o
  .debug_pubnames
-                0x00000e6e       0x26 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+                0x00000eaf       0x26 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
  .debug_pubnames
-                0x00000e94       0xce /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+                0x00000ed5       0xce /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
  .debug_pubnames
-                0x00000f62       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+                0x00000fa3       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
  .debug_pubnames
-                0x00000f7f       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+                0x00000fc0       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
  .debug_pubnames
-                0x00000f9c       0x38 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+                0x00000fdd       0x38 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
  .debug_pubnames
-                0x00000fd4       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+                0x00001015       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
  .debug_pubnames
-                0x00000ff1       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+                0x00001032       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
  .debug_pubnames
-                0x0000100e       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+                0x0000104f       0x1d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
  .debug_pubnames
-                0x0000102b       0x1e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+                0x0000106c       0x1e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
  .debug_pubnames
-                0x00001049       0x1e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+                0x0000108a       0x1e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
  .debug_pubnames
-                0x00001067       0x1e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+                0x000010a8       0x1e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
  .debug_pubnames
-                0x00001085       0x31 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+                0x000010c6       0x31 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
  .debug_pubnames
-                0x000010b6       0x39 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+                0x000010f7       0x39 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
 
-.debug_info     0x00000000     0xad8e
+.debug_info     0x00000000     0xaddf
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000       0x9a Startup.o
- .debug_info    0x0000009a     0x11ea main.o
- .debug_info    0x00001284      0xc8e ../lib/syscalls.o
- .debug_info    0x00001f12      0x201 ../lib/rprintf.o
- .debug_info    0x00002113      0x133 ../lib/serial.o
- .debug_info    0x00002246       0xe7 ../lib/spi0.o
- .debug_info    0x0000232d      0x554 ../lib/rootdir.o
- .debug_info    0x00002881      0x693 ../lib/sd_raw.o
- .debug_info    0x00002f14     0x1443 ../lib/fat16.o
- .debug_info    0x00004357      0x28b ../lib/partition.o
- .debug_info    0x000045e2      0x103 ../lib/MMA7260.o
- .debug_info    0x000046e5      0x51a ../lib/LCD_driver.o
- .debug_info    0x00004bff      0x1cd ../lib/vs1002.o
- .debug_info    0x00004dcc      0x136 ../lib/NS73.o
- .debug_info    0x00004f02      0x1b1 ../Bootloader/LPCUSB/main_msc.o
- .debug_info    0x000050b3      0x3be ../Bootloader/LPCUSB/msc_bot.o
- .debug_info    0x00005471      0x2e8 ../Bootloader/LPCUSB/msc_scsi.o
- .debug_info    0x00005759      0x368 ../Bootloader/LPCUSB/blockdev_sd.o
- .debug_info    0x00005ac1      0x1d9 ../Bootloader/LPCUSB/lpc2000_spi.o
- .debug_info    0x00005c9a       0xbc ../Bootloader/LPCUSB/usbinit.o
- .debug_info    0x00005d56      0x601 ../Bootloader/LPCUSB/usbhw_lpc.o
- .debug_info    0x00006357      0x2e2 ../Bootloader/LPCUSB/usbcontrol.o
- .debug_info    0x00006639      0x463 ../Bootloader/LPCUSB/usbstdreq.o
- .debug_info    0x00006a9c      0x966 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .debug_info    0x00007402      0xcc6 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .debug_info    0x000080c8      0x10a /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .debug_info    0x000081d2      0x10f /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .debug_info    0x000082e1      0x94f /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
- .debug_info    0x00008c30      0x110 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .debug_info    0x00008d40       0xd7 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .debug_info    0x00008e17       0xd3 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .debug_info    0x00008eea       0xef /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .debug_info    0x00008fd9      0x126 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .debug_info    0x000090ff       0xc4 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .debug_info    0x000091c3      0xbbb /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
- .debug_info    0x00009d7e      0x935 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
- .debug_info    0x0000a6b3      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
- .debug_info    0x0000a812      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
- .debug_info    0x0000a971      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
- .debug_info    0x0000aad0      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
- .debug_info    0x0000ac2f      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
+ .debug_info    0x0000009a     0x123b main.o
+ .debug_info    0x000012d5      0xc8e ../lib/syscalls.o
+ .debug_info    0x00001f63      0x201 ../lib/rprintf.o
+ .debug_info    0x00002164      0x133 ../lib/serial.o
+ .debug_info    0x00002297       0xe7 ../lib/spi0.o
+ .debug_info    0x0000237e      0x554 ../lib/rootdir.o
+ .debug_info    0x000028d2      0x693 ../lib/sd_raw.o
+ .debug_info    0x00002f65     0x1443 ../lib/fat16.o
+ .debug_info    0x000043a8      0x28b ../lib/partition.o
+ .debug_info    0x00004633      0x103 ../lib/MMA7260.o
+ .debug_info    0x00004736      0x51a ../lib/LCD_driver.o
+ .debug_info    0x00004c50      0x1cd ../lib/vs1002.o
+ .debug_info    0x00004e1d      0x136 ../lib/NS73.o
+ .debug_info    0x00004f53      0x1b1 ../Bootloader/LPCUSB/main_msc.o
+ .debug_info    0x00005104      0x3be ../Bootloader/LPCUSB/msc_bot.o
+ .debug_info    0x000054c2      0x2e8 ../Bootloader/LPCUSB/msc_scsi.o
+ .debug_info    0x000057aa      0x368 ../Bootloader/LPCUSB/blockdev_sd.o
+ .debug_info    0x00005b12      0x1d9 ../Bootloader/LPCUSB/lpc2000_spi.o
+ .debug_info    0x00005ceb       0xbc ../Bootloader/LPCUSB/usbinit.o
+ .debug_info    0x00005da7      0x601 ../Bootloader/LPCUSB/usbhw_lpc.o
+ .debug_info    0x000063a8      0x2e2 ../Bootloader/LPCUSB/usbcontrol.o
+ .debug_info    0x0000668a      0x463 ../Bootloader/LPCUSB/usbstdreq.o
+ .debug_info    0x00006aed      0x966 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .debug_info    0x00007453      0xcc6 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .debug_info    0x00008119      0x10a /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .debug_info    0x00008223      0x10f /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .debug_info    0x00008332      0x94f /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .debug_info    0x00008c81      0x110 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .debug_info    0x00008d91       0xd7 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .debug_info    0x00008e68       0xd3 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .debug_info    0x00008f3b       0xef /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .debug_info    0x0000902a      0x126 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .debug_info    0x00009150       0xc4 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .debug_info    0x00009214      0xbbb /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .debug_info    0x00009dcf      0x935 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .debug_info    0x0000a704      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+ .debug_info    0x0000a863      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+ .debug_info    0x0000a9c2      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+ .debug_info    0x0000ab21      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+ .debug_info    0x0000ac80      0x15f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
 
-.debug_abbrev   0x00000000     0x2db8
+.debug_abbrev   0x00000000     0x2df9
  *(.debug_abbrev)
  .debug_abbrev  0x00000000       0x10 Startup.o
- .debug_abbrev  0x00000010      0x34d main.o
- .debug_abbrev  0x0000035d      0x1c5 ../lib/syscalls.o
- .debug_abbrev  0x00000522      0x144 ../lib/rprintf.o
- .debug_abbrev  0x00000666       0xbb ../lib/serial.o
- .debug_abbrev  0x00000721       0x8b ../lib/spi0.o
- .debug_abbrev  0x000007ac      0x16d ../lib/rootdir.o
- .debug_abbrev  0x00000919      0x270 ../lib/sd_raw.o
- .debug_abbrev  0x00000b89      0x2fa ../lib/fat16.o
- .debug_abbrev  0x00000e83       0xd4 ../lib/partition.o
- .debug_abbrev  0x00000f57       0xa9 ../lib/MMA7260.o
- .debug_abbrev  0x00001000      0x1ce ../lib/LCD_driver.o
- .debug_abbrev  0x000011ce       0xc3 ../lib/vs1002.o
- .debug_abbrev  0x00001291       0xc1 ../lib/NS73.o
- .debug_abbrev  0x00001352       0xc7 ../Bootloader/LPCUSB/main_msc.o
- .debug_abbrev  0x00001419      0x1e3 ../Bootloader/LPCUSB/msc_bot.o
- .debug_abbrev  0x000015fc      0x10f ../Bootloader/LPCUSB/msc_scsi.o
- .debug_abbrev  0x0000170b      0x1bd ../Bootloader/LPCUSB/blockdev_sd.o
- .debug_abbrev  0x000018c8      0x12f ../Bootloader/LPCUSB/lpc2000_spi.o
- .debug_abbrev  0x000019f7       0xa0 ../Bootloader/LPCUSB/usbinit.o
- .debug_abbrev  0x00001a97      0x25b ../Bootloader/LPCUSB/usbhw_lpc.o
- .debug_abbrev  0x00001cf2      0x14c ../Bootloader/LPCUSB/usbcontrol.o
- .debug_abbrev  0x00001e3e      0x20a ../Bootloader/LPCUSB/usbstdreq.o
- .debug_abbrev  0x00002048      0x18e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .debug_abbrev  0x000021d6      0x22c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .debug_abbrev  0x00002402       0x97 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .debug_abbrev  0x00002499       0xb0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .debug_abbrev  0x00002549      0x171 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
- .debug_abbrev  0x000026ba       0x96 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .debug_abbrev  0x00002750       0x78 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .debug_abbrev  0x000027c8       0x92 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .debug_abbrev  0x0000285a       0x94 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .debug_abbrev  0x000028ee       0x94 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .debug_abbrev  0x00002982       0x76 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .debug_abbrev  0x000029f8      0x1fe /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
- .debug_abbrev  0x00002bf6      0x15e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
- .debug_abbrev  0x00002d54       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
- .debug_abbrev  0x00002d68       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
- .debug_abbrev  0x00002d7c       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
- .debug_abbrev  0x00002d90       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
- .debug_abbrev  0x00002da4       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
+ .debug_abbrev  0x00000010      0x38e main.o
+ .debug_abbrev  0x0000039e      0x1c5 ../lib/syscalls.o
+ .debug_abbrev  0x00000563      0x144 ../lib/rprintf.o
+ .debug_abbrev  0x000006a7       0xbb ../lib/serial.o
+ .debug_abbrev  0x00000762       0x8b ../lib/spi0.o
+ .debug_abbrev  0x000007ed      0x16d ../lib/rootdir.o
+ .debug_abbrev  0x0000095a      0x270 ../lib/sd_raw.o
+ .debug_abbrev  0x00000bca      0x2fa ../lib/fat16.o
+ .debug_abbrev  0x00000ec4       0xd4 ../lib/partition.o
+ .debug_abbrev  0x00000f98       0xa9 ../lib/MMA7260.o
+ .debug_abbrev  0x00001041      0x1ce ../lib/LCD_driver.o
+ .debug_abbrev  0x0000120f       0xc3 ../lib/vs1002.o
+ .debug_abbrev  0x000012d2       0xc1 ../lib/NS73.o
+ .debug_abbrev  0x00001393       0xc7 ../Bootloader/LPCUSB/main_msc.o
+ .debug_abbrev  0x0000145a      0x1e3 ../Bootloader/LPCUSB/msc_bot.o
+ .debug_abbrev  0x0000163d      0x10f ../Bootloader/LPCUSB/msc_scsi.o
+ .debug_abbrev  0x0000174c      0x1bd ../Bootloader/LPCUSB/blockdev_sd.o
+ .debug_abbrev  0x00001909      0x12f ../Bootloader/LPCUSB/lpc2000_spi.o
+ .debug_abbrev  0x00001a38       0xa0 ../Bootloader/LPCUSB/usbinit.o
+ .debug_abbrev  0x00001ad8      0x25b ../Bootloader/LPCUSB/usbhw_lpc.o
+ .debug_abbrev  0x00001d33      0x14c ../Bootloader/LPCUSB/usbcontrol.o
+ .debug_abbrev  0x00001e7f      0x20a ../Bootloader/LPCUSB/usbstdreq.o
+ .debug_abbrev  0x00002089      0x18e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .debug_abbrev  0x00002217      0x22c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .debug_abbrev  0x00002443       0x97 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .debug_abbrev  0x000024da       0xb0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .debug_abbrev  0x0000258a      0x171 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .debug_abbrev  0x000026fb       0x96 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .debug_abbrev  0x00002791       0x78 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .debug_abbrev  0x00002809       0x92 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .debug_abbrev  0x0000289b       0x94 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .debug_abbrev  0x0000292f       0x94 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .debug_abbrev  0x000029c3       0x76 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .debug_abbrev  0x00002a39      0x1fe /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .debug_abbrev  0x00002c37      0x15e /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .debug_abbrev  0x00002d95       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+ .debug_abbrev  0x00002da9       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+ .debug_abbrev  0x00002dbd       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+ .debug_abbrev  0x00002dd1       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+ .debug_abbrev  0x00002de5       0x14 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
 
-.debug_line     0x00000000     0x38f8
+.debug_line     0x00000000     0x3919
  *(.debug_line)
  .debug_line    0x00000000       0xa3 Startup.o
- .debug_line    0x000000a3      0x551 main.o
- .debug_line    0x000005f4      0x164 ../lib/syscalls.o
- .debug_line    0x00000758       0xc8 ../lib/rprintf.o
- .debug_line    0x00000820       0x63 ../lib/serial.o
- .debug_line    0x00000883       0x4c ../lib/spi0.o
- .debug_line    0x000008cf      0x157 ../lib/rootdir.o
- .debug_line    0x00000a26      0x22b ../lib/sd_raw.o
- .debug_line    0x00000c51      0x4ba ../lib/fat16.o
- .debug_line    0x0000110b       0xcb ../lib/partition.o
- .debug_line    0x000011d6       0x6c ../lib/MMA7260.o
- .debug_line    0x00001242      0x1d8 ../lib/LCD_driver.o
- .debug_line    0x0000141a       0xad ../lib/vs1002.o
- .debug_line    0x000014c7       0xc2 ../lib/NS73.o
- .debug_line    0x00001589       0x8d ../Bootloader/LPCUSB/main_msc.o
- .debug_line    0x00001616      0x10e ../Bootloader/LPCUSB/msc_bot.o
- .debug_line    0x00001724       0xd1 ../Bootloader/LPCUSB/msc_scsi.o
- .debug_line    0x000017f5      0x113 ../Bootloader/LPCUSB/blockdev_sd.o
- .debug_line    0x00001908       0x9b ../Bootloader/LPCUSB/lpc2000_spi.o
- .debug_line    0x000019a3       0x66 ../Bootloader/LPCUSB/usbinit.o
- .debug_line    0x00001a09      0x181 ../Bootloader/LPCUSB/usbhw_lpc.o
- .debug_line    0x00001b8a       0xc8 ../Bootloader/LPCUSB/usbcontrol.o
- .debug_line    0x00001c52      0x102 ../Bootloader/LPCUSB/usbstdreq.o
- .debug_line    0x00001d54      0x228 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .debug_line    0x00001f7c      0x357 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .debug_line    0x000022d3      0x19f /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .debug_line    0x00002472      0x1a6 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .debug_line    0x00002618      0x21c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
- .debug_line    0x00002834       0xe1 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .debug_line    0x00002915       0xe9 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .debug_line    0x000029fe      0x171 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .debug_line    0x00002b6f      0x19f /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .debug_line    0x00002d0e      0x198 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .debug_line    0x00002ea6       0xd5 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .debug_line    0x00002f7b      0x2ac /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
- .debug_line    0x00003227      0x20a /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
- .debug_line    0x00003431      0x103 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
- .debug_line    0x00003534      0x10f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
- .debug_line    0x00003643       0xec /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
- .debug_line    0x0000372f       0xf2 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
- .debug_line    0x00003821       0xd7 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
+ .debug_line    0x000000a3      0x572 main.o
+ .debug_line    0x00000615      0x164 ../lib/syscalls.o
+ .debug_line    0x00000779       0xc8 ../lib/rprintf.o
+ .debug_line    0x00000841       0x63 ../lib/serial.o
+ .debug_line    0x000008a4       0x4c ../lib/spi0.o
+ .debug_line    0x000008f0      0x157 ../lib/rootdir.o
+ .debug_line    0x00000a47      0x22b ../lib/sd_raw.o
+ .debug_line    0x00000c72      0x4ba ../lib/fat16.o
+ .debug_line    0x0000112c       0xcb ../lib/partition.o
+ .debug_line    0x000011f7       0x6c ../lib/MMA7260.o
+ .debug_line    0x00001263      0x1d8 ../lib/LCD_driver.o
+ .debug_line    0x0000143b       0xad ../lib/vs1002.o
+ .debug_line    0x000014e8       0xc2 ../lib/NS73.o
+ .debug_line    0x000015aa       0x8d ../Bootloader/LPCUSB/main_msc.o
+ .debug_line    0x00001637      0x10e ../Bootloader/LPCUSB/msc_bot.o
+ .debug_line    0x00001745       0xd1 ../Bootloader/LPCUSB/msc_scsi.o
+ .debug_line    0x00001816      0x113 ../Bootloader/LPCUSB/blockdev_sd.o
+ .debug_line    0x00001929       0x9b ../Bootloader/LPCUSB/lpc2000_spi.o
+ .debug_line    0x000019c4       0x66 ../Bootloader/LPCUSB/usbinit.o
+ .debug_line    0x00001a2a      0x181 ../Bootloader/LPCUSB/usbhw_lpc.o
+ .debug_line    0x00001bab       0xc8 ../Bootloader/LPCUSB/usbcontrol.o
+ .debug_line    0x00001c73      0x102 ../Bootloader/LPCUSB/usbstdreq.o
+ .debug_line    0x00001d75      0x228 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .debug_line    0x00001f9d      0x357 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .debug_line    0x000022f4      0x19f /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .debug_line    0x00002493      0x1a6 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .debug_line    0x00002639      0x21c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .debug_line    0x00002855       0xe1 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .debug_line    0x00002936       0xe9 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .debug_line    0x00002a1f      0x171 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .debug_line    0x00002b90      0x19f /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .debug_line    0x00002d2f      0x198 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .debug_line    0x00002ec7       0xd5 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .debug_line    0x00002f9c      0x2ac /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .debug_line    0x00003248      0x20a /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .debug_line    0x00003452      0x103 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+ .debug_line    0x00003555      0x10f /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+ .debug_line    0x00003664       0xec /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+ .debug_line    0x00003750       0xf2 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+ .debug_line    0x00003842       0xd7 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_dvmd_tls.o)
 
-.debug_frame    0x00000000     0x16f0
+.debug_frame    0x00000000     0x1738
  *(.debug_frame)
- .debug_frame   0x00000000      0x454 main.o
- .debug_frame   0x00000454       0x80 ../lib/syscalls.o
- .debug_frame   0x000004d4       0x68 ../lib/rprintf.o
- .debug_frame   0x0000053c       0x80 ../lib/serial.o
- .debug_frame   0x000005bc       0x48 ../lib/spi0.o
- .debug_frame   0x00000604      0x108 ../lib/rootdir.o
- .debug_frame   0x0000070c      0x154 ../lib/sd_raw.o
- .debug_frame   0x00000860      0x33c ../lib/fat16.o
- .debug_frame   0x00000b9c       0x4c ../lib/partition.o
- .debug_frame   0x00000be8       0x60 ../lib/MMA7260.o
- .debug_frame   0x00000c48      0x134 ../lib/LCD_driver.o
- .debug_frame   0x00000d7c      0x104 ../lib/vs1002.o
- .debug_frame   0x00000e80       0x94 ../lib/NS73.o
- .debug_frame   0x00000f14       0x40 ../Bootloader/LPCUSB/main_msc.o
- .debug_frame   0x00000f54       0xac ../Bootloader/LPCUSB/msc_bot.o
- .debug_frame   0x00001000       0x64 ../Bootloader/LPCUSB/msc_scsi.o
- .debug_frame   0x00001064       0xc8 ../Bootloader/LPCUSB/blockdev_sd.o
- .debug_frame   0x0000112c       0x68 ../Bootloader/LPCUSB/lpc2000_spi.o
- .debug_frame   0x00001194       0x38 ../Bootloader/LPCUSB/usbinit.o
- .debug_frame   0x000011cc      0x168 ../Bootloader/LPCUSB/usbhw_lpc.o
- .debug_frame   0x00001334       0x8c ../Bootloader/LPCUSB/usbcontrol.o
- .debug_frame   0x000013c0       0x6c ../Bootloader/LPCUSB/usbstdreq.o
- .debug_frame   0x0000142c       0x30 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .debug_frame   0x0000145c       0x38 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .debug_frame   0x00001494       0x2c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .debug_frame   0x000014c0       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .debug_frame   0x000014e8       0x30 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
- .debug_frame   0x00001518       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .debug_frame   0x00001540       0x20 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .debug_frame   0x00001560       0x20 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .debug_frame   0x00001580       0x2c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .debug_frame   0x000015ac       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .debug_frame   0x000015d4       0x2c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .debug_frame   0x00001600       0x50 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
- .debug_frame   0x00001650       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
- .debug_frame   0x00001678       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
- .debug_frame   0x000016a0       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
- .debug_frame   0x000016c8       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
+ .debug_frame   0x00000000      0x49c main.o
+ .debug_frame   0x0000049c       0x80 ../lib/syscalls.o
+ .debug_frame   0x0000051c       0x68 ../lib/rprintf.o
+ .debug_frame   0x00000584       0x80 ../lib/serial.o
+ .debug_frame   0x00000604       0x48 ../lib/spi0.o
+ .debug_frame   0x0000064c      0x108 ../lib/rootdir.o
+ .debug_frame   0x00000754      0x154 ../lib/sd_raw.o
+ .debug_frame   0x000008a8      0x33c ../lib/fat16.o
+ .debug_frame   0x00000be4       0x4c ../lib/partition.o
+ .debug_frame   0x00000c30       0x60 ../lib/MMA7260.o
+ .debug_frame   0x00000c90      0x134 ../lib/LCD_driver.o
+ .debug_frame   0x00000dc4      0x104 ../lib/vs1002.o
+ .debug_frame   0x00000ec8       0x94 ../lib/NS73.o
+ .debug_frame   0x00000f5c       0x40 ../Bootloader/LPCUSB/main_msc.o
+ .debug_frame   0x00000f9c       0xac ../Bootloader/LPCUSB/msc_bot.o
+ .debug_frame   0x00001048       0x64 ../Bootloader/LPCUSB/msc_scsi.o
+ .debug_frame   0x000010ac       0xc8 ../Bootloader/LPCUSB/blockdev_sd.o
+ .debug_frame   0x00001174       0x68 ../Bootloader/LPCUSB/lpc2000_spi.o
+ .debug_frame   0x000011dc       0x38 ../Bootloader/LPCUSB/usbinit.o
+ .debug_frame   0x00001214      0x168 ../Bootloader/LPCUSB/usbhw_lpc.o
+ .debug_frame   0x0000137c       0x8c ../Bootloader/LPCUSB/usbcontrol.o
+ .debug_frame   0x00001408       0x6c ../Bootloader/LPCUSB/usbstdreq.o
+ .debug_frame   0x00001474       0x30 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .debug_frame   0x000014a4       0x38 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .debug_frame   0x000014dc       0x2c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .debug_frame   0x00001508       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .debug_frame   0x00001530       0x30 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .debug_frame   0x00001560       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .debug_frame   0x00001588       0x20 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .debug_frame   0x000015a8       0x20 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .debug_frame   0x000015c8       0x2c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .debug_frame   0x000015f4       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .debug_frame   0x0000161c       0x2c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .debug_frame   0x00001648       0x50 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .debug_frame   0x00001698       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_udivsi3.o)
+ .debug_frame   0x000016c0       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_divsi3.o)
+ .debug_frame   0x000016e8       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_umodsi3.o)
+ .debug_frame   0x00001710       0x28 /opt/local/lib/gcc/arm-elf/4.3.2/libgcc.a(_modsi3.o)
 
-.debug_str      0x00000000     0x2b10
+.debug_str      0x00000000     0x2b45
  *(.debug_str)
- .debug_str     0x00000000      0x533 main.o
-                                0x5b7 (size before relaxing)
- .debug_str     0x00000533      0x50a ../lib/syscalls.o
+ .debug_str     0x00000000      0x568 main.o
+                                0x5ec (size before relaxing)
+ .debug_str     0x00000568      0x50a ../lib/syscalls.o
                                 0x5fe (size before relaxing)
- .debug_str     0x00000a3d       0x99 ../lib/rprintf.o
+ .debug_str     0x00000a72       0x99 ../lib/rprintf.o
                                 0x1af (size before relaxing)
- .debug_str     0x00000ad6       0x76 ../lib/serial.o
+ .debug_str     0x00000b0b       0x76 ../lib/serial.o
                                 0x112 (size before relaxing)
- .debug_str     0x00000b4c       0x31 ../lib/spi0.o
+ .debug_str     0x00000b81       0x31 ../lib/spi0.o
                                 0x13f (size before relaxing)
- .debug_str     0x00000b7d      0x246 ../lib/rootdir.o
+ .debug_str     0x00000bb2      0x246 ../lib/rootdir.o
                                 0x3c3 (size before relaxing)
- .debug_str     0x00000dc3      0x196 ../lib/sd_raw.o
+ .debug_str     0x00000df8      0x196 ../lib/sd_raw.o
                                 0x374 (size before relaxing)
- .debug_str     0x00000f59      0x5ba ../lib/fat16.o
+ .debug_str     0x00000f8e      0x5ba ../lib/fat16.o
                                 0x880 (size before relaxing)
- .debug_str     0x00001513       0x47 ../lib/partition.o
+ .debug_str     0x00001548       0x47 ../lib/partition.o
                                 0x224 (size before relaxing)
- .debug_str     0x0000155a       0x49 ../lib/MMA7260.o
+ .debug_str     0x0000158f       0x49 ../lib/MMA7260.o
                                  0xe6 (size before relaxing)
- .debug_str     0x000015a3      0x107 ../lib/LCD_driver.o
+ .debug_str     0x000015d8      0x107 ../lib/LCD_driver.o
                                 0x248 (size before relaxing)
- .debug_str     0x000016aa       0xb5 ../lib/vs1002.o
+ .debug_str     0x000016df       0xb5 ../lib/vs1002.o
                                 0x186 (size before relaxing)
- .debug_str     0x0000175f       0x8a ../lib/NS73.o
+ .debug_str     0x00001794       0x8a ../lib/NS73.o
                                 0x13c (size before relaxing)
- .debug_str     0x000017e9       0x9f ../Bootloader/LPCUSB/main_msc.o
+ .debug_str     0x0000181e       0x9f ../Bootloader/LPCUSB/main_msc.o
                                 0x1bb (size before relaxing)
- .debug_str     0x00001888      0x17b ../Bootloader/LPCUSB/msc_bot.o
+ .debug_str     0x000018bd      0x17b ../Bootloader/LPCUSB/msc_bot.o
                                 0x2b2 (size before relaxing)
- .debug_str     0x00001a03       0xf2 ../Bootloader/LPCUSB/msc_scsi.o
+ .debug_str     0x00001a38       0xf2 ../Bootloader/LPCUSB/msc_scsi.o
                                 0x215 (size before relaxing)
- .debug_str     0x00001af5       0xc4 ../Bootloader/LPCUSB/blockdev_sd.o
+ .debug_str     0x00001b2a       0xc4 ../Bootloader/LPCUSB/blockdev_sd.o
                                 0x20a (size before relaxing)
- .debug_str     0x00001bb9       0x6c ../Bootloader/LPCUSB/lpc2000_spi.o
+ .debug_str     0x00001bee       0x6c ../Bootloader/LPCUSB/lpc2000_spi.o
                                 0x18d (size before relaxing)
- .debug_str     0x00001c25       0x4e ../Bootloader/LPCUSB/usbinit.o
+ .debug_str     0x00001c5a       0x4e ../Bootloader/LPCUSB/usbinit.o
                                 0x118 (size before relaxing)
- .debug_str     0x00001c73      0x25a ../Bootloader/LPCUSB/usbhw_lpc.o
+ .debug_str     0x00001ca8      0x25a ../Bootloader/LPCUSB/usbhw_lpc.o
                                 0x340 (size before relaxing)
- .debug_str     0x00001ecd       0xa9 ../Bootloader/LPCUSB/usbcontrol.o
+ .debug_str     0x00001f02       0xa9 ../Bootloader/LPCUSB/usbcontrol.o
                                 0x20a (size before relaxing)
- .debug_str     0x00001f76      0x175 ../Bootloader/LPCUSB/usbstdreq.o
+ .debug_str     0x00001fab      0x175 ../Bootloader/LPCUSB/usbstdreq.o
                                 0x29f (size before relaxing)
- .debug_str     0x000020eb       0xa1 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .debug_str     0x00002120       0xa1 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
                                 0x4f1 (size before relaxing)
- .debug_str     0x0000218c      0x263 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .debug_str     0x000021c1      0x263 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
                                 0x6c6 (size before relaxing)
- .debug_str     0x000023ef       0xca /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .debug_str     0x00002424       0xca /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
                                  0xfd (size before relaxing)
- .debug_str     0x000024b9       0xb0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .debug_str     0x000024ee       0xb0 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
                                 0x153 (size before relaxing)
- .debug_str     0x00002569       0xce /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
+ .debug_str     0x0000259e       0xce /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mlock.o)
                                 0x4f8 (size before relaxing)
- .debug_str     0x00002637       0xa8 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .debug_str     0x0000266c       0xa8 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
                                 0x14a (size before relaxing)
- .debug_str     0x000026df       0xa3 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .debug_str     0x00002714       0xa3 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
                                 0x138 (size before relaxing)
- .debug_str     0x00002782       0xa9 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .debug_str     0x000027b7       0xa9 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
                                 0x152 (size before relaxing)
- .debug_str     0x0000282b       0xa5 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .debug_str     0x00002860       0xa5 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
                                 0x141 (size before relaxing)
- .debug_str     0x000028d0       0xa5 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .debug_str     0x00002905       0xa5 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
                                 0x169 (size before relaxing)
- .debug_str     0x00002975       0xa5 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .debug_str     0x000029aa       0xa5 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
                                 0x13f (size before relaxing)
- .debug_str     0x00002a1a       0x3c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .debug_str     0x00002a4f       0x3c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
                                 0x618 (size before relaxing)
- .debug_str     0x00002a56       0xba /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
+ .debug_str     0x00002a8b       0xba /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-impure.o)
                                 0x4f0 (size before relaxing)
 
-.debug_loc      0x00000000     0x526e
+.debug_loc      0x00000000     0x52c0
  *(.debug_loc)
- .debug_loc     0x00000000      0x923 main.o
- .debug_loc     0x00000923       0x98 ../lib/syscalls.o
- .debug_loc     0x000009bb      0x2a4 ../lib/rprintf.o
- .debug_loc     0x00000c5f       0xc9 ../lib/serial.o
- .debug_loc     0x00000d28       0x45 ../lib/spi0.o
- .debug_loc     0x00000d6d      0x23f ../lib/rootdir.o
- .debug_loc     0x00000fac      0x5c8 ../lib/sd_raw.o
- .debug_loc     0x00001574     0x1211 ../lib/fat16.o
- .debug_loc     0x00002785      0x114 ../lib/partition.o
- .debug_loc     0x00002899       0x13 ../lib/MMA7260.o
- .debug_loc     0x000028ac      0x58e ../lib/LCD_driver.o
- .debug_loc     0x00002e3a      0x1e7 ../lib/vs1002.o
- .debug_loc     0x00003021      0x126 ../lib/NS73.o
- .debug_loc     0x00003147       0xae ../Bootloader/LPCUSB/main_msc.o
- .debug_loc     0x000031f5      0x263 ../Bootloader/LPCUSB/msc_bot.o
- .debug_loc     0x00003458      0x1b8 ../Bootloader/LPCUSB/msc_scsi.o
- .debug_loc     0x00003610      0x2dc ../Bootloader/LPCUSB/blockdev_sd.o
- .debug_loc     0x000038ec       0x45 ../Bootloader/LPCUSB/lpc2000_spi.o
- .debug_loc     0x00003931       0x1f ../Bootloader/LPCUSB/usbinit.o
- .debug_loc     0x00003950      0x36d ../Bootloader/LPCUSB/usbhw_lpc.o
- .debug_loc     0x00003cbd      0x1cf ../Bootloader/LPCUSB/usbcontrol.o
- .debug_loc     0x00003e8c      0x2bb ../Bootloader/LPCUSB/usbstdreq.o
- .debug_loc     0x00004147       0x3c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
- .debug_loc     0x00004183      0x75d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
- .debug_loc     0x000048e0      0x130 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
- .debug_loc     0x00004a10      0x12b /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
- .debug_loc     0x00004b3b       0xd3 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
- .debug_loc     0x00004c0e       0xba /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
- .debug_loc     0x00004cc8       0x47 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
- .debug_loc     0x00004d0f      0x105 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
- .debug_loc     0x00004e14      0x128 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
- .debug_loc     0x00004f3c       0x87 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
- .debug_loc     0x00004fc3      0x2ab /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
+ .debug_loc     0x00000000      0x975 main.o
+ .debug_loc     0x00000975       0x98 ../lib/syscalls.o
+ .debug_loc     0x00000a0d      0x2a4 ../lib/rprintf.o
+ .debug_loc     0x00000cb1       0xc9 ../lib/serial.o
+ .debug_loc     0x00000d7a       0x45 ../lib/spi0.o
+ .debug_loc     0x00000dbf      0x23f ../lib/rootdir.o
+ .debug_loc     0x00000ffe      0x5c8 ../lib/sd_raw.o
+ .debug_loc     0x000015c6     0x1211 ../lib/fat16.o
+ .debug_loc     0x000027d7      0x114 ../lib/partition.o
+ .debug_loc     0x000028eb       0x13 ../lib/MMA7260.o
+ .debug_loc     0x000028fe      0x58e ../lib/LCD_driver.o
+ .debug_loc     0x00002e8c      0x1e7 ../lib/vs1002.o
+ .debug_loc     0x00003073      0x126 ../lib/NS73.o
+ .debug_loc     0x00003199       0xae ../Bootloader/LPCUSB/main_msc.o
+ .debug_loc     0x00003247      0x263 ../Bootloader/LPCUSB/msc_bot.o
+ .debug_loc     0x000034aa      0x1b8 ../Bootloader/LPCUSB/msc_scsi.o
+ .debug_loc     0x00003662      0x2dc ../Bootloader/LPCUSB/blockdev_sd.o
+ .debug_loc     0x0000393e       0x45 ../Bootloader/LPCUSB/lpc2000_spi.o
+ .debug_loc     0x00003983       0x1f ../Bootloader/LPCUSB/usbinit.o
+ .debug_loc     0x000039a2      0x36d ../Bootloader/LPCUSB/usbhw_lpc.o
+ .debug_loc     0x00003d0f      0x1cf ../Bootloader/LPCUSB/usbcontrol.o
+ .debug_loc     0x00003ede      0x2bb ../Bootloader/LPCUSB/usbstdreq.o
+ .debug_loc     0x00004199       0x3c /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-malloc.o)
+ .debug_loc     0x000041d5      0x75d /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+ .debug_loc     0x00004932      0x130 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memcpy.o)
+ .debug_loc     0x00004a62      0x12b /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-memset.o)
+ .debug_loc     0x00004b8d       0xd3 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strchr.o)
+ .debug_loc     0x00004c60       0xba /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strcmp.o)
+ .debug_loc     0x00004d1a       0x47 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strlen.o)
+ .debug_loc     0x00004d61      0x105 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncmp.o)
+ .debug_loc     0x00004e66      0x128 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strncpy.o)
+ .debug_loc     0x00004f8e       0x87 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-strrchr.o)
+ .debug_loc     0x00005015      0x2ab /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-freer.o)
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -1223,17 +1226,17 @@ END GROUP
  *(.debug_varnames)
 OUTPUT(main.elf elf32-littlearm)
 
-.debug_ranges   0x00000000      0x828
- .debug_ranges  0x00000000      0x490 main.o
- .debug_ranges  0x00000490       0x18 ../lib/rprintf.o
- .debug_ranges  0x000004a8       0x48 ../lib/sd_raw.o
- .debug_ranges  0x000004f0      0x1a8 ../lib/fat16.o
- .debug_ranges  0x00000698       0x30 ../Bootloader/LPCUSB/msc_bot.o
- .debug_ranges  0x000006c8       0x18 ../Bootloader/LPCUSB/blockdev_sd.o
- .debug_ranges  0x000006e0       0x18 ../Bootloader/LPCUSB/lpc2000_spi.o
- .debug_ranges  0x000006f8       0x78 ../Bootloader/LPCUSB/usbhw_lpc.o
- .debug_ranges  0x00000770       0x60 ../Bootloader/LPCUSB/usbstdreq.o
- .debug_ranges  0x000007d0       0x58 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
+.debug_ranges   0x00000000      0x810
+ .debug_ranges  0x00000000      0x478 main.o
+ .debug_ranges  0x00000478       0x18 ../lib/rprintf.o
+ .debug_ranges  0x00000490       0x48 ../lib/sd_raw.o
+ .debug_ranges  0x000004d8      0x1a8 ../lib/fat16.o
+ .debug_ranges  0x00000680       0x30 ../Bootloader/LPCUSB/msc_bot.o
+ .debug_ranges  0x000006b0       0x18 ../Bootloader/LPCUSB/blockdev_sd.o
+ .debug_ranges  0x000006c8       0x18 ../Bootloader/LPCUSB/lpc2000_spi.o
+ .debug_ranges  0x000006e0       0x78 ../Bootloader/LPCUSB/usbhw_lpc.o
+ .debug_ranges  0x00000758       0x60 ../Bootloader/LPCUSB/usbstdreq.o
+ .debug_ranges  0x000007b8       0x58 /opt/local/lib/gcc/arm-elf/4.3.2/../../../../arm-elf/lib/libc.a(lib_a-mallocr.o)
 
 .ARM.attributes
                 0x00000000       0x10
@@ -1517,6 +1520,7 @@ getButton                                         main.o
 getNewFiles                                       main.o
 getc0                                             ../lib/serial.o
 getkey_serial0                                    ../lib/serial.o
+handleAccelerometer                               main.o
 handleDownButton                                  main.o
 handleMiddleButton                                main.o
 handleUpButton                                    main.o
@@ -1660,3 +1664,5 @@ vs1002SineTest                                    ../lib/vs1002.o
 welcome                                           main.o
 white                                             ../lib/LCD_driver.o
                                                   main.o
+wishesFileManager                                 main.o
+wishesSettings                                    main.o

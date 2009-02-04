@@ -217,35 +217,14 @@ int main (void) {
     } else if (button_pressed == MID_BUT) {
       handleMiddleButton();
     } else if (update_screen) {
-			disableUIInterrupt(DEBOUNCE_ACCELEROMETER); // Stop interrupts and allow accelerometer to stabilize
-			if(MMA_get_y()>700 && prev_position>700){	//Get new accelerometer value; make sure position is correct.
-        clearScreen();
-				current_display = &settings_menu;
-				current_display->orientation=ORIENTLEFT;
-				ledBlueOff();
-				if(file_is_open) {
-				  ledGrnOn();
-			  } else {
-			    ledRedOn();
-		    }
-			}
-			else if(MMA_get_y()<700 && prev_position<700){
-        clearScreen();
-				current_display = &file_manager;
-				current_display->orientation=ORIENTUP;
-				ledGrnOff();
-				ledRedOff();
-        if (file_is_open) {
-          ledBlueOn();
-        }
-			}
-			printMenu(current_display);					//If the screen has changed, show the new menu
-			enableUIInterrupt();
-		}
-		button_pressed = NO_BUT;
-		enableUIInterrupt();
-	}
-    return 0;
+      handleAccelerometer();
+    }
+    button_pressed = NO_BUT;
+    enableUIInterrupt();
+  } // while (1)
+  
+  // main
+  return 0;
 }
 
 
@@ -986,4 +965,48 @@ void initializeLEDs(void) {
 void displayRadioMenu(void) {
   LCDSetRowColor(2, 0, current_display->back_color, current_display->orientation);
   LCDPrintString("%d", radio_channel, white, 2, 0, current_display->orientation);
+}
+
+//
+// Accelerometer
+//
+
+// 
+//
+void handleAccelerometer(void) {
+  // Disable UI interrupts
+  disableUIInterrupt(DEBOUNCE_ACCELEROMETER);
+  // Get new accelerometer value; make sure position is correct.
+  if (wishesSettings()) {
+    clearScreen();
+    current_display = &settings_menu;
+    current_display->orientation = ORIENTLEFT;
+    ledBlueOff();
+    if (file_is_open) {
+      ledGrnOn();
+    } else {
+      ledRedOn();
+    }
+  } else if (wishesFileManager()) {
+    clearScreen();
+    current_display = &file_manager;
+    current_display->orientation = ORIENTUP;
+    ledGrnOff();
+    ledRedOff();
+    if (file_is_open) {
+      ledBlueOn();
+    }
+  }
+  // If the screen has changed, show the new menu
+  printMenu(current_display);
+  // Reenable UI interrupts
+  enableUIInterrupt();
+}
+
+int wishesSettings(void) {
+  return (MMA_get_y() > 700 && prev_position > 700);
+}
+
+int wishesFileManager(void) {
+  return (MMA_get_y() < 700 && prev_position < 700);
 }
