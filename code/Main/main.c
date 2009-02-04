@@ -104,7 +104,9 @@ int main (void) {
   bootUp();
   
   initializeMP3Player();
+  
   splashScreen();
+  
   initializeRadio(radio_channel);
   
   // Find Out how many files are on the SD card
@@ -175,7 +177,7 @@ int main (void) {
 	
 		//Wait for a button to be pressed or for the screen to be rotated.
 		//while(!button_pressed && !update_screen){
-		if(!button_pressed && !update_screen){
+		if (!button_pressed && !update_screen) {
       // If the current song is done playing, start playing the next song if it's available.
       if (song_is_over) {
         disableMP3Interrupt();
@@ -197,45 +199,50 @@ int main (void) {
 				//If there is another song in the list, get it and play it!
 				if(file_manager.list[file_manager.current_row+1].file_name[0] != '\0'){	
 					LCDClear(file_manager.back_color);
-					printMenu(&file_manager);									//Print the menu with the next song!
-					file_is_open = loadSongInfo(&current_song, &file_manager);	//Get the current song info.					
-					vs1002Config();												//Enable the MP3 Comm. Lines
-					vs1002SCIWrite(SCI_MODE, SM_SDINEW);						//Make sure the MP3 player is in the right mode. TODO necessary?
-					vs1002Finish();												//Disable the MP3 Comm. Lines
+					printMenu(&file_manager);									// Print the menu with the next song!
+					file_is_open = loadSongInfo(&current_song, &file_manager);	// Get the current song info.					
+					vs1002Config();												// Enable the MP3 Comm. Lines
+					vs1002SCIWrite(SCI_MODE, SM_SDINEW);						// Make sure the MP3 player is in the right mode. TODO necessary?
+					vs1002Finish();												// Disable the MP3 Comm. Lines
 					ledBlueOn();
 					enableMP3Interrupt();
 				}	
 			}
 		}
 
-		if(button_pressed == UP_BUT)handleUpButton(current_display, &Files[0]);
-		else if(button_pressed == DWN_BUT)handleDownButton(current_display, &Files[0]);
-		else if(button_pressed == MID_BUT)handleMiddleButton();
-		
-		else if(update_screen){
+		if (button_pressed == UP_BUT) {
+		  handleUpButton(current_display, &Files[0]);
+	  } else if (button_pressed == DWN_BUT) {
+	    handleDownButton(current_display, &Files[0]);
+    } else if (button_pressed == MID_BUT) {
+      handleMiddleButton();
+    } else if (update_screen) {
 			disableUIInterrupt(DEBOUNCE_ACCELEROMETER); // Stop interrupts and allow accelerometer to stabilize
 			if(MMA_get_y()>700 && prev_position>700){	//Get new accelerometer value; make sure position is correct.
-				if(file_is_open)quickClear(current_display);
-				else LCDClear(current_display->back_color);
+        clearScreen();
 				current_display = &settings_menu;
 				current_display->orientation=ORIENTLEFT;
 				ledBlueOff();
-				if(file_is_open)ledGrnOn();
-				else ledRedOn();
+				if(file_is_open) {
+				  ledGrnOn();
+			  } else {
+			    ledRedOn();
+		    }
 			}
 			else if(MMA_get_y()<700 && prev_position<700){
-				if(file_is_open)quickClear(current_display);
-				else LCDClear(current_display->back_color);
+        clearScreen();
 				current_display = &file_manager;
 				current_display->orientation=ORIENTUP;
 				ledGrnOff();
 				ledRedOff();
-				if(file_is_open)ledBlueOn();
+        if (file_is_open) {
+          ledBlueOn();
+        }
 			}
 			printMenu(current_display);					//If the screen has changed, show the new menu
 			enableUIInterrupt();
 		}
-		button_pressed=NO_BUT;
+		button_pressed = NO_BUT;
 		enableUIInterrupt();
 	}
     return 0;
@@ -444,17 +451,20 @@ void highlightRow(DisplayStruct *display, char direction){
 	LCDPrintString(display->list[display->current_index].file_name, 0,display->back_color, display->current_row,0,display->orientation);	
 }
 
-//Usage: printMenu(&settings_menu);
-//Inputs: DisplayStruct *display: Pointer to the display struct to be displayed on the LCD.
-//This function writes the title, along with all of the file names in the display struct to the screen.
+// Usage: printMenu(&settings_menu);
+// Inputs: DisplayStruct *display: Pointer to the display struct to be displayed on the LCD.
+// This function writes the title, along with all of the file names in the display struct to the screen.
+//
 void printMenu(DisplayStruct *display){
-	selectLCD();		//Hand over SPI lines to LCD talk
-	if(display->current_page==0)LCDPrintString(display->title,0, display->text_color, 0,0,display->orientation);
-	for(int j=0; j<NUMROWS; j++){
-		LCDPrintString(display->list[j].file_name,0, display->text_color, j+1,0,display->orientation);
-	}
-	LCDSetRowColor(display->current_row, 0, display->text_color, display->orientation);
-	LCDPrintString(display->list[display->current_index].file_name, 0,display->back_color, display->current_row,0,display->orientation);
+  selectLCD(); // Hand over SPI lines to LCD talk
+  if (display->current_page == 0) {
+    LCDPrintString(display->title,0, display->text_color, 0,0,display->orientation);
+  }
+  for (int j = 0; j < NUMROWS; j++){
+    LCDPrintString(display->list[j].file_name,0, display->text_color, j+1,0,display->orientation);
+  }
+  LCDSetRowColor(display->current_row, 0, display->text_color, display->orientation);
+  LCDPrintString(display->list[display->current_index].file_name, 0,display->back_color, display->current_row,0,display->orientation);
 }
 
 //Usage: fillSettings(&settings_menu, &settings_values);
@@ -558,11 +568,7 @@ void handleMiddleButton(void){
       stopMP3Player();
     }
   } else { // Else we are on the Settings menu, and we need to handle the settins options
-    if (file_is_open) {
-      quickClear(current_display);
-    } else {
-      LCDClear(settings_menu.back_color);
-    }
+    clearScreen();
     LCDPrintString(current_display->list[current_display->current_index].file_name,0,current_display->text_color,1,0,current_display->orientation);
 		enableUIInterrupt();
 		if (current_display->current_row == VOLUMEMENU) {
@@ -612,11 +618,7 @@ void handleMiddleButton(void){
         enableUIInterrupt();
       }
     }
-    if (file_is_open) {
-      quickClear(current_display);
-    } else {
-      LCDClear(current_display->back_color);
-    }
+    clearScreen();
     printMenu(current_display);
   }
   enableUIInterrupt();
@@ -874,6 +876,16 @@ void splashScreen(void) {
   LCDInit();       // Initialize the LCD
   LCDClear(white); // Clear the screen with white
   LCDPrintLogo();  // Print the Sparkfun Logo
+}
+
+// Clear the screen, cheap if possible.
+//
+void clearScreen(void) {
+  if (file_is_open) {
+    quickClear(current_display);
+  } else {
+    LCDClear(current_display->back_color);
+  }
 }
 
 //

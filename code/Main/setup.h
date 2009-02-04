@@ -94,6 +94,7 @@ int isUSBConnected(void);
 
 // LCD
 void splashScreen(void);
+void clearScreen(void);
 
 // Timers
 void initializeMP3Timer(void);
@@ -113,3 +114,6 @@ void initializeLEDs(void);
 
 // Menus
 void displayRadioMenu(void);
+
+// SD handling
+FileStruct* loadSDFiles();
